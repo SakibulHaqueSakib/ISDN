@@ -1,0 +1,25 @@
+# Virtualenv
+isdnenv/
+
+# Third-party source installed in-tree (clone from https://github.com/NVlabs/curobo)
+curobo/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Editor / IntelliSense caches
+**/.vscode/browse.vc.db*
+**/.vscode/ipch/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Slides are ~110 MB of binary pptx; uncomment if the remote rejects them.
+Slides/
