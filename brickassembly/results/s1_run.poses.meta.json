@@ -1,0 +1,63 @@
+{
+ "meta": true,
+ "structure": "S1",
+ "robot_prim": "/World/Robot",
+ "parts": {
+  "0": {
+   "prim": "/World/managed/Parts/Part_0",
+   "dims": [
+    0.16,
+    0.16,
+    0.0032
+   ]
+  },
+  "1": {
+   "prim": "/World/managed/Parts/Part_1",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "2": {
+   "prim": "/World/managed/Parts/Part_2",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "3": {
+   "prim": "/World/managed/Parts/Part_3",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "4": {
+   "prim": "/World/managed/Parts/Part_4",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "5": {
+   "prim": "/World/managed/Parts/Part_5",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "6": {
+   "prim": "/World/managed/Parts/Part_6",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  }
+ }
+}

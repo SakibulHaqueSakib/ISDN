@@ -1,0 +1,16 @@
+--- /tmp/demo_assembly.orig	2026-09-21 14:15:26.250944545 +0800
++++ demos/demo_assembly.py	2026-09-21 14:15:26.255755382 +0800
+@@ -412,8 +412,11 @@
+     specified connection parameters. It relies on physical interaction (pressing)
+     to trigger the automatic assembly connection detection.
+     """
+-    press_depth = 0.0005
+-    press_duration = 1.0
++    # Made tunable: the press force a position-controlled overshoot develops
++    # is stiffness x depth, and at 0.5 mm it measured ~1-2.6 N against the
++    # 8.9 N the §2.3.3 gate asks for. Overridable as demo.PRESS_DEPTH.
++    press_depth = globals().get("PRESS_DEPTH", 0.0005)
++    press_duration = globals().get("PRESS_DURATION", 1.0)
+ 
+     print(f"--- Attempting to assemble {hole_brick_path} onto {stud_brick_path} ---")
+     print(f"-> Offset: {offset}, Yaw Index: {yaw_index}")

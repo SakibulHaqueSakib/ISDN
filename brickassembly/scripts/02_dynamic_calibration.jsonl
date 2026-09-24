@@ -1,0 +1,15 @@
+{"brick": "2x4", "studs": 8, "preload_n": 10.0, "ramp_n_per_step": 0.1, "release_n": 17.2, "per_stud_n": 2.15, "ramp_steps": 172, "wall_s": 0.1, "ts": "2026-09-21T00:59:36Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 20.0, "ramp_n_per_step": 0.1, "release_n": 31.1, "per_stud_n": 3.8875, "ramp_steps": 311, "wall_s": 0.1, "ts": "2026-09-21T00:59:46Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 35.0, "ramp_n_per_step": 0.1, "release_n": 54.4, "per_stud_n": 6.8, "ramp_steps": 544, "wall_s": 0.2, "ts": "2026-09-21T00:59:56Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 50.0, "ramp_n_per_step": 0.1, "release_n": 72.9, "per_stud_n": 9.1125, "ramp_steps": 729, "wall_s": 0.2, "ts": "2026-09-21T01:00:08Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 60.0, "ramp_n_per_step": 0.1, "release_n": 79.0, "per_stud_n": 9.875, "ramp_steps": 790, "wall_s": 0.2, "ts": "2026-09-21T01:00:18Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 70.0, "ramp_n_per_step": 0.1, "release_n": 85.5, "per_stud_n": 10.6875, "ramp_steps": 855, "wall_s": 0.3, "ts": "2026-09-21T01:00:28Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 10.0, "ramp_n_per_step": 0.1, "release_n": 25.0, "per_stud_n": 2.0833, "ramp_steps": 250, "wall_s": 0.1, "ts": "2026-09-21T01:00:38Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 20.0, "ramp_n_per_step": 0.1, "release_n": 45.3, "per_stud_n": 3.775, "ramp_steps": 453, "wall_s": 0.1, "ts": "2026-09-21T01:00:48Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 35.0, "ramp_n_per_step": 0.1, "release_n": 72.7, "per_stud_n": 6.0583, "ramp_steps": 727, "wall_s": 0.2, "ts": "2026-09-21T01:00:58Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 50.0, "ramp_n_per_step": 0.1, "release_n": 84.2, "per_stud_n": 7.0167, "ramp_steps": 842, "wall_s": 0.3, "ts": "2026-09-21T01:01:09Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 60.0, "ramp_n_per_step": 0.1, "release_n": 85.9, "per_stud_n": 7.1583, "ramp_steps": 859, "wall_s": 0.3, "ts": "2026-09-21T01:01:20Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 70.0, "ramp_n_per_step": 0.1, "release_n": 85.8, "per_stud_n": 7.15, "ramp_steps": 858, "wall_s": 0.3, "ts": "2026-09-21T01:01:30Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 90.0, "ramp_n_per_step": 0.1, "release_n": 88.0, "per_stud_n": 11.0, "ramp_steps": 880, "wall_s": 0.3, "ts": "2026-09-21T01:04:09Z"}
+{"brick": "2x4", "studs": 8, "preload_n": 120.0, "ramp_n_per_step": 0.1, "release_n": 89.6, "per_stud_n": 11.2, "ramp_steps": 896, "wall_s": 0.3, "ts": "2026-09-21T01:04:20Z"}
+{"brick": "2x6", "studs": 12, "preload_n": 120.0, "ramp_n_per_step": 0.1, "release_n": 88.5, "per_stud_n": 7.375, "ramp_steps": 885, "wall_s": 0.3, "ts": "2026-09-21T01:05:11Z"}

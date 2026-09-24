@@ -1,0 +1,299 @@
+{
+ "structure_id": "S3",
+ "source": {
+  "dataset": "hand_authored",
+  "index": null
+ },
+ "voxel_origin": [
+  0.4,
+  -0.12,
+  0.0
+ ],
+ "grid_pitch": [
+  0.008,
+  0.008,
+  0.0096
+ ],
+ "bricks": [
+  {
+   "id": "b_000",
+   "type": "2x2",
+   "grid_pos": [
+    0,
+    0,
+    0
+   ],
+   "yaw_index": 0,
+   "color": "red"
+  },
+  {
+   "id": "b_001",
+   "type": "2x2",
+   "grid_pos": [
+    0,
+    0,
+    1
+   ],
+   "yaw_index": 0,
+   "color": "red"
+  },
+  {
+   "id": "b_002",
+   "type": "2x2",
+   "grid_pos": [
+    0,
+    0,
+    2
+   ],
+   "yaw_index": 0,
+   "color": "red"
+  },
+  {
+   "id": "b_003",
+   "type": "2x6",
+   "grid_pos": [
+    0,
+    0,
+    3
+   ],
+   "yaw_index": 0,
+   "color": "red"
+  },
+  {
+   "id": "b_004",
+   "type": "2x2",
+   "grid_pos": [
+    0,
+    4,
+    4
+   ],
+   "yaw_index": 0,
+   "color": "red"
+  }
+ ],
+ "sequence": [
+  {
+   "step": 0,
+   "brick_id": "b_000",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 0,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0
+   },
+   "pre_insertion_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.025,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": []
+  },
+  {
+   "step": 1,
+   "brick_id": "b_001",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 0,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0
+   },
+   "pre_insertion_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.0346,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.0096,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_000",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 2,
+   "brick_id": "b_002",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 0,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0
+   },
+   "pre_insertion_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.0442,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.40800000000000003,
+    -0.11199999999999999,
+    0.0192,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_001",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 3,
+   "brick_id": "b_003",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 0,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0
+   },
+   "pre_insertion_pose": [
+    0.40800000000000003,
+    -0.096,
+    0.0538,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.40800000000000003,
+    -0.096,
+    0.0288,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_002",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 4,
+   "brick_id": "b_004",
+   "placer_arm": "B",
+   "requires_brace": true,
+   "brace": {
+    "arm": "A",
+    "target_brick_id": "b_003",
+    "rationale": "nearest_placed_brick",
+    "predicted_failure_joint": [
+     "b_002",
+     "b_003"
+    ],
+    "brace_pose": [
+     0.40800000000000003,
+     -0.096,
+     0.0384,
+     0.0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    "brace_force_N": 20.0,
+    "brace_axis": [
+     0,
+     0,
+     -1
+    ],
+    "expected_reaction_wrench": [
+     0.0,
+     0.0,
+     -35.6,
+     -0.5696,
+     0.0,
+     0.0
+    ],
+    "end_effector": "parallel_jaw"
+   },
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 0,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0
+   },
+   "pre_insertion_pose": [
+    0.40800000000000003,
+    -0.07999999999999999,
+    0.0634,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.40800000000000003,
+    -0.07999999999999999,
+    0.0384,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_003",
+     4
+    ]
+   ]
+  }
+ ],
+ "validation": {
+  "stability_method": "lever_arm_margin",
+  "bracing_strategy": "nearest",
+  "weakest_joint": [
+   "b_002",
+   "b_003"
+  ],
+  "min_margin": 0.363,
+  "all_bricks_accessible": null,
+  "brace_required_count": 1
+ }
+}

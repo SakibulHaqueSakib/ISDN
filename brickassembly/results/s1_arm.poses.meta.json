@@ -1,0 +1,101 @@
+{
+ "meta": true,
+ "structure": "S1",
+ "robot_prim": "/World/Robot",
+ "robot_usd": "/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd",
+ "robot_base": [
+  [
+   -0.1,
+   0.0,
+   0.0
+  ],
+  [
+   1.0,
+   0.0,
+   0.0,
+   0.0
+  ]
+ ],
+ "joint_names": [
+  "panda_joint1",
+  "panda_joint2",
+  "panda_joint3",
+  "panda_joint4",
+  "panda_joint5",
+  "panda_joint6",
+  "panda_joint7",
+  "panda_finger_joint1",
+  "panda_finger_joint2"
+ ],
+ "links": [
+  "panda_link0",
+  "panda_link1",
+  "panda_link2",
+  "panda_link3",
+  "panda_link4",
+  "panda_link5",
+  "panda_link6",
+  "panda_link7",
+  "panda_hand",
+  "panda_leftfinger",
+  "panda_rightfinger"
+ ],
+ "parts": {
+  "0": {
+   "prim": "/World/managed/Parts/Part_0",
+   "dims": [
+    0.16,
+    0.16,
+    0.0032
+   ]
+  },
+  "1": {
+   "prim": "/World/managed/Parts/Part_1",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "2": {
+   "prim": "/World/managed/Parts/Part_2",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "3": {
+   "prim": "/World/managed/Parts/Part_3",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "4": {
+   "prim": "/World/managed/Parts/Part_4",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "5": {
+   "prim": "/World/managed/Parts/Part_5",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  },
+  "6": {
+   "prim": "/World/managed/Parts/Part_6",
+   "dims": [
+    0.016,
+    0.016,
+    0.009600000000000001
+   ]
+  }
+ }
+}

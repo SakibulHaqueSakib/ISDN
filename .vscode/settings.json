@@ -15,5 +15,6 @@
         "/opt/ros/jazzy/opt/gz_msgs_vendor/lib/python",
         "/opt/ros/jazzy/opt/gz_math_vendor/lib/python",
         "/opt/ros/jazzy/lib/python3.12/site-packages"
-    ]
+    ],
+    "cmake.sourceDirectory": "/home/bakasakib/Documents/ISDN_Robofab/BrickSim/native"
 }

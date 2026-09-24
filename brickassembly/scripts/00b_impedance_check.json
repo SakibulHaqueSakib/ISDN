@@ -1,0 +1,18 @@
+{
+ "rms_mm": 0.9046,
+ "peak_mm": 0.9096,
+ "samples": 4800,
+ "radius_m": 0.05,
+ "period_s": 20.0,
+ "kp_task": [
+  1200.0,
+  1200.0,
+  600.0,
+  40.0,
+  40.0,
+  40.0
+ ],
+ "ee_frame": "panda_leftfinger",
+ "backend": "cuda:0",
+ "pass": false
+}

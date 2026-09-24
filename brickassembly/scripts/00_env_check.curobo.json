@@ -1,0 +1,24 @@
+{
+ "ts": "2026-09-20T07:09:21Z",
+ "versions": {
+  "python": "3.11.16",
+  "executable": "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/../isdnenv/bin/python",
+  "torch": "2.14.0+cu130",
+  "warp": "1.17.0",
+  "numpy": "2.4.6",
+  "newton": null,
+  "isaaclab": null,
+  "isaacsim": null,
+  "curobo": "0.8.0.post1.dev43",
+  "viser": "1.1.0",
+  "rsl_rl": null,
+  "trimesh": "4.12.2",
+  "gpu": "NVIDIA GeForce RTX 5090 D, 32607 MiB, 595.84"
+ },
+ "curobo": {
+  "warmup_s": 3.0,
+  "plan_ms_median": 31.7,
+  "plan_ms_max": 33.0,
+  "plans_succeeded": "10/10"
+ }
+}

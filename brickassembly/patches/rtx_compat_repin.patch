@@ -1,0 +1,49 @@
+From: brickassembly (ISDN_Robofab)
+Subject: isaacsim_rtx_compat: repin to the current Vulkan profiles package
+
+BrickSim pins vulkan-profiles-1.4.341.0-1, which Arch has replaced with
+1.4.357.0-2. The old URL 404s, so the module raised on import and the
+`bricksim` CLI could not start at all.
+
+Repinned to 1.4.357.0-2, with both SHA-256 pins recomputed. The package was
+downloaded from TWO independent mirrors (geo.mirror.pkgbuild.com and
+mirrors.kernel.org) and both produced the identical archive hash, so the new
+pin is not "whatever one host served once".
+
+    _PKG 149625d97130849026fb3e54acdec6b3d086f2cf35db92797f990b81c9a9cf59
+    _SO  7d2d622adf83f5075a0a0ee2a16b7cbae0c508e7a0ccea15ef2478452925fa9d
+
+NOTE: this does NOT fix the RTX segfault on this machine. With the layer
+verified, extracted and all five VK_*/XDG_DATA_DIRS variables set, Isaac Sim
+5.1 still crashes in librtx.scenedb.plugin.so. An identical render probe
+renders 60 frames under Isaac Sim 6.0 and segfaults under 5.1 on the same
+driver, so the fault is Isaac Sim 5.1, not the driver or the allocation limit
+this module works around. The repin is kept because the broken download is a
+real bug of its own.
+
+Apply with: git apply ../brickassembly/patches/rtx_compat_repin.patch
+---
+--- /tmp/rtx.orig	2026-09-21 19:13:59.264610995 +0800
++++ BrickSim/python/isaacsim_rtx_compat.py	2026-09-21 19:13:59.269130910 +0800
+@@ -41,9 +41,9 @@
+ from sys import stderr
+ from urllib.request import urlretrieve
+ 
+-_URL = "https://geo.mirror.pkgbuild.com/extra/os/x86_64/vulkan-profiles-1.4.341.0-1-x86_64.pkg.tar.zst"
+-_PKG = "d52d72259b6c8911c9e3b41985e014cb76954f013b87af45f5ef1fcff1126131"
+-_SO = "99f20d7af6e073eac74a04308be01a3a81505629cff6dc066a7d3282b4dce533"
++_URL = "https://geo.mirror.pkgbuild.com/extra/os/x86_64/vulkan-profiles-1.4.357.0-2-x86_64.pkg.tar.zst"
++_PKG = "149625d97130849026fb3e54acdec6b3d086f2cf35db92797f990b81c9a9cf59"
++_SO = "7d2d622adf83f5075a0a0ee2a16b7cbae0c508e7a0ccea15ef2478452925fa9d"
+ _NAME = "VP_RTX_driver_compat_generated"
+ _NVIDIA = 0x10DE
+ _LAST_KNOWN_GOOD_DRIVER = (590, 48, 1, 0)
+@@ -146,7 +146,7 @@
+         msg = "tar is required to extract the Vulkan profiles layer"
+         raise RuntimeError(msg)
+     _CACHE.mkdir(parents=True, exist_ok=True)
+-    package = _CACHE / "vulkan-profiles-1.4.341.0-1-x86_64.pkg.tar.zst"
++    package = _CACHE / "vulkan-profiles-1.4.357.0-2-x86_64.pkg.tar.zst"
+     if force_download:
+         package.unlink(missing_ok=True)
+     if not package.exists() or _hash(package) != _PKG:

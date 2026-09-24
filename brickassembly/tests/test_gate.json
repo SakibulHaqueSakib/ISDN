@@ -1,0 +1,111 @@
+{
+ "press_n": 15.0,
+ "gate": {
+  "lateral_mm": 1.2,
+  "yaw_deg": 5.0,
+  "required_force_n": 8.9
+ },
+ "lateral": [
+  {
+   "offset_mm": 0.0,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "offset_mm": 0.6,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "offset_mm": 1.0,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "offset_mm": 1.15,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": 45.979
+  },
+  {
+   "offset_mm": 1.5,
+   "snapped": false,
+   "expected": false,
+   "agrees": true,
+   "start_gap_mm": -1.225
+  },
+  {
+   "offset_mm": 2.5,
+   "snapped": false,
+   "expected": false,
+   "agrees": true,
+   "start_gap_mm": -1.225
+  }
+ ],
+ "yaw": [
+  {
+   "yaw_deg": 0.0,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "yaw_deg": 2.0,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "yaw_deg": 4.0,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "yaw_deg": 4.8,
+   "snapped": false,
+   "expected": true,
+   "agrees": false,
+   "start_gap_mm": -1.225
+  },
+  {
+   "yaw_deg": 6.0,
+   "snapped": false,
+   "expected": false,
+   "agrees": true,
+   "start_gap_mm": -1.225
+  },
+  {
+   "yaw_deg": 12.0,
+   "snapped": false,
+   "expected": false,
+   "agrees": true,
+   "start_gap_mm": -1.225
+  }
+ ],
+ "insertion_2mm": {
+  "snapped": false,
+  "held_30s": null
+ },
+ "drift_control": {
+  "case": "lateral 0.0 mm repeated last",
+  "snapped": false,
+  "agrees_with_first": true
+ },
+ "verdict": {
+  "gate_boundary_lateral": false,
+  "gate_boundary_yaw": false,
+  "scripted_insertion_2mm": false,
+  "control_clean": true
+ }
+}

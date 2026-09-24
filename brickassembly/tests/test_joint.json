@@ -1,0 +1,46 @@
+{
+ "control_free_brick_falls": {
+  "pass": true,
+  "dropped_mm": 250.0,
+  "z_before": 0.25,
+  "z_after": -0.0,
+  "criterion": "an unconnected brick must fall > 1 mm in 2 s"
+ },
+ "mated_pair_holds_30s": {
+  "pass": true,
+  "drift_mm": 0.00222,
+  "connected": true,
+  "criterion": "drift < 0.05 mm"
+ },
+ "energy_non_increasing_10k_steps": {
+  "pass": true,
+  "start_j": 0.000339,
+  "end_j": 0.000339,
+  "peak_growth_mj": 0.0,
+  "criterion": "peak energy growth < 1 mJ",
+  "note": "angular term approximated with mass, not the inertia tensor"
+ },
+ "double_mate_rejected": {
+  "pass": false,
+  "connections_created": 3,
+  "of": 3,
+  "rival_brick_gap_mm": 0.0,
+  "criterion": "bricks must not end up co-located",
+  "note": "import_lego authored both connections; this checks whether physics kept them apart"
+ },
+ "f_break_release_within_15pct": {
+  "pass": true,
+  "measured_n": 89.6,
+  "predicted_n": 89.6,
+  "error_pct": 0.0,
+  "repeatability": "0.5% over three repeats at preload 60 (79.0 / 78.9 / 78.6 N)",
+  "caveat": "f_break IS the adopted calibration, so this checks self-consistency and reproducibility, not an independent prediction"
+ },
+ "extraction_exceeds_insertion": {
+  "pass": true,
+  "extraction_n": 89.6,
+  "insertion_n": 8.9,
+  "ratio": 10.067,
+  "note": "asymmetry is IMPOSED by configuring required_force below the clutch capacity, not produced emergently"
+ }
+}

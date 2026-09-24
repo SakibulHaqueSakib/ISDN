@@ -1,0 +1,6 @@
+{"n_envs": 1, "startup_s": 2.5, "steps": 60, "wall_s": 0.51, "steps_per_s": 118.0, "env_steps_per_s": 118.0, "bricksim_solve_ms_median": 0.001, "bricksim_solve_ms_max": 0.002, "ts": "2026-09-20T07:46:16Z"}
+{"n_envs": 4, "startup_s": 2.6, "steps": 60, "wall_s": 0.78, "steps_per_s": 77.3, "env_steps_per_s": 309.3, "bricksim_solve_ms_median": 0.003, "bricksim_solve_ms_max": 0.004, "ts": "2026-09-20T07:46:29Z"}
+{"n_envs": 16, "startup_s": 2.8, "steps": 60, "wall_s": 1.58, "steps_per_s": 37.9, "env_steps_per_s": 606.1, "bricksim_solve_ms_median": 0.009, "bricksim_solve_ms_max": 0.093, "ts": "2026-09-20T07:46:43Z"}
+{"n_envs": 64, "startup_s": 3.0, "steps": 60, "wall_s": 2.26, "steps_per_s": 26.5, "env_steps_per_s": 1695.6, "bricksim_solve_ms_median": 0.037, "bricksim_solve_ms_max": 0.116, "ts": "2026-09-20T07:46:59Z"}
+{"n_envs": 256, "startup_s": 3.4, "steps": 60, "wall_s": 4.94, "steps_per_s": 12.1, "env_steps_per_s": 3109.3, "bricksim_solve_ms_median": 0.15, "bricksim_solve_ms_max": 0.366, "ts": "2026-09-20T07:47:40Z"}
+{"n_envs": 512, "startup_s": 4.4, "steps": 60, "wall_s": 8.88, "steps_per_s": 6.8, "env_steps_per_s": 3458.7, "bricksim_solve_ms_median": 0.35, "bricksim_solve_ms_max": 0.531, "ts": "2026-09-20T07:48:03Z"}

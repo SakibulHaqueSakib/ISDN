@@ -1,0 +1,256 @@
+{
+ "reference": "literature_values_master_report_2.3_and_2.6",
+ "fitted": {
+  "f_break_per_stud_N": 11.3,
+  "insertion_peak_N": 8.9,
+  "extraction_peak_N": 11.3,
+  "asymmetry_ratio": 1.27,
+  "lateral_stiffness_N_per_mm": 42.1,
+  "gate_lateral_mm": 1.18,
+  "ramp_time_s": 0.047
+ },
+ "bricksim_settings": {
+  "static_solve": {
+   "preloaded_force": 18.832,
+   "gives_n_per_stud": 11.3,
+   "use_for": "static_solve / bricksim_adapter (bracing and stability queries)"
+  },
+  "live_sim": {
+   "preloaded_force": 120.0,
+   "gives_n_per_stud": {
+    "2x4": 11.2,
+    "2x6": 7.375
+   },
+   "use_for": "set_breakage_thresholds() in the PhysX path (WP5 training)"
+  },
+  "required_force": 8.9,
+  "position_tolerance": 0.0011799999999999998,
+  "warning": "THE SAME PHYSICAL JOINT NEEDS DIFFERENT KNOB VALUES IN THE TWO PATHS: 18.832 N in static_solve and 120 N in the live sim both produce ~11.3 N/stud on a 2x4. Using one value in both paths misrepresents the joint by about 6.4x. Anything reading this file must pick the path it is running in."
+ },
+ "measurement": {
+  "method": "pure axial pull-off, bisected on clutch utilisation crossing 1.0, via the patched static_solve",
+  "transfer_function": {
+   "2xN": {
+    "n_points": 27,
+    "slope_n_per_stud_per_preload_n": 0.600037,
+    "rmse_n_per_stud": 0.002075,
+    "free_intercept_check": {
+     "slope": 0.599996,
+     "intercept_n": 0.002641,
+     "rmse": 0.000418
+    }
+   },
+   "1xN": {
+    "n_points": 18,
+    "slope_n_per_stud_per_preload_n": 0.799906,
+    "rmse_n_per_stud": 0.008114,
+    "free_intercept_check": {
+     "slope": 0.799766,
+     "intercept_n": 0.009066,
+     "rmse": 0.004139
+    }
+   }
+  },
+  "verification_at_fitted_preload": [
+   {
+    "brick": "2x2",
+    "overlap_j": 0,
+    "studs": 4,
+    "per_stud_n": 11.302,
+    "role": "fit"
+   },
+   {
+    "brick": "2x4",
+    "overlap_j": 0,
+    "studs": 8,
+    "per_stud_n": 11.3019,
+    "role": "fit"
+   },
+   {
+    "brick": "2x6",
+    "overlap_j": 0,
+    "studs": 12,
+    "per_stud_n": 11.3018,
+    "role": "fit"
+   },
+   {
+    "brick": "1x2",
+    "overlap_j": 0,
+    "studs": 2,
+    "per_stud_n": 15.0679,
+    "role": "fit"
+   },
+   {
+    "brick": "1x4",
+    "overlap_j": 0,
+    "studs": 4,
+    "per_stud_n": 15.0671,
+    "role": "fit"
+   },
+   {
+    "brick": "2x4",
+    "overlap_j": 2,
+    "studs": 4,
+    "per_stud_n": 4.0642,
+    "role": "check_eccentric"
+   },
+   {
+    "brick": "2x6",
+    "overlap_j": 3,
+    "studs": 6,
+    "per_stud_n": 3.9692,
+    "role": "check_eccentric"
+   }
+  ]
+ },
+ "residual_rmse_N": 0.0019,
+ "phase_regime": null,
+ "deformable_check_run": false,
+ "limitations": [
+  "the fitted preloaded_force is calibrated against the STATIC solver only; the dynamic path releases at roughly 0.4x that prediction and its calibration is still provisional (see 'dynamic')",
+  "literature-calibrated, not derived: the [MechanicsSnapFit] closed-form relations were not applied and no mechanical phase was identified (\u00a7WP2 steps 1-2 not done, fallback taken)",
+  "asymmetry is IMPOSED by setting required_force (insertion) below the clutch capacity (extraction); BrickSim's static model does not produce insertion/extraction asymmetry emergently",
+  "1xN bricks do not share the 2xN per-stud capacity and are fitted separately; the plan library must not assume one number",
+  "calibrated against the static solver only; the in-sim PhysX path is assumed to share BreakageThresholds but is unverified"
+ ],
+ "envelope_check": {
+  "envelope_N_per_stud": [
+   8.0,
+   15.0
+  ],
+  "f_break_in_envelope": true,
+  "source": "master_report \u00a72.3, citing [SnapFitFEA1]/[SnapFitFEA2]"
+ },
+ "dynamic": {
+  "status": "ADOPTED -- calibration of record",
+  "why": "WP5 trains in the live PhysX path. The static fit predicted 90.4 N release on a 2x4 where the dynamic path gives ~36.8 N, so the static preload would hand the policy a joint about 2.4x too weak.",
+  "method": "one Kit process per measurement (scripts/02_dynamic_sweep.sh); pure axial ramp at 0.1 N per physics step, release detected from get_disassembled_connections filtered to the article",
+  "measurements": [
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 10.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 17.2,
+    "per_stud_n": 2.15,
+    "ramp_steps": 172,
+    "wall_s": 0.1,
+    "ts": "2026-09-21T00:59:36Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 20.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 31.1,
+    "per_stud_n": 3.8875,
+    "ramp_steps": 311,
+    "wall_s": 0.1,
+    "ts": "2026-09-21T00:59:46Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 35.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 54.4,
+    "per_stud_n": 6.8,
+    "ramp_steps": 544,
+    "wall_s": 0.2,
+    "ts": "2026-09-21T00:59:56Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 50.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 72.9,
+    "per_stud_n": 9.1125,
+    "ramp_steps": 729,
+    "wall_s": 0.2,
+    "ts": "2026-09-21T01:00:08Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 60.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 79.0,
+    "per_stud_n": 9.875,
+    "ramp_steps": 790,
+    "wall_s": 0.2,
+    "ts": "2026-09-21T01:00:18Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 70.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 85.5,
+    "per_stud_n": 10.6875,
+    "ramp_steps": 855,
+    "wall_s": 0.3,
+    "ts": "2026-09-21T01:00:28Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 90.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 88.0,
+    "per_stud_n": 11.0,
+    "ramp_steps": 880,
+    "wall_s": 0.3,
+    "ts": "2026-09-21T01:04:09Z"
+   },
+   {
+    "brick": "2x4",
+    "studs": 8,
+    "preload_n": 120.0,
+    "ramp_n_per_step": 0.1,
+    "release_n": 89.6,
+    "per_stud_n": 11.2,
+    "ramp_steps": 896,
+    "wall_s": 0.3,
+    "ts": "2026-09-21T01:04:20Z"
+   }
+  ],
+  "power_law_fit": {
+   "a": 0.480108,
+   "b": 0.710382,
+   "rmse_n_per_stud": 1.3855,
+   "n_points": 8,
+   "form": "per_stud_n = a * preload_n ** b"
+  },
+  "adopted_preload_n": 120.0,
+  "interpolated_between": null,
+  "power_law_cross_check_preload_n": 85.308,
+  "target_per_stud_n": 11.3,
+  "target_unreachable": {
+   "target_n_per_stud": 11.3,
+   "best_measured_n_per_stud": 11.2,
+   "at_preload_n": 120.0,
+   "shortfall_pct": 0.88
+  },
+  "total_force_ceiling": {
+   "finding": "release force saturates near 88-90 N per connection REGARDLESS of mated stud count, so per-stud capacity falls as bricks get larger instead of staying constant",
+   "evidence": {
+    "2x4_8_studs": {
+     "preload_70": 85.5,
+     "preload_90": 88.0,
+     "preload_120": 89.6,
+     "best_n_per_stud": 11.2
+    },
+    "2x6_12_studs": {
+     "preload_50": 84.2,
+     "preload_60": 85.9,
+     "preload_70": 85.8,
+     "preload_120": 88.5,
+     "best_n_per_stud": 7.375
+    }
+   },
+   "consequence": "the report's \u00a72.3 target of 8-15 N per stud CANNOT be met across the brick library at one setting: at preload 120 a 2x4 sits at 11.2 N/stud (in envelope) while a 2x6 sits at 7.4 N/stud (below the 8 N floor). Smaller bricks are correspondingly over-strength.",
+   "sensitivity_warning": "in the saturated region the knob barely works -- raising preload from 70 to 120 (+71%) buys 4.8% more release force, so the calibration is stiff against further tuning"
+  }
+ }
+}

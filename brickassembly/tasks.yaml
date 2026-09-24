@@ -1,0 +1,89 @@
+# tasks.yaml — machine-readable. The orchestrator reads this.
+project: brickassembly
+version: 3.0
+gates_are_blocking: true
+
+work_packages:
+  - id: WP0
+    name: environment_verification
+    depends_on: []
+    gate: G0
+    owner: human
+    cuttable: false
+    acceptance_ref: "§WP0"
+    on_fail: {action: switch_backend, to: physx, record: "contribution_2_unavailable"}
+
+  - id: WP1
+    name: joint_mechanics
+    depends_on: [WP0]
+    gate: G1
+    owner: human
+    cuttable: false
+    branch:
+      probe: bricksim_batching_scaling
+      if_batches: {path: adapter, contribution_2: false}
+      else:       {path: warp_kernel, contribution_2: true}
+
+  - id: WP2
+    name: joint_calibration
+    depends_on: [WP1]
+    gate: null
+    owner: implementer
+    hard_cap_days: 3
+    cuttable: true
+    on_cut: {fallback: literature_values, record: "calibration_gap_limitation"}
+
+  - id: WP3
+    name: planner_and_bracing
+    depends_on: [WP1]
+    gate: G2
+    owner: implementer
+    cuttable: partial
+    must_keep: [bracing.py, three_bracing_strategies]
+    preflight:
+      - "verify S3 and S5 fail single-arm"
+
+  - id: WP4
+    name: motion_and_scripted_baseline
+    depends_on: [WP1, WP3]
+    gate: G3
+    gate_criticality: blocking_all_forward_work
+    owner: implementer
+    cuttable: false
+
+  - id: WP5
+    name: rl_insertion
+    depends_on: [WP4]
+    gate: G4
+    owner: implementer
+    run_order: [R1, R2, R3, R4]      # normative; R5 conditional
+    decision_point:
+      id: vision_decision
+      input: "A3 result (R4 vs R1)"
+      outputs: [proceed_WP6, skip_WP6]
+
+  - id: WP6
+    name: perception
+    depends_on: [WP5]
+    conditional_on: {decision: vision_decision, value: proceed_WP6}
+    gate: G5
+    owner: implementer
+    cuttable: true
+    cut_priority: 1                   # first to cut
+
+  - id: WP7
+    name: integration
+    depends_on: [WP5]
+    optional_depends_on: [WP6]
+    gate: G6
+    owner: implementer
+    cuttable: false
+
+  - id: WP8
+    name: experiments_and_analysis
+    depends_on: [WP7]
+    gate: G7
+    owner: analyst
+    cuttable: false
+    must_run: [A6, A3, A10]
+    cut_order: [A8, A9, A5, A7, A2]

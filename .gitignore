@@ -23,3 +23,6 @@ Thumbs.db
 
 # Slides are ~110 MB of binary pptx; uncomment if the remote rejects them.
 Slides/
+
+# Newton/ImGui viewer window layout, rewritten on every run
+imgui.ini

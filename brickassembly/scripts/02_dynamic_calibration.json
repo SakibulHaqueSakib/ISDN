@@ -1,0 +1,99 @@
+{
+ "rows": [
+  {
+   "brick": "2x2",
+   "studs": 4,
+   "preload_n": 3.5,
+   "release_n": 3.0,
+   "per_stud_n": 0.75,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x2",
+   "studs": 4,
+   "preload_n": 10.0,
+   "release_n": 8.5,
+   "per_stud_n": 2.125,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x2",
+   "studs": 4,
+   "preload_n": 18.832,
+   "release_n": 13.75,
+   "per_stud_n": 3.4375,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x2",
+   "studs": 4,
+   "preload_n": 35.0,
+   "release_n": 7.75,
+   "per_stud_n": 1.9375,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x2",
+   "studs": 4,
+   "preload_n": 60.0,
+   "release_n": 38.75,
+   "per_stud_n": 9.6875,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x4",
+   "studs": 8,
+   "preload_n": 3.5,
+   "release_n": 6.25,
+   "per_stud_n": 0.7812,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x4",
+   "studs": 8,
+   "preload_n": 10.0,
+   "release_n": 19.5,
+   "per_stud_n": 2.4375,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x4",
+   "studs": 8,
+   "preload_n": 18.832,
+   "release_n": 36.75,
+   "per_stud_n": 4.5938,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x4",
+   "studs": 8,
+   "preload_n": 35.0,
+   "release_n": 52.5,
+   "per_stud_n": 6.5625,
+   "ramp_n_per_step": 0.25
+  },
+  {
+   "brick": "2x4",
+   "studs": 8,
+   "preload_n": 60.0,
+   "release_n": 90.75,
+   "per_stud_n": 11.3438,
+   "ramp_n_per_step": 0.25
+  }
+ ],
+ "ramp_control": [
+  {
+   "ramp_n_per_step": 0.05,
+   "release_n": 36.75
+  },
+  {
+   "ramp_n_per_step": 1.0,
+   "release_n": 46.0
+  }
+ ],
+ "fit": {
+  "slope_n_per_stud_per_preload_n": 0.166444,
+  "rmse_n_per_stud": 1.438403,
+  "n_points": 10
+ }
+}

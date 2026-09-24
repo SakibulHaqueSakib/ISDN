@@ -1,0 +1,40 @@
+{
+ "ts": "2026-09-20T07:08:19Z",
+ "versions": {
+  "python": "3.12.3",
+  "executable": "/home/bakasakib/Codes/CAIRSS/Issac/bin/python",
+  "torch": "2.10.0+cu128",
+  "warp": "1.13.0",
+  "numpy": "2.5.2",
+  "newton": "1.2.1",
+  "isaaclab": "6.1.11",
+  "isaacsim": "unknown",
+  "curobo": null,
+  "viser": "1.1.0",
+  "rsl_rl": "unknown",
+  "trimesh": "4.11.1",
+  "gpu": "NVIDIA GeForce RTX 5090 D, 32607 MiB, 595.84"
+ },
+ "warp_writable": {
+  "body_q_dtype": "<class 'warp._src.types.transformf'>",
+  "n_bodies": 8,
+  "kernel_wrote": true
+ },
+ "newton": {
+  "1_envs": {
+   "steps_per_s": 223,
+   "env_steps_per_s": 223,
+   "vram_mb": 78
+  },
+  "512_envs": {
+   "steps_per_s": 206,
+   "env_steps_per_s": 105351,
+   "vram_mb": 0
+  },
+  "2048_envs": {
+   "steps_per_s": 177,
+   "env_steps_per_s": 363406,
+   "vram_mb": 32
+  }
+ }
+}
