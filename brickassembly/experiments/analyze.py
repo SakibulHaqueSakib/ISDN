@@ -166,12 +166,43 @@ def g3():
     return out
 
 
+def g6():
+    """WP7 full loop: every structure x strategy with the RL-first inserter."""
+    trials = [r for r in rows(RES / "g6" / "trials.jsonl") if r.get("kind") == "assembly"]
+    eps = rows(RES / "g6" / "episodes.jsonl")
+    out = {"runs": {}, "inserter": {}, "brace": {}}
+    for r in trials:
+        out["runs"]["%s/%s/seed%d" % (r["structure_id"], r["strategy"], r["seed"])] = {
+            "success": bool(r.get("success")), "placed": r.get("placed"), "of": r.get("of"),
+            "fatal": r.get("fatal"), "attempts": r.get("attempts")}
+    by_pol = defaultdict(list)
+    for e in eps:
+        by_pol[e.get("policy")].append(e)
+    for pol, es in by_pol.items():
+        ok = [e for e in es if e.get("success")]
+        probs = [(e["predicted_success_prob"], float(e["success"])) for e in es
+                 if e.get("predicted_success_prob") is not None]
+        out["inserter"][pol] = {"attempts": len(es), "success": len(ok),
+                                "rate": len(ok) / len(es) if es else None,
+                                "peak_force_mean_N": float(np.mean([e["peak_force_N"] for e in es
+                                                                    if e.get("peak_force_N") is not None]))
+                                if es else None,
+                                "n_with_success_prob": len(probs)}
+    br = [e for e in eps if e.get("brace_measured_wrench") and e.get("brace_expected_wrench")]
+    if br:
+        err = [float(np.linalg.norm(np.array(e["brace_measured_wrench"][:3])
+                                    - np.array(e["brace_expected_wrench"][:3]))) for e in br]
+        out["brace"] = {"placements": len(br), "abs_err_mean_N": float(np.mean(err)),
+                        "abs_err_median_N": float(np.median(err))}
+    return out
+
+
 def wp5():
     ev = {}
     for r in rows(RES / "wp5" / "eval.jsonl"):
         ev[(r["name"], r["stage"], r.get("joint", "calibrated"), r.get("vision"))] = r
     curves = {}
-    for run in ("R1", "R2", "R3", "R4", "R1ht"):
+    for run in ("R1", "R2", "R3", "R4", "R1ht", "R1hc"):
         rs = rows(RES / "wp5" / run / "train.jsonl")
         if rs:
             curves[run] = [(r["samples"], r["success_100"], r["stage"]) for r in rs]
@@ -189,13 +220,19 @@ def wp5():
                                         "p_fisher": float(p),
                                         "peak_a": ra["peak_force_mean_N"],
                                         "peak_b": rb["peak_force_mean_N"]}
-    S = 3
-    comp("A1 scripted->R1", ("scripted", S, "calibrated", True), ("R1", S, "calibrated", True))
-    comp("A4 R3(e2e)->R2(residual)", ("R3", S, "calibrated", True), ("R2", S, "calibrated", True))
-    comp("A-dense R1(sparse)->R2(dense)", ("R1", S, "calibrated", True), ("R2", S, "calibrated", True))
-    comp("A3 R1(vision)->R4(no vision)", ("R1", S, "calibrated", True), ("R4", S, "calibrated", False))
-    comp("A10 R1(calibrated)->R1ht(hand-tuned), eval calibrated",
-         ("R1", S, "calibrated", True), ("R1ht", S, "calibrated", True))
+    for S in (0, 3):      # stage 0: in the training distribution; stage 3: G4's criterion
+        tag = " @stage%d" % S
+        comp("A1 scripted->R1" + tag, ("scripted", S, "calibrated", True), ("R1", S, "calibrated", True))
+        comp("A4 R3(e2e)->R2(residual)" + tag, ("R3", S, "calibrated", True),
+             ("R2", S, "calibrated", True))
+        comp("A-dense R1(sparse)->R2(dense)" + tag, ("R1", S, "calibrated", True),
+             ("R2", S, "calibrated", True))
+        comp("A3 R1(vision)->R4(no vision)" + tag, ("R1", S, "calibrated", True),
+             ("R4", S, "calibrated", False))
+        comp("A10 R1(calibrated)->R1ht(hand-tuned)" + tag, ("R1", S, "calibrated", True),
+             ("R1ht", S, "calibrated", True))
+        comp("A10 R1(calibrated)->R1hc(hand-tuned, calibrated budget)" + tag,
+             ("R1", S, "calibrated", True), ("R1hc", S, "calibrated", True))
     return out, curves
 
 
@@ -240,7 +277,7 @@ def figures(a6out, by, curves):
 
 def main():
     a6out, by = a6()
-    out = {"A6": a6out, "G3": g3()}
+    out = {"A6": a6out, "G3": g3(), "G6": g6()}
     w, curves = wp5()
     out["WP5"] = w
     figures(a6out, by, curves)

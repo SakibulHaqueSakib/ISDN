@@ -354,7 +354,11 @@ class LiftAndRegrasp(Leaf):
         arm = ctx.sim.arms["B"]
         if ctx.in_hand == bid and _held(ctx, bid):
             if ctx.cm.bricks[bid].state != "DISENGAGED":
-                return False                       # half-seated; lifting would tear it
+                # half-seated; lifting would tear it. After a failed RL attempt
+                # (a force-budget stop mid-press) the fallback presses it home
+                # (§WP7.1); the scripted-only tree keeps its G3/A6 behaviour
+                return ctx.inserter is not None
+
             ctx.sim.goto("B", arm.x_d + [0, 0, 0.015], arm.R_d, duration=0.4)
             if K.hand_tilt_deg(ctx.sim, "B", bid) <= K.MAX_HAND_TILT_DEG:
                 yaw = math.radians(s["grasp"]["yaw_offset_deg"])

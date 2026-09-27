@@ -3,6 +3,21 @@
 Everything below reads what has actually been measured and written down.
 Nothing recomputes, so none of it can report progress that did not happen.
 
+## v3.1 (the MuJoCo twin, CPU)
+
+```bash
+cd brickassembly
+python scripts/status.py                         # gates, ledger, experiment summaries
+../mjenv/bin/python -m experiments.analyze       # refresh results/analysis.json + figures
+```
+
+* Results and the gate-by-gate verdicts: [`Docs/results_report.md`](../Docs/results_report.md)
+* What changed from the v3.0 plan and why: `Docs/master_report.md` §0.6 and §7.7
+* Raw data: `results/g3/`, `results/a6/`, `results/g6/` (trials.jsonl = one line per
+  trial; episodes.jsonl = one §2.6 insertion episode per attempt), `results/wp5/`
+  (training logs per run, `eval.jsonl`)
+* Test evidence: `tests/test_{clutch,planner,control,env}.json`, written by the suites
+
 **To watch the simulation, see [VIEWING.md](VIEWING.md).** Short version:
 `bash scripts/run.sh dual_arm_sim.py --shape arch` runs the whole dual-arm
 pipeline live (images → blueprint → plan → two arms in Newton physics) in a
@@ -106,16 +121,11 @@ tail -f /tmp/<name>.log                 # live
 grep -aE "^RESULT|^  \[" /tmp/<name>.log  # just the results
 ```
 
-## When model training starts (WP5, not yet begun)
+## Training (WP5)
 
-Nothing is training yet — WP0-WP2 are platform and physics work. Once WP5
-starts, training progress will appear as:
-
-- `rsl_rl` / TensorBoard logs under the task's run directory, watched with
-  `tensorboard --logdir <run>`
-- one `insertion_episode.json` record per attempt (schema in master_report
-  §2.6): success, peak force, initial and final error, brace state
-- `scripts/status.py` will grow a TRAINING section reading those episode logs
-
-Until then, "progress" means gates closed and measurements recorded, which is
-what `status.py` shows.
+`python scripts/status.py` prints a TRAINING section: the last line of each
+`results/wp5/<run>/train.jsonl` (samples, curriculum stage, success over the
+last 100 episodes, mean peak force). Each line of a train.jsonl is one PPO
+update; `experiments/analyze.py` plots them in `results/figures/wp5_training.png`.
+Held-out evaluations are one line per (policy, stage, joint) in
+`results/wp5/eval.jsonl`.

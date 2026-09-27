@@ -139,6 +139,15 @@ def summary(rows):
         print("\nTWIN TEST ARTIFACTS  (re-run the suite to refresh)")
         for f, lab in shown:
             print("  %-16s %s" % (lab, f))
+    runs = sorted((ROOT / "results" / "wp5").glob("*/train.jsonl"))
+    if runs:
+        print("\nTRAINING  (WP5, last line of results/wp5/<run>/train.jsonl)")
+        for f in runs:
+            lines = f.read_text().strip().splitlines()
+            if lines:
+                t = json.loads(lines[-1])
+                print("  %-5s %7d samples  stage %d  success(last 100) %.2f  peak %.0f N" % (
+                    t["run"], t["samples"], t["stage"], t["success_100"], t["peak_force_mean"]))
     ana = artifact("results/analysis.json")
     if ana and not ana.get("_raw"):
         print("\nEXPERIMENTS  (results/analysis.json)")
@@ -150,6 +159,9 @@ def summary(rows):
                                                  if st in v))
         for k, v in ana.get("WP5", {}).get("comparisons", {}).items():
             print("  %-48s %.2f -> %.2f (p=%.3g)" % (k, v["rate_a"], v["rate_b"], v["p_fisher"]))
+        for k, v in ana.get("G6", {}).get("runs", {}).items():
+            print("  G6 %-24s %s  %s/%s placed" % (k, "complete" if v["success"] else "failed",
+                                                   v["placed"], v["of"]))
 
     # An escalation answered by a later decision, or retracted by a later
     # entry, is not still open.

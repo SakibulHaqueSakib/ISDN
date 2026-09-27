@@ -40,6 +40,11 @@ RUNS = {
     "R4": dict(mode="residual", reward="sparse", vision=False),
     # ablation A10: R1 trained on the hand-tuned joint, evaluated on the calibrated one
     "R1ht": dict(mode="residual", reward="sparse", vision=True, joint="handtuned"),
+    # A10 with the force budget and base press held at the calibrated seating
+    # force: R1ht's budget, scaled by the hand-tuned 3 N per stud, sat below
+    # the touchdown transient and the run collapsed to never touching
+    "R1hc": dict(mode="residual", reward="sparse", vision=True, joint="handtuned",
+                 budget_from="calibrated"),
 }
 
 
@@ -390,9 +395,9 @@ def _auc(p, y):
     return float((ranks[y == 1].sum() - npos * (npos + 1) / 2) / (npos * nneg))
 
 
-def eval_all(episodes=100, stages=(0, 3), only=None):
-    """Every trained run (and the scripted base) on the CALIBRATED joint, one
-    row per (policy, stage) in results/wp5/eval.jsonl."""
+def eval_all(episodes=100, stages=(0, 3), only=None, joint="calibrated"):
+    """Every trained run (and the scripted base) on the CALIBRATED joint (or
+    the one named), one row per (policy, stage) in results/wp5/eval.jsonl."""
     out = OUT / "eval.jsonl"
     names = ["scripted"] + [r for r in RUNS if (OUT / r / "policy.pt").exists()]
     for name in names:
@@ -400,7 +405,7 @@ def eval_all(episodes=100, stages=(0, 3), only=None):
             continue
         for st in stages:
             r = evaluate(None if name == "scripted" else OUT / name / "policy.pt", st, episodes,
-                         scripted=name == "scripted")
+                         scripted=name == "scripted", joint=joint)
             r["name"] = name
             with open(out, "a") as fh:
                 fh.write(json.dumps(r) + "\n")
@@ -422,9 +427,11 @@ if __name__ == "__main__":
     ap.add_argument("--no-vision", action="store_true")
     ap.add_argument("--eval-all", nargs="*", default=None, help="evaluate these runs (all if empty)")
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--joint", default="calibrated", help="--eval-all: the joint to evaluate on")
+    ap.add_argument("--stages", type=int, nargs="+", default=[0, 3], help="--eval-all: stages")
     a = ap.parse_args()
     if a.eval_all is not None:
-        eval_all(a.episodes, only=a.eval_all or None)
+        eval_all(a.episodes, stages=a.stages, only=a.eval_all or None, joint=a.joint)
     elif a.eval or a.scripted:
         r = evaluate(a.eval, a.stage, a.episodes, vision=False if a.no_vision else None,
                      scripted=a.scripted)

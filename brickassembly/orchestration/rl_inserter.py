@@ -13,6 +13,10 @@ built from arm B of the full cell: the TCP frame is flipped to z up, the
 wrist wrench is moved from the F/T site to the TCP, the believed target is the
 plan's (ground-truth poses, §WP4), and the vision slot carries the same
 sigma 0.3 mm estimate the policy was trained with (zero for an R4 policy).
+Every pose, velocity and wrench is expressed in a task frame turned by the
+seated hand's yaw: the training cell's world frame has the hand at yaw ~0, and
+handing the policy world-frame poses of a hand at the plan's 90 deg made its
+success head read 0.002 on every G6 attempt.
 The brace-state slot stays zero, as in training: feeding the stabilizer's
 wrench would put the policy outside its training distribution.
 
@@ -44,11 +48,11 @@ class _CellView:
 
     @property
     def x_d(self):
-        return self.ins.arm.x_d
+        return self.ins.T.T @ self.ins.arm.x_d
 
     @property
     def R_d(self):
-        return self.ins.arm.R_d @ FLIP
+        return self.ins.T.T @ self.ins.arm.R_d @ FLIP
 
     @property
     def believed(self):
@@ -70,16 +74,26 @@ class RLInserter:
         self.max_steps = max_steps
 
     # --- the cell, in the policy's conventions -----------------------------------------
-    def hand_pose(self):
+    def world_hand(self):
         x, R = self.arm.tcp(self.sim.d)
         return x, R @ FLIP
 
-    def ft_tcp(self):
+    def hand_pose(self):
+        """Hand pose in the task frame (world turned by the seated yaw)."""
+        x, R = self.world_hand()
+        return self.T.T @ x, self.T.T @ R
+
+    def ft_world(self):
         w = self.sim.ft("B")
         f, t = w[:3], w[3:]
         x, _ = self.arm.tcp(self.sim.d)
         r = self.sim.d.site_xpos[self.arm.ft_site] - x      # moment arm F/T site -> TCP
         return np.concatenate([f, t + np.cross(r, f)])
+
+    def ft_tcp(self):
+        """Wrench about the TCP, task frame."""
+        w = self.ft_world()
+        return np.concatenate([self.T.T @ w[:3], self.T.T @ w[3:]])
 
     def _delta(self, target):
         x, R = self.hand_pose()
@@ -89,6 +103,7 @@ class RLInserter:
     def _obs(self):
         x, R = self.hand_pose()
         v = self.arm.tcp_vel(self.sim.d)
+        v = np.concatenate([self.T.T @ v[:3], self.T.T @ v[3:]])
         bx, _ = self.believed
         proprio = np.concatenate([(x - bx) / 0.01, E._rot6(R), v[:3] / 0.05, v[3:],
                                   [self.arm.opening(self.sim.d) / 0.04]])
@@ -114,9 +129,11 @@ class RLInserter:
         off = K.in_hand_offset(self.sim, "B", bid)
         _, R_seat = self.arm.tcp(self.sim.d)       # transport set the planned yaw
         seat = K.tcp_for_brick(off, np.asarray(tgt), R_seat)
-        self.believed = (seat, R_seat @ FLIP)
+        Rb = R_seat @ FLIP
+        self.T = E._yaw_rot(float(np.arctan2(Rb[1, 0], Rb[0, 0])))
+        self.believed = (self.T.T @ seat, self.T.T @ Rb)
         ev = self.rng.normal(0, E.VISION_SIGMA[0], 2)
-        self.fine = (seat + [ev[0], ev[1], 0.0], self.believed[1])
+        self.fine = (self.believed[0] + [ev[0], ev[1], 0.0], self.believed[1])
         self.ft_hist = np.zeros((10, 6))
         self.prev = np.zeros(E.ACT_DIM)
         view = _CellView(self)
@@ -145,7 +162,7 @@ class RLInserter:
                 arm.kp_pos[:2] = C.KP_POS[:2] * (4000.0 / 1200.0 if base.phase == "search" else 1.0)
             else:
                 a = a_pol
-            x, Rh = self.hand_pose()
+            x, Rh = self.world_hand()                  # hand-frame actions -> world
             xd = arm.x_d + Rh @ (a[:3] * E.DPOS)
             off_ = xd - x
             if np.linalg.norm(off_) > E.LEASH:
@@ -164,11 +181,12 @@ class RLInserter:
                 f = self.ft_tcp()
                 fz_max = max(fz_max, float(np.linalg.norm(f[:3])))
             steps += 1
-            f = self.ft_tcp()
+            f = self.ft_world()
             peak = max(peak, fz_max)
             impulse += max(0.0, f[2]) * dt
             if flog is not None:
                 flog.append((sim.t - t0, f[2], 0.0, phase))
+            _, Rh = self.world_hand()
             self.ft_hist = np.roll(self.ft_hist, 1, axis=0)
             self.ft_hist[0] = np.concatenate([Rh.T @ f[:3] / 30.0, Rh.T @ f[3:] / 2.0])
             self.prev = a_pol
@@ -178,8 +196,13 @@ class RLInserter:
         arm.f_ff[:] = 0
         arm.kp_pos[:] = C.KP_POS
         arm.kp_rot[:] = kp_rot0
-        x, _ = arm.tcp(sim.d)
+        # hold the pose the hand is in: the policy's rotation actions accumulate
+        # in R_d, and with the yaw gain back at its stiff value a few degrees of
+        # leftover target twisted the brick it had just seated off its support
+        # (G6: S1 and S3's base joints broke right after an RL seat)
+        x, R = arm.tcp(sim.d)
         arm.x_d = x.copy()
+        arm.R_d = R.copy()
         sim.noslip(False)
         return {"success": clutch.bricks[bid].state == "MATED", "peak_force_N": round(float(peak), 2),
                 "impulse_Ns": round(float(impulse), 3), "duration_s": round(sim.t - t0, 3),

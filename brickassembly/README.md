@@ -28,10 +28,11 @@ export MJ_PY=../mjenv/bin/python     # or use bash scripts/run.sh <script>
 | one assembly through the behaviour tree | `$MJ_PY -m orchestration.twin_executor --structure S3 --strategy weakest_joint --seed 0` | `results/twin_episodes.jsonl` |
 | one A6 critical-step trial | `... twin_executor --structure S3 --step 12 --strategy nearest --seed 3` | |
 | G3 benchmark (S1–S3 × 20) | `$MJ_PY -m experiments.runner g3 --trials 20` | `results/g3/` |
-| A6 (critical steps × 3 strategies × seeds) | `$MJ_PY -m experiments.runner a6 --steps S3:12,14 --seeds 20` | `results/a6/` |
-| WP5 runs R1–R4, R1ht (A10) | `$MJ_PY -m tasks.ppo --run R1 --samples 300000` | `results/wp5/<run>/` |
-| WP5 evaluation (calibrated joint) | `$MJ_PY -m tasks.ppo --eval-all` | `results/wp5/eval.jsonl` |
-| statistics + figures | `$MJ_PY -m experiments.analyze` | `results/analysis.json`, `results/figures/` |
+| A6 (every critical step × 3 strategies × seeds) | `$MJ_PY -m experiments.runner a6 --structures S3 --seeds 20` (or `--steps S3:11,13`) | `results/a6/` |
+| WP5 runs R1–R4; R1ht, R1hc (A10) | `$MJ_PY -m tasks.ppo --run R1 --samples 300000` | `results/wp5/<run>/` |
+| WP5 evaluation (calibrated joint; `--joint handtuned --stages 0` for A10's own joint) | `$MJ_PY -m tasks.ppo --eval-all` | `results/wp5/eval.jsonl` |
+| G6 full loop (RL-first inserter, S1–S5 × 3 strategies) | `$MJ_PY -m experiments.runner g6 --policy R1 --seeds 1` | `results/g6/` |
+| statistics + figures, report tables | `$MJ_PY -m experiments.analyze && $MJ_PY -m experiments.tables` | `results/analysis.json`, `results/figures/` |
 
 Layout: `sim/mj/` (scene, bricks, impedance control, runtime, plan checks),
 `sim/joint_model/` (clutch + capacity), `stability.py` (force-balance LP),

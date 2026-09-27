@@ -35,6 +35,12 @@ def _run(task):
     kw = {}
     if variant == "passive":
         kw["coordinated"] = False
+    if variant.startswith("rl:"):
+        # WP7: the WP5 policy is the tree's nominal inserter, scripted fallback
+        from orchestration.rl_inserter import RLInserter
+        run = variant.split(":", 1)[1]
+        kw["inserter"] = RLInserter(ROOT / "results" / "wp5" / run / "policy.pt", seed=seed)
+        kw["policy_name"] = run
     try:
         if kind == "step":
             r = X.step_trial(sid, step, strat, seed, out=out / "episodes.jsonl", **kw)
@@ -63,7 +69,8 @@ def critical_steps(sid):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("exp", choices=["g3", "a6", "a6_passive"])
+    ap.add_argument("exp", choices=["g3", "a6", "a6_passive", "g6"])
+    ap.add_argument("--policy", default="R1", help="g6: the WP5 run used as the inserter")
     ap.add_argument("--structures", nargs="*", default=None)
     ap.add_argument("--steps", nargs="*", default=None, help="S3:10,12,14 ...")
     ap.add_argument("--strategies", nargs="*", default=["none", "nearest", "weakest_joint"])
@@ -84,7 +91,12 @@ def main():
                 pass
     tasks = []
     variant = "passive" if a.exp == "a6_passive" else ""
-    if a.exp == "g3":
+    if a.exp == "g6":
+        variant = "rl:" + a.policy
+        for sid in a.structures or ["S1", "S2", "S3", "S4", "S5"]:
+            for strat in a.strategies:
+                tasks += [("assembly", sid, None, strat, k, variant, out) for k in range(n)]
+    elif a.exp == "g3":
         for sid in a.structures or ["S1", "S2", "S3"]:
             strat = "weakest_joint"
             tasks += [("assembly", sid, None, strat, k, variant, out) for k in range(n)]

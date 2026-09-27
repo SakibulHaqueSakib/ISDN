@@ -175,13 +175,18 @@ class ScriptedBase:
 
 class InsertionEnv:
     def __init__(self, stage=0, mode="residual", reward="sparse", vision=True, dr=True,
-                 seed=0, force_budget=None, joint="calibrated"):
+                 seed=0, force_budget=None, joint="calibrated", budget_from="joint"):
         """joint: "calibrated" (§2.3.3 / WP2: 8.9 N insertion, 11.3 N break per
         stud, 1.2 mm gate) or "handtuned" (ablation A10: the light, lenient
         joint a simulation-first build would have used -- 3 N / 5 N per stud,
-        2 mm gate, as BrickSim's default gate)."""
+        2 mm gate, as BrickSim's default gate).
+        budget_from: the insertion force the force budget and the scripted
+        base's press are scaled by -- "joint" (the model's own, as a builder
+        who trusted it would set them) or "calibrated" (8.9 N per stud
+        whatever the joint, so that only the joint's mechanics differ)."""
         self.stage, self.mode, self.reward_kind = stage, mode, reward
         self.joint = joint
+        self.budget_from = budget_from
         self.vision, self.dr = vision, dr
         self.rng = np.random.default_rng(seed)
         self.fixed_budget = force_budget
@@ -276,9 +281,10 @@ class InsertionEnv:
         n = self.n_studs
         # §5.5's U(20, 45) N cannot seat a 2x4 (8 x 8.9 = 71 N): the budget is
         # drawn relative to the seating force instead (v3.1 amendment)
+        f_ref = 8.9 if self.budget_from == "calibrated" else f_ins
         self.budget = self.fixed_budget or (self.rng.uniform(1.55, 2.0) if self.dr else 1.7) \
-            * n * f_ins
-        self.press_nom = 1.3 * n * f_ins
+            * n * f_ref
+        self.press_nom = 1.3 * n * f_ref
         # targets: true, believed (handoff estimate), fine (vision)
         self.true_tgt = (tgt + [0, 0, TCP_ABOVE_BOTTOM], np.eye(3))
         eb = self.rng.normal(0, BELIEF_SIGMA[0], 2)

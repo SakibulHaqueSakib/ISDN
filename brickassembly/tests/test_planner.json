@@ -56,12 +56,12 @@
     "worst_braced_util": 0.0
    },
    "nearest": {
-    "braced": 2,
+    "braced": 3,
     "worst_braced_util": 1.9593
    },
    "weakest_joint": {
-    "braced": 2,
-    "worst_braced_util": 0.0991
+    "braced": 3,
+    "worst_braced_util": 0.2384
    }
   },
   "S4": {
@@ -89,7 +89,7 @@
    },
    "weakest_joint": {
     "braced": 10,
-    "worst_braced_util": 0.2363
+    "worst_braced_util": 0.0
    }
   }
  },
@@ -168,8 +168,18 @@
   "all_mated": false,
   "passed": false
  },
+ "all_bricks_accessible": {
+  "S1": true,
+  "S2": true,
+  "S3": true,
+  "S4": false,
+  "S5": false
+ },
  "ik_worst_residual_m": {
   "S1": 9.95050351457779e-06,
-  "S3": 9.813609059757282e-06
+  "S2": 9.95050351457779e-06,
+  "S3": 9.813609059757282e-06,
+  "S4": 9.889457511152588e-06,
+  "S5": 9.89593776618918e-06
  }
 }
