@@ -74,88 +74,88 @@
   "workers": 4
  },
  "scripted_insertion_from_2mm": {
-  "successes": 9,
+  "successes": 2,
   "trials": 10,
   "rows": [
    {
     "err_mm": 1.581,
-    "success": true,
+    "success": false,
     "held_s": 30.0,
-    "drift_mm": 9.325007746049702e-23,
-    "peak_N": 68.19,
-    "searches": 1
+    "drift_mm": 0.012103109909233033,
+    "peak_N": 46.39,
+    "searches": 2
    },
    {
     "err_mm": 1.761,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 6.769458135094273e-22,
-    "peak_N": 66.68,
-    "searches": 1
+    "drift_mm": 0.00023870575183260819,
+    "peak_N": 47.4,
+    "searches": 4
    },
    {
     "err_mm": 1.096,
     "success": true,
     "held_s": 2.0,
-    "drift_mm": 7.597934588045147e-22,
-    "peak_N": 64.17,
-    "searches": 1
+    "drift_mm": 2.6272752025229927e-06,
+    "peak_N": 47.05,
+    "searches": 2
    },
    {
     "err_mm": 0.145,
     "success": true,
     "held_s": 2.0,
-    "drift_mm": 8.33292041936063e-22,
-    "peak_N": 66.62,
-    "searches": 0
+    "drift_mm": 6.857391569879405e-06,
+    "peak_N": 46.95,
+    "searches": 5
    },
    {
     "err_mm": 1.786,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 1.2822817676042891e-21,
-    "peak_N": 71.65,
-    "searches": 1
+    "drift_mm": 0.0006915048801017839,
+    "peak_N": 46.91,
+    "searches": 3
    },
    {
     "err_mm": 1.101,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 4.3506325601857345e-22,
-    "peak_N": 63.59,
-    "searches": 1
+    "drift_mm": 0.00033799638623980085,
+    "peak_N": 47.39,
+    "searches": 4
    },
    {
     "err_mm": 1.01,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 3.220961331316266e-22,
-    "peak_N": 62.51,
-    "searches": 1
+    "drift_mm": 0.0003383652822523556,
+    "peak_N": 47.35,
+    "searches": 4
    },
    {
     "err_mm": 1.421,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 1.5394267945020267e-22,
-    "peak_N": 58.77,
-    "searches": 1
+    "drift_mm": 0.0006630488123272021,
+    "peak_N": 47.32,
+    "searches": 3
    },
    {
     "err_mm": 1.995,
     "success": false,
     "held_s": 2.0,
-    "drift_mm": 0.0006314280672532165,
-    "peak_N": 46.85,
+    "drift_mm": 0.002287340975261053,
+    "peak_N": 46.3,
     "searches": 2
    },
    {
     "err_mm": 1.578,
-    "success": true,
+    "success": false,
     "held_s": 2.0,
-    "drift_mm": 6.278414187422722e-22,
-    "peak_N": 68.76,
-    "searches": 1
+    "drift_mm": 0.0011695643181571513,
+    "peak_N": 46.3,
+    "searches": 2
    }
   ]
  }
