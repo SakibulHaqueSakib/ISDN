@@ -79,11 +79,12 @@ def brick_pose(sim, brick):
     return sim.d.xpos[b].copy(), sim.d.xmat[b].reshape(3, 3).copy()
 
 
-def pick(sim, name, brick, yaw, grip_force=GRIP_FORCE):
-    """Grasp `brick` where it lies. Returns True if it left the table with the hand."""
+def pick(sim, name, brick, yaw, grip_force=GRIP_FORCE, offset=(0.0, 0.0)):
+    """Grasp `brick` where it lies, `offset` (m, world xy) from its centre.
+    Returns True if it left the table with the hand."""
     arm = sim.arms[name]
-    p, _ = brick_pose(sim, brick)
-    grasp = p + [0, 0, GRASP_TCP_ABOVE_BOTTOM]
+    p, Rb = brick_pose(sim, brick)
+    grasp = p + Rb @ np.array([offset[0], offset[1], 0.0]) + [0, 0, GRASP_TCP_ABOVE_BOTTOM]
     yaw = grip_yaw(sim, name, yaw, grasp)
     R = C.down_rot(yaw)
     arm.grip_open = 0.04
@@ -94,11 +95,22 @@ def pick(sim, name, brick, yaw, grip_force=GRIP_FORCE):
     sim.goto_joint(name, grasp + [0, 0, APPROACH], R)
     sim.goto(name, grasp, R, duration=0.8, settle=0.6)
     arm.grip_open = 0.0                      # close: force-limited at grip_force
-    sim.run(0.35)
+    close(sim, name)
     z0 = brick_pose(sim, brick)[0][2]
     sim.goto(name, grasp + [0, 0, APPROACH], R, duration=0.8, settle=0.1)
     lifted = brick_pose(sim, brick)[0][2] - z0 > 0.5 * APPROACH
     return lifted
+
+
+def close(sim, name, tmax=1.2):
+    """Wait for the fingers (closing at control.GRIP_SPEED) to stop on
+    something, then let the grip force settle."""
+    arm = sim.arms[name]
+    t0 = sim.t
+    sim.run(0.1)
+    sim.run(tmax, until=lambda s_: abs(float(s_.d.qvel[arm.finger_v].mean())) < 0.001)
+    sim.run(0.1)
+    return sim.t - t0
 
 
 def in_hand_offset(sim, name, brick):
@@ -275,3 +287,77 @@ def park(sim, name):
     if x[2] < p[2]:
         sim.goto(name, [x[0], x[1], p[2]], arm.R_d, duration=0.5)
     sim.goto_joint(name, p, R)
+
+
+# --- the stabilizer ------------------------------------------------------------
+BRACE_KP_POS = np.array([15000.0, 15000.0, 15000.0])  # N/m while holding: an anchor, not a spring
+BRACE_KP_ROT = np.array([300.0, 300.0, 300.0])        # N*m/rad
+BRACE_APPROACH = 0.05                                  # m back along the tool axis
+
+
+def brace_pose(brace):
+    """TCP position and orientation for a §2.6 brace (bracing.py fields)."""
+    p = np.array(brace["brace_pose"][:3], float)
+    R = C.down_rot(math.pi / 2, brace.get("brace_tilt_rotvec", (0.0, 0.0, 0.0)))  # fingers along x
+    return p, R
+
+
+def brace(sim, name, brace, width=0.0158):
+    """Arm `name` grasps the structure at the brace pose and holds it stiffly.
+
+    Approach along the (tilted) tool axis, close with brace_force_N per
+    finger, then latch the pose with BRACE_KP gains: the LP modelled the brace
+    as an anchor bounded by pad friction, so the arm must not yield like the
+    §2.5 insertion impedance (600 N/m would give 70 mm under 40 N).
+    Returns True if the pads closed on something.
+    """
+    arm = sim.arms[name]
+    p, R = brace_pose(brace)
+    tool = R[:, 2]                                   # hand z = toward the fingertips
+    back = p - tool * BRACE_APPROACH
+    arm.grip_open = width / 2 + 0.006
+    x, _ = arm.tcp(sim.d)
+    sim.goto(name, [x[0], x[1], max(x[2], back[2] + 0.05)], arm.R_d, duration=0.4)
+    sim.goto_joint(name, back + [0, 0, 0.04], R)
+    sim.goto(name, back, R, duration=0.5)
+    sim.goto(name, p, R, duration=0.8, settle=0.3)
+    arm.grip_force = float(brace.get("brace_force_N", 40.0))
+    arm.grip_open = 0.0
+    close(sim, name)
+    closed_on_something = arm.opening(sim.d) > width / 2 - 0.002
+    arm.hold(sim.d)
+    arm.kp_pos[:] = BRACE_KP_POS
+    arm.kp_rot[:] = BRACE_KP_ROT
+    sim.noslip(True)
+    sim.run(0.2)
+    return closed_on_something
+
+
+def brace_feedforward(sim, name, brace, placer="B"):
+    """Coordinated bracing: a hook (append to sim.hooks) that makes arm `name`
+    push the structure with the plan's feed-forward wrench, scaled by the
+    press the placer is COMMANDING (the dual-arm controller shares it; the
+    measured press spikes on contact). The stiff hold takes only what the LP
+    did not foresee."""
+    arm = sim.arms[name]
+    w = np.array(brace.get("feedforward_wrench_per_N", np.zeros(6)), float)
+    top = float(brace.get("press_nominal_N", 0.0))
+
+    def hook(s_):
+        if s_.k % 2 == 0:
+            press = float(np.clip(-s_.arms[placer].f_ff[2], 0.0, top))
+            arm.f_ff[:] = w * press
+    return hook
+
+
+def unbrace(sim, name):
+    arm = sim.arms[name]
+    arm.kp_pos[:] = C.KP_POS
+    arm.kp_rot[:] = C.KP_ROT
+    arm.hold(sim.d)
+    arm.grip_open = 0.03
+    sim.run(0.3)
+    sim.noslip(False)
+    x, R = arm.tcp(sim.d)
+    sim.goto(name, x - R[:, 2] * BRACE_APPROACH, arm.R_d, duration=0.5)
+    park(sim, name)

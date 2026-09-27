@@ -12,6 +12,8 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
+
 # --- §2.3 LEGO System geometry (metres) -------------------------------------
 PITCH = 0.008          # stud pitch
 BRICK_H = 0.0096       # brick height (3 plates)
@@ -33,25 +35,76 @@ VOXEL_ORIGIN = (0.46, -0.04, 0.010)
 
 # ponytail: structures hand-authored instead of sampled from StableLego (D14).
 # Swap for the dataset once it is downloaded; the rest of the file is agnostic.
-# Each brick: (id, type, i, j, k, yaw_index)
+# Each brick: (id, type, i, j, k, yaw_index). All are 2 studs wide in x, so a
+# gripper closing along x can take any of them (§3.4, cite [BricksToBots]).
+
+
+def _numbered(spec):
+    """[(type, j, k)] -> brick tuples in build order, ids b_000... in that order."""
+    bricks = [("b_%03d" % n, t, 0, j, k, 0) for n, (t, j, k) in enumerate(spec)]
+    order = sorted(bricks, key=lambda b: (b[4], b[2], b[3]))
+    return [("b_%03d" % n,) + b[1:] for n, b in enumerate(order)]
+
+
+def _staircase(steps):
+    """Stepped 2-wide staircase, one layer per step, seams staggered."""
+    spec = []
+    for k in range(steps):
+        lo, hi = 2 * k, 2 * steps - 1
+        j = lo + (2 if k % 2 else 0)
+        if k % 2:
+            spec.append(("2x2", lo, k))
+        while j <= hi:
+            t = "2x4" if hi - j + 1 >= 4 else "2x2"
+            spec.append((t, j, k))
+            j += int(t[2])
+    return spec
+
+
+# §3.1's graded set (v3.1: hand-authored, sizes verified by stability.py):
+#   S1 column 6, S2 staggered wall 12, S3 corbelled bridge 16 (two corbels and
+#   the crown fail single-arm), S4 staircase 19 (accessibility), S5 tower +
+#   corbelled balcony + a sub-structure on its tip 26 (six steps fail single-arm).
 STRUCTURES = {
     "S1": [("b_%03d" % n, "2x2", 0, 0, n, 0) for n in range(6)],
-    "S2": [  # staggered wall, seams offset between layers
+    "S2": _numbered([("2x4", 0, 0), ("2x4", 4, 0), ("2x4", 8, 0),
+                     ("2x2", 0, 1), ("2x4", 2, 1), ("2x4", 6, 1), ("2x2", 10, 1),
+                     ("2x4", 0, 2), ("2x4", 4, 2), ("2x4", 8, 2),
+                     ("2x2", 0, 3), ("2x2", 10, 3)]),
+    # a corbelled bridge: corbels cantilever 2, 2, 1 studs out from a pier to
+    # a 2x4 crown lapping onto a solid column. (A symmetric arch was tried: its
+    # crown rests on both corbel stacks, so one stabilizer can never hold both
+    # sides and the crown step is unbraceable -- stability.py, s = 2.56 either way.
+    # The second corbel is a 2x6 lapping the first over all 8 studs: as a 2x4
+    # lapping 4, its joint took the third corbel's whole press moment and no
+    # grasp that clears the placer's hand could hold it -- twin, step 12.)
+    "S3": _numbered([("2x2", 0, 0), ("2x2", 0, 1), ("2x2", 0, 2), ("2x2", 0, 3),
+                     ("2x4", 0, 4), ("2x6", 0, 5), ("2x4", 3, 6),
+                     ("2x2", 8, 0), ("2x2", 8, 1), ("2x2", 8, 2), ("2x2", 8, 3),
+                     ("2x2", 8, 4), ("2x2", 8, 5), ("2x2", 8, 6),
+                     ("2x4", 6, 7), ("2x4", 6, 8)]),
+    "S4": _numbered(_staircase(7)),
+    "S5": _numbered([("2x4", 0, 0), ("2x4", 4, 0), ("2x2", 0, 1), ("2x4", 2, 1), ("2x2", 6, 1),
+                     ("2x4", 0, 2), ("2x2", 0, 3), ("2x2", 2, 3),
+                     ("2x6", 0, 4), ("2x6", 2, 5), ("2x6", 4, 6), ("2x4", 8, 7),
+                     ("2x4", 0, 7), ("2x4", 0, 6), ("2x2", 0, 5),
+                     ("2x2", 10, 8), ("2x2", 8, 8), ("2x2", 10, 9), ("2x2", 8, 9), ("2x4", 8, 10),
+                     ("2x4", 4, 7), ("2x2", 4, 8), ("2x2", 6, 8), ("2x4", 4, 9), ("2x2", 2, 8),
+                     ("2x2", 0, 8)]),
+    # v3.0 structures, kept so the BrickSim results in the ledger reproduce:
+    # the 7-brick wall, the pier + cantilever that was "S3", and S3L.
+    "S2A": [
         ("b_000", "2x4", 0, 0, 0, 0), ("b_001", "2x4", 0, 4, 0, 0),
         ("b_002", "2x2", 0, 2, 1, 0), ("b_003", "2x4", 0, 4, 1, 0),
         ("b_004", "2x2", 0, 0, 1, 0), ("b_005", "2x4", 0, 0, 2, 0),
         ("b_006", "2x4", 0, 4, 2, 0),
     ],
-    "S3": [  # pier + cantilever: pressing the far end levers the cantilever's studs
+    "S3C": [  # pier + cantilever: pressing the far end levers the cantilever's studs
         ("b_000", "2x2", 0, 0, 0, 0), ("b_001", "2x2", 0, 0, 1, 0),
         ("b_002", "2x2", 0, 0, 2, 0),
         ("b_003", "2x6", 0, 0, 3, 0),   # overhangs to j=5, held by 4 studs at j=0,1
         ("b_004", "2x2", 0, 4, 4, 0),   # pressed onto the free end
     ],
-    # S3 stops failing single-arm once the clutch is calibrated to the
-    # literature's 8-15 N/stud (ledger: s3_not_failing_when_calibrated), so
-    # S3L stacks a second 2x6 to double the overhang and restore the case
-    # ablation A6 needs.
     "S3L": [
         ("b_000", "2x2", 0, 0, 0, 0), ("b_001", "2x2", 0, 0, 1, 0),
         ("b_002", "2x2", 0, 0, 2, 0),
@@ -60,6 +113,7 @@ STRUCTURES = {
         ("b_005", "2x2", 0, 8, 5, 0),   # pressed at the far tip
     ],
 }
+BENCHMARK = ("S1", "S2", "S3", "S4", "S5")
 
 
 def footprint(btype, yaw_index):
@@ -215,10 +269,27 @@ def grasp_for(brick, placed):
     # 0: fingers on the +-x faces; min() is stable, so ties keep the short side
     axis = min([0, 1] if nx <= ny else [1, 0], key=touched)
     across = (nx, ny)[axis]
+    # Press through the mating studs: a corbel gripped at its centre while
+    # only one half is supported tips ~9 deg in the grasp under the press
+    # (MuJoCo twin, S3 step 8). Slide the grip along the brick toward the
+    # centroid of the studs it mates, keeping the 17 mm pads on the brick.
+    sup_cells = set()
+    for p in placed:
+        if p[4] == k - 1:
+            sup_cells |= c & cells(p)[0]
+    along = 1 - axis                      # grip slides along the other axis
+    offset = 0.0
+    if sup_cells and k > 0:
+        mid = ((i0 + nx / 2) if along == 0 else (j0 + ny / 2)) * PITCH
+        pc = sum(((a + 0.5) if along == 0 else (b_ + 0.5)) for a, b_ in sup_cells) / len(sup_cells) * PITCH
+        room = max(0.0, (nx if along == 0 else ny) * PITCH / 2 - 0.0085 - 0.001)
+        offset = float(np.clip(pc - mid, -room, room)) if room else 0.0
     return {"face_pair": "long" if across == min(nx, ny) else "short",
             "yaw_offset_deg": 90 if axis == 0 else 0,
             "grip_width_m": round(across * PITCH - 0.0012, 4),
             "grip_force_N": 15.0,
+            # grasp centre relative to the brick centre, world frame (m)
+            "tcp_offset_m": [round(offset, 4), 0.0] if along == 0 else [0.0, round(offset, 4)],
             "accessible": touched(axis) == 0}
 
 
@@ -314,17 +385,35 @@ def _bricksim_crosscheck(structure_id, order):
     return out
 
 
-def build_plan(structure_id, strategy="weakest_joint", crosscheck=False):
-    """Emit an assembly_plan.json dict per §2.6."""
+def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_model="grasp_lp",
+               clearance=None):
+    """Emit an assembly_plan.json dict per §2.6.
+
+    brace_model: "grasp_lp" (v3.1: bracing.py over stability.py's force
+    balance -- the stabilizer grasps) or "lever_press" (v3.0: the lever model
+    and a press-down brace, as the Newton prototype executes).
+    clearance: callable(brick, y, z, tilt) -> bool, the hands-fit check for a
+    brace grasp (sim/mj/checks.BraceClearance in the twin's frame); None
+    keeps the 28 mm rule.
+    """
     bricks = STRUCTURES[structure_id]
     order = sequence(bricks)
-    steps, placed = [], []
+    steps, placed, utils = [], [], []
+    if brace_model == "grasp_lp":
+        import bracing
+        import stability
     for n, b in enumerate(order):
         bid, btype, i, j, k, yaw = b
         sup = supports(b, placed)
         x, y, z = brick_pose(b)
         nx, ny = footprint(btype, yaw)
-        brace = brace_for(b, placed, strategy)
+        if brace_model == "grasp_lp":
+            r0 = stability.insertion_utilisation(b, placed) if placed else None
+            utils.append((r0.s, r0.weakest) if r0 else (0.0, None))
+            brace = bracing.assign(b, placed, strategy, unbraced=r0,
+                                   clearance=clearance) if placed else None
+        else:
+            brace = brace_for(b, placed, strategy)
         yaw_rad = math.pi / 2 * yaw
         # Gripper points down: Rz(yaw) * Rx(pi), as xyzw.
         quat = [math.cos(yaw_rad / 2), math.sin(yaw_rad / 2), 0.0, 0.0]
@@ -332,8 +421,9 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False):
             "step": n,
             "brick_id": bid,
             "placer_arm": "B",
-            "requires_brace": brace is not None,
+            "requires_brace": brace is not None and brace.get("feasible", True),
             "brace": brace,
+            "predicted_util_unbraced": round(utils[-1][0], 4) if utils else None,
             "grasp": grasp_for(b, placed),
             "pre_insertion_pose": [x, y, z + PRE_INSERTION_DZ] + quat,
             "target_pose": [x, y, z] + quat,
@@ -341,6 +431,30 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False):
         })
         placed.append(b)
 
+    if brace_model == "grasp_lp":
+        worst = max(utils, key=lambda u: u[0]) if utils else (0.0, None)
+        validation = {
+            "stability_method": "stablelego_force_balance (stability.py, capacity.Patch)",
+            "bracing_strategy": strategy,
+            "brace_model": brace_model,
+            "weakest_joint": list(worst[1]) if worst[1] else None,
+            "max_util_unbraced": round(worst[0], 4),
+            "single_arm_fails": bool(worst[0] >= 1.0),
+            "all_bricks_accessible": all(s_["grasp"]["accessible"] for s_ in steps),
+            "brace_required_count": sum(s_["requires_brace"] for s_ in steps),
+            "brace_infeasible_count": sum(1 for s_ in steps if s_["brace"]
+                                          and not s_["brace"].get("feasible", True)),
+        }
+        return {
+            "structure_id": structure_id,
+            "source": {"dataset": "hand_authored", "index": None},
+            "voxel_origin": list(VOXEL_ORIGIN),
+            "grid_pitch": [PITCH, PITCH, BRICK_H],
+            "bricks": [{"id": b[0], "type": b[1], "grid_pos": [b[2], b[3], b[4]],
+                        "yaw_index": b[5], "color": "red"} for b in bricks],
+            "sequence": steps,
+            "validation": validation,
+        }
     worst_overall = min(
         (weakest_joint(b, order[:n]) for n, b in enumerate(order) if n),
         key=lambda w: w[2] if w else 1e9, default=None)
@@ -424,7 +538,7 @@ def to_bricksim_topology(structure_id, upto_step=None):
 
 def _self_check():
     for sid in STRUCTURES:
-        plan = build_plan(sid)
+        plan = build_plan(sid, "none")
         steps = plan["sequence"]
         assert len(steps) == len(STRUCTURES[sid])
         seen = set()
@@ -440,17 +554,17 @@ def _self_check():
             keyed = {(i, j, k) for i, j in c}
             assert not (occ & keyed), "overlap in %s" % sid
             occ |= keyed
-    # the spanning arch must need a brace; the column must not
-    assert build_plan("S1")["validation"]["brace_required_count"] == 0
-    assert build_plan("S3")["validation"]["brace_required_count"] > 0
+    # the spanning bridge must need a brace; the column must not
+    assert build_plan("S1", "none")["validation"]["single_arm_fails"] is False
+    assert build_plan("S3", "none")["validation"]["single_arm_fails"] is True
     # the three strategies all produce valid plans for the same structure
     n, w = (build_plan("S3", s)["validation"]["brace_required_count"]
             for s in ("none", "weakest_joint"))
     assert n == 0 and w > 0
-    # the brace presses over the pier; the cantilever's centre is on the load
-    # side of the pivot and would add to the prying
-    brace = build_plan("S3")["sequence"][-1]["brace"]["brace_pose"]
-    pier = next(b for b in STRUCTURES["S3"] if b[0] == "b_002")
+    # legacy (v3.0) lever/press-down brace on the old cantilever: it presses
+    # over the pier, since the cantilever's centre is on the load side
+    brace = build_plan("S3C", brace_model="lever_press")["sequence"][-1]["brace"]["brace_pose"]
+    pier = next(b for b in STRUCTURES["S3C"] if b[0] == "b_002")
     assert abs(brace[1] - brick_pose(pier)[1]) < footprint(pier[1], pier[5])[1] * PITCH / 2, brace
     # a finger never goes into the 0.2 mm gap beside a placed brick
     first, second = ("a", "2x4", 0, 0, 0, 0), ("b", "2x4", 2, 0, 0, 0)
@@ -459,8 +573,16 @@ def _self_check():
 
 
 if __name__ == "__main__":
+    import sys
+    # bracing/stability do `import planner`; make that this module, not a second
+    # copy with its own VOXEL_ORIGIN
+    sys.modules.setdefault("planner", sys.modules[__name__])
     ap = argparse.ArgumentParser()
     ap.add_argument("--structure", default=None, choices=list(STRUCTURES))
+    ap.add_argument("--brace-model", default="grasp_lp", choices=["grasp_lp", "lever_press"])
+    ap.add_argument("--frame", default="arm", choices=["arm", "twin"],
+                    help="twin: centre the build between the MuJoCo twin's arms and write "
+                         "plans/twin/<S>_<strategy>.json for the benchmark set")
     ap.add_argument("--strategy", default="weakest_joint",
                     choices=["none", "nearest", "weakest_joint"])
     ap.add_argument("--list", action="store_true")
@@ -489,13 +611,39 @@ if __name__ == "__main__":
         raise SystemExit
 
     _self_check()
+    if args.frame == "twin":
+        # the MuJoCo twin's world: build centred between the arms (sim/mj/scene.py)
+        out = Path(__file__).parent / "plans" / "twin"
+        out.mkdir(parents=True, exist_ok=True)
+        clr, clr_sid = None, None
+        for sid in ([args.structure] if args.structure else BENCHMARK):
+            for strat in ("none", "nearest", "weakest_joint"):
+                from sim.mj.scene import centre_plan_origin
+                from sim.mj.checks import BraceClearance, drop_test
+                centre_plan_origin(STRUCTURES[sid])
+                clr = clr if strat != "none" and clr_sid == sid else BraceClearance(sid)
+                clr_sid = sid
+                plan = build_plan(sid, strat, clearance=clr)
+                plan["frame"] = "twin world: arm A base (-0.45,0,0), arm B base (+0.45,0,0), z up"
+                plan["validation"]["brace_clearance"] = "twin collision check (sim/mj/checks.py)"
+                drop = drop_test(plan)
+                plan["validation"]["drop_test_max_disp_mm"] = drop["max_disp_mm"]
+                plan["validation"]["drop_test_passed"] = drop["passed"]
+                path = out / ("%s_%s.json" % (sid, strat))
+                path.write_text(json.dumps(plan, indent=1))
+                v = plan["validation"]
+                print("%s -> plans/twin/%s  (%d steps, %d braced, max util unbraced %.2f)" % (
+                    sid, path.name, len(plan["sequence"]), v["brace_required_count"],
+                    v["max_util_unbraced"]))
+        raise SystemExit
     out = Path(__file__).parent / "plans"
     out.mkdir(exist_ok=True)
     for sid in ([args.structure] if args.structure else STRUCTURES):
-        plan = build_plan(sid, args.strategy, crosscheck=args.crosscheck)
+        plan = build_plan(sid, args.strategy, crosscheck=args.crosscheck, brace_model=args.brace_model)
         path = out / ("%s_%s.json" % (sid, args.strategy))
         path.write_text(json.dumps(plan, indent=1))
-        print("%s -> %s  (%d steps, %d braced, min margin %s)" % (
-            sid, path.name, len(plan["sequence"]),
-            plan["validation"]["brace_required_count"],
-            plan["validation"]["min_margin"]))
+        v = plan["validation"]
+        print("%s -> %s  (%d steps, %d braced, %s)" % (
+            sid, path.name, len(plan["sequence"]), v["brace_required_count"],
+            "min margin %s" % v.get("min_margin") if "min_margin" in v
+            else "max util unbraced %.2f" % v["max_util_unbraced"]))

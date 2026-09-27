@@ -131,13 +131,18 @@ def centre_plan_origin(bricks):
     return NI, NJ
 
 
-def build_cell(plan, preplaced=(), colors=None, with_arms=True, spawn=None):
+def build_cell(plan, preplaced=(), colors=None, with_arms=True, spawn=None, pre=None,
+               attach=None, post=None):
     """Compile the cell for an assembly_plan dict.
 
     preplaced: brick ids spawned already seated at their targets (their
     connections then start MATED -- the clutch model is told by the caller);
     everything else starts in the feeder, or at spawn[brick_id] if given.
     with_arms=False gives a bricks-only model for joint-model tests.
+    pre(spec): called before any brick is added (e.g. to add a floating hand).
+    attach: {brick_id: (body_name, pos, quat)} adds that brick as a rigid child
+    of an existing body instead of free (tasks/insertion_env.py's grasp).
+    post(spec): called just before compiling.
     """
     spec = mujoco.MjSpec()
     spec.option.timestep = TIMESTEP
@@ -152,6 +157,8 @@ def build_cell(plan, preplaced=(), colors=None, with_arms=True, spawn=None):
     table.contype, table.conaffinity = Bk.WORLD_TYPE, Bk.WORLD_AFFINITY
     table.rgba = [0.8, 0.78, 0.74, 1]
     w.add_light(pos=[0, 0, 2], dir=[0, 0, -1], type=mujoco.mjtLightType.mjLIGHT_DIRECTIONAL)
+    if pre is not None:
+        pre(spec)
 
     # --- arms ---------------------------------------------------------------
     for name, (pos, yaw) in (ARM_BASE.items() if with_arms else ()):
@@ -203,7 +210,12 @@ def build_cell(plan, preplaced=(), colors=None, with_arms=True, spawn=None):
         else:
             at = np.array([slots[n][0], slots[n][1], 0.0])
         feeder[b["id"]] = np.array([slots[n][0], slots[n][1], 0.0])
-        Bk.add_brick(spec, w, b["id"], nx, ny, at, rgba=palette[n % len(palette)])
+        if attach and b["id"] in attach:
+            body, pos, quat = attach[b["id"]]
+            Bk.add_brick(spec, spec.body(body), b["id"], nx, ny, pos, quat=quat,
+                         rgba=palette[n % len(palette)], free=False)
+        else:
+            Bk.add_brick(spec, w, b["id"], nx, ny, at, rgba=palette[n % len(palette)])
 
     # --- clutch pool ----------------------------------------------------------
     conns = []
@@ -297,6 +309,8 @@ def build_cell(plan, preplaced=(), colors=None, with_arms=True, spawn=None):
                 # the Newton prototype did
                 geom.contype, geom.conaffinity = 0, 0
 
+    if post is not None:
+        post(spec)
     model = spec.compile()
     for c in conns:
         tag = "%s_on_%s" % (c.upper, c.lower or "plate")

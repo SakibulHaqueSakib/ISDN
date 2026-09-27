@@ -77,11 +77,15 @@ class Sim:
         """Step for `seconds` of sim time, or until until(sim) is true.
         Returns True if `until` fired."""
         n = int(round(seconds / self.m.opt.timestep))
+        bad = self.d.warning[mujoco.mjtWarning.mjWARN_BADQACC].number
         for _ in range(n):
             self.step()
             if until is not None and self.k % CTRL_EVERY == 0 and until(self):
                 return True
-        if not np.isfinite(self.d.qpos).all():
+        # MuJoCo resets the state on a NaN acceleration and carries on: a
+        # collapsing structure then teleports back to qpos0
+        if (not np.isfinite(self.d.qpos).all()
+                or self.d.warning[mujoco.mjtWarning.mjWARN_BADQACC].number > bad):
             self.diverged = True
             raise FloatingPointError("simulation diverged at t=%.3f" % self.t)
         return False

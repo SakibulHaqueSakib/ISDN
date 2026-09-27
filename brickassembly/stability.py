@@ -28,6 +28,7 @@ carries them), and the 0.2 mm gaps between neighbours in a layer (bricks in a
 layer interact only through the bricks above and below).
 """
 
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -59,9 +60,15 @@ class Brace:
     bricks: tuple
     point: tuple
     grip_N: float = 40.0          # per finger
+    shares: tuple = None          # fraction of the pad contact on each gripped brick
+                                  # (default: equal); pad friction splits by contact
     mu: float = 1.0
     arm_max_N: float = 60.0       # total force the stabilizer holds
-    moment_max_Nm: float = 0.3    # pad couple limit per gripped brick
+    moment_max_Nm: float = 0.3    # pad couple about the grip axis, shared like the force
+                                  # (bracing.py sets it from the grip: mu * 2 * grip * 5 mm)
+    lateral_max_N: float = None   # bound on the horizontal brace force (the feed-forward:
+                                  # a sideways push loads the stud interface being pressed
+                                  # and stalled the S3 step-12 insertion at 69 N)
 
 
 @dataclass
@@ -71,6 +78,8 @@ class Result:
     util: dict = field(default_factory=dict)          # (upper, lower) -> utilisation
     weakest: tuple = None
     brace_wrench: list = field(default_factory=list)  # per brace, world (Fx..Mz) on the structure
+    brace_util: list = field(default_factory=list)    # per brace: max over gripped bricks of
+                                                      # |force| / its friction share
 
 
 def brick_centre(b):
@@ -130,11 +139,14 @@ def _cross_mat(p):
     return np.array([[0, -z, y], [z, 0, -x], [-y, x, 0.0]])
 
 
-def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
+def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True, util_cap=None):
     """Minimax utilisation of `bricks` (planner tuples, all placed).
 
     loads: [(brick_id, force(3), point(3))] in N and m, world frame.
     braces: [Brace].
+    util_cap: instead of the least total utilisation at the minimax, the
+    least brace effort that keeps every joint at or below max(s*, util_cap)
+    -- the wrench a coordinated stabilizer should feed forward (bracing.py).
     """
     bricks = list(bricks)
     ids = [b[0] for b in bricks]
@@ -205,13 +217,32 @@ def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
             rows.append(r)
     A_ub = np.array(rows) if rows else np.zeros((0, nv))
     b_ub = np.zeros(len(rows))
-    # arm force limit on each brace's total vertical force: |sum fz| <= arm_max
+    # The pads close along x, so the brace's force on each gripped brick in the
+    # pad plane (y, z) is friction: |(fy, fz)| <= mu * 2 * grip * share, as an
+    # octagon inscribed in that circle. The arm's total force is bounded the
+    # same way in (y, z) and by arm_max along x. (A per-axis box let the LP ask
+    # one brace for 76 N from a 60 N arm.)
     extra_ub, extra_b = [], []
+    octagon = [(math.cos(a), math.sin(a)) for a in np.arange(8) * math.pi / 4]
+    inscribe = math.cos(math.pi / 8)
     for br, cols in zip(braces, brace_cols):
+        shares = br.shares or tuple(1.0 / len(br.bricks) for _ in br.bricks)
+        for c0, sh in zip(cols, shares):
+            for cy, cz in octagon:
+                r = np.zeros(nv)
+                r[c0 + 1], r[c0 + 2] = cy, cz
+                extra_ub.append(r)
+                extra_b.append(br.mu * 2 * br.grip_N * sh * inscribe)
+        for cy, cz in octagon:
+            r = np.zeros(nv)
+            for c0 in cols:
+                r[c0 + 1], r[c0 + 2] = cy, cz
+            extra_ub.append(r)
+            extra_b.append(br.arm_max_N * inscribe)
         for sgn in (1.0, -1.0):
             r = np.zeros(nv)
             for c0 in cols:
-                r[c0 + 2] = sgn
+                r[c0] = sgn
             extra_ub.append(r)
             extra_b.append(br.arm_max_N)
     if extra_ub:
@@ -219,10 +250,12 @@ def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
         b_ub = np.concatenate([b_ub, extra_b])
     bounds = [(None, None)] * (6 * nc)
     for br in braces:
-        fmax = br.mu * 2 * br.grip_N / len(br.bricks)
-        mmax = br.moment_max_Nm * MM
-        for _ in br.bricks:
-            bounds += [(-fmax, fmax)] * 3 + [(-mmax, mmax)] * 3
+        shares = br.shares or tuple(1.0 / len(br.bricks) for _ in br.bricks)
+        for sh in shares:
+            fmax = br.mu * 2 * br.grip_N * sh
+            mmax = br.moment_max_Nm * MM * sh
+            lat = fmax if br.lateral_max_N is None else min(fmax, br.lateral_max_N * sh)
+            bounds += [(-lat, lat)] * 2 + [(-fmax, fmax)] + [(-mmax, mmax)] * 3
     bounds += [(0, None)]
     cost = np.zeros(nv)
     cost[s_col] = 1.0
@@ -240,9 +273,9 @@ def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
     n_aux = nc + (6 * nbr if minimise_brace else 0)
     n2 = nv + n_aux
     cost2 = np.zeros(n2)
-    cost2[nv:nv + nc] = 1.0
+    cost2[nv:nv + nc] = 1.0 if util_cap is None else 1e-3
     if minimise_brace and nbr:
-        cost2[nv + nc:] = 1e-3
+        cost2[nv + nc:] = 1e-3 if util_cap is None else 1.0
     A_eq2 = lil_matrix((A_eq.shape[0], n2))
     A_eq2[:, :nv] = A_eq
     ub_rows = [np.hstack([A_ub, np.zeros((A_ub.shape[0], n_aux))])]
@@ -268,7 +301,7 @@ def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
     A_ub2 = np.vstack(ub_rows)
     b_ub2 = np.concatenate([b_ub, np.zeros(len(aux))])
     bounds2 = list(bounds)
-    bounds2[s_col] = (0, s_star * 1.0001 + 1e-9)
+    bounds2[s_col] = (0, max(s_star, util_cap or 0.0) * 1.0001 + 1e-9)
     r2 = linprog(cost2, A_ub=A_ub2, b_ub=b_ub2, A_eq=A_eq2.tocsr(), b_eq=b_eq,
                  bounds=bounds2 + [(0, None)] * n_aux, method="highs")
     if r2.status == 0:
@@ -281,13 +314,19 @@ def analyze(bricks, loads=(), braces=(), gravity=True, minimise_brace=True):
     # the joint nearest the load, where a brace intercepts the path first
     zc = {(c.upper, c.lower): c.centre[2] for c in conns}
     weakest = max(util, key=lambda k: (round(util[k], 6), zc[k])) if util else None
-    bw = []
-    for cols in brace_cols:
+    bw, bu = [], []
+    for br, cols in zip(braces, brace_cols):
         tot = np.zeros(6)
-        for c0 in cols:
-            tot += x[c0:c0 + 6] * np.array([1, 1, 1, 1 / MM, 1 / MM, 1 / MM])
+        worst = 0.0
+        shares = br.shares or tuple(1.0 / len(br.bricks) for _ in br.bricks)
+        for c0, sh in zip(cols, shares):
+            w = x[c0:c0 + 6] * np.array([1, 1, 1, 1 / MM, 1 / MM, 1 / MM])
+            tot += w
+            worst = max(worst, float(np.linalg.norm(w[:3]) / (br.mu * 2 * br.grip_N * sh)))
         bw.append(tot)
-    return Result(s=s_star, feasible=True, util=util, weakest=weakest, brace_wrench=bw)
+        bu.append(worst)
+    return Result(s=s_star, feasible=True, util=util, weakest=weakest, brace_wrench=bw,
+                  brace_util=bu)
 
 
 def insertion_utilisation(brick, placed, braces=(), press=None):
@@ -304,12 +343,14 @@ def insertion_utilisation(brick, placed, braces=(), press=None):
 
 
 if __name__ == "__main__":
-    # S3 check against BrickSim (README: u = 2.36 at a 35.6 N tip press)
+    # check against BrickSim on the v3.0 cantilever (README: u = 2.36 at a
+    # 35.6 N tip press); the benchmark's S3 is now the corbelled bridge
     import sys
-    order = P.sequence(P.STRUCTURES["S3"])
+    sys.modules.setdefault("stability", sys.modules[__name__])
+    order = P.sequence(P.STRUCTURES["S3C"])
     placed, tip = order[:-1], order[-1]
     r = analyze(placed, loads=insertion_loads(tip, placed), gravity=False)
-    print("S3 tip press, no gravity: s = %.3f  weakest %s" % (r.s, r.weakest))
+    print("S3C tip press, no gravity: s = %.3f  weakest %s" % (r.s, r.weakest))
     r = insertion_utilisation(tip, placed)
-    print("S3 with gravity and +-3 N lateral: s = %.3f  weakest %s" % (r.s, r.weakest))
+    print("S3C with gravity and +-3 N lateral: s = %.3f  weakest %s" % (r.s, r.weakest))
     sys.exit(0 if abs(analyze(placed, loads=insertion_loads(tip, placed), gravity=False).s - 2.363) < 0.01 else 1)

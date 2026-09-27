@@ -25,6 +25,9 @@ KP_ROT = np.array([40.0, 40.0, 40.0])          # N*m/rad
 ZETA = 1.0
 NULL_KP = 25.0                                  # 1/s^2 posture task toward mid-range
 READY_Q = np.array([0.0, -0.3, 0.0, -2.2, 0.0, 1.9, 0.785])
+NULL_RATE = 0.5              # rad/s, posture reference slew
+CTRL_DT = 0.002              # s, the controller period (runtime.CTRL_EVERY x timestep)
+GRIP_SPEED = 0.08            # m/s per finger while closing (Franka hand: <= 0.1 m/s)
 JOINT_DAMPING = 1.0                             # menagerie panda passive damping, compensated
 _EYE6, _EYE7 = np.eye(6), np.eye(7)
 
@@ -99,6 +102,8 @@ class Arm:
         self.q_null = READY_Q.copy()
         self._jp = np.zeros((3, model.nv))
         self._jr = np.zeros((3, model.nv))
+        self._jdp = np.zeros((3, model.nv))
+        self._jdr = np.zeros((3, model.nv))
         # commands
         self.x_d = None
         self.R_d = None
@@ -107,6 +112,8 @@ class Arm:
         self.f_ff = np.zeros(6)
         self.grip_open = 0.04          # per-finger opening target, m
         self.grip_force = 15.0         # N per finger when closing on something
+        self._close_ref = None         # ramped closing target (grip_ctrl)
+        self._q_ref = None             # slewed posture reference (torque)
 
     # --- state -------------------------------------------------------------
     def q(self, d):
@@ -164,13 +171,24 @@ class Arm:
         e = np.concatenate([self.x_d - x, rot_error(self.R_d, R)])
         K = np.concatenate([self.kp_pos, self.kp_rot])
         D = 2 * ZETA * np.sqrt(K * np.clip(np.diag(Lam), 1e-6, None))
-        F = K * e - D * (v - self.v_d) + Lam @ self.a_d + self.f_ff
+        # -Lambda Jdot qdot: without it, null-space motion leaks into the task
+        # (0.23 mm at 0.46 rad/s of posture swing)
+        mujoco.mj_jacDot(self.m, d, self._jdp, self._jdr, d.site_xpos[self.site], self.m.site_bodyid[self.site])
+        Jdqd = np.concatenate([self._jdp[:, self.dofs] @ qd, self._jdr[:, self.dofs] @ qd])
+        F = K * e - D * (v - self.v_d) + Lam @ (self.a_d - Jdqd) + self.f_ff
         tau = J.T @ F
         # null-space posture (dynamically consistent)
         Jbar = MinvJT @ Lam
         N = _EYE7 - J.T @ Jbar.T
         q = d.qpos[self.qadr]
-        tau0 = M @ (NULL_KP * (self.q_null - q) - 2 * math.sqrt(NULL_KP) * qd)
+        # the posture reference slews at NULL_RATE toward q_null (goto()
+        # re-targets the posture at every move; a 0.4 rad step would whip the
+        # elbow)
+        if self._q_ref is None:
+            self._q_ref = q.copy()
+        step = NULL_RATE * CTRL_DT
+        self._q_ref += np.clip(self.q_null - self._q_ref, -step, step)
+        tau0 = M @ (NULL_KP * (self._q_ref - q) - 2 * math.sqrt(NULL_KP) * qd)
         tau += N @ tau0
         tau += d.qfrc_bias[self.dofs] + JOINT_DAMPING * qd
         return np.clip(tau, -self.limits, self.limits)
@@ -178,15 +196,27 @@ class Arm:
     def grip_ctrl(self, d):
         """Force on the split tendon (half of it reaches each finger).
 
-        Closing (grip_open below the current opening) is FORCE control: the
-        full grip_force per finger, whatever is between the pads -- a
-        position loop never saturates on a 16 mm brick and squeezed 15.6 N
-        where 27.6 N was asked for. Opening is a position loop.
+        Closing (grip_open below the current opening): the position target
+        ramps shut at GRIP_SPEED, and once the pads are held 2 mm behind it
+        (they are on the brick) the law is pure FORCE control at the full
+        grip_force per finger -- a position loop never saturates on a 16 mm
+        brick and squeezed 15.6 N where 27.6 N was asked for. The ramp is the
+        Franka hand's speed limit: unlimited force control shut the fingers
+        at 1.4 m/s and flicked a 2x4 out of the feeder (S3 step 12); a
+        velocity servo chatters on fingers this light at 500 Hz.
+        Opening is a position loop.
         """
         o = self.opening(d)
         od = float(d.qvel[self.finger_v].mean())
-        if self.grip_open < o - 0.0005:
-            return -2.0 * self.grip_force - 20.0 * od
+        if self.grip_open < o - 0.0005 or (self._close_ref is not None and self.grip_open < o):
+            if self._close_ref is None:
+                self._close_ref = o
+            self._close_ref = max(self.grip_open, self._close_ref - GRIP_SPEED * 0.002)
+            if o - self._close_ref > 0.002:
+                return -2.0 * self.grip_force - 20.0 * od
+            f = 4000.0 * (self._close_ref - o) - 60.0 * od
+            return float(np.clip(f, -2 * self.grip_force, 2 * 40.0))
+        self._close_ref = None
         f = 4000.0 * (self.grip_open - o) - 60.0 * od
         return float(np.clip(f, -2 * self.grip_force, 2 * 40.0))
 
