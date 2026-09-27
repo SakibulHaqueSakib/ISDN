@@ -10,6 +10,11 @@
 #   BrickSim/.venv   bricksim + Isaac Sim 5.1   BrickSim physics runs
 #   isdnenv          cuRobo + Viser             planner, viewer, force queries
 #   Issac            Isaac Sim 6.0 + Newton     dual_arm_sim, USD viewers, WP0
+#   mjenv            MuJoCo twin (CPU, v3.1)    tests/test_{clutch,planner,control,env}.py,
+#                                               orchestration/twin_executor.py, experiments/*,
+#                                               tasks/*, stability.py, bracing.py,
+#                                               planner.py --frame twin
+#                    (MJ_PY overrides the interpreter; requirements-twin.txt)
 set -eu
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,6 +22,7 @@ REPO="$(dirname "$HERE")"
 BRICKSIM_PY="$REPO/BrickSim/.venv/bin/python"
 ISDN_PY="$HERE/../isdnenv/bin/python"
 ISAAC_PY="$HOME/Codes/CAIRSS/Issac/bin/python"
+MJ_PY="${MJ_PY:-$HERE/../mjenv/bin/python}"
 
 [ $# -ge 1 ] || { sed -n '2,12p' "$0"; exit 1; }
 script="$1"; shift
@@ -29,6 +35,24 @@ elif [ -f "$HERE/$script" ]; then
     script="$(cd "$(dirname "$HERE/$script")" && pwd)/$(basename "$script")"
 else
     echo "no such script: $script" >&2; exit 1
+fi
+
+# The MuJoCo twin (v3.1): run as a module from brickassembly so the package
+# imports (sim.mj, orchestration, tasks, experiments) resolve.
+twin=0
+case "$script" in
+    */tests/test_clutch.py|*/tests/test_planner.py|*/tests/test_control.py|*/tests/test_env.py) twin=2 ;;
+    */twin_executor.py|*/experiments/*.py|*/tasks/*.py|*/stability.py|*/bracing.py|*/sim/mj/*.py) twin=1 ;;
+    */planner.py) case " $* " in *" --frame twin "*|*" --frame=twin "*) twin=1 ;; esac ;;
+esac
+if [ "$twin" -ne 0 ]; then
+    cd "$HERE"
+    rel="${script#$HERE/}"
+    if [ "$twin" -eq 2 ]; then
+        exec "$MJ_PY" -m pytest "$rel" "$@"
+    fi
+    mod="${rel%.py}"
+    exec "$MJ_PY" -u -m "${mod//\//.}" "$@"
 fi
 
 case "$script" in

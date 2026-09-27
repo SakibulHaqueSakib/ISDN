@@ -10,8 +10,8 @@ cores (~1 s of wall time per 10 s episode):
   * the placer is a 1.5 kg floating HAND body under the arm's impedance law
     (control.KP_POS/KP_ROT, D = 2 zeta sqrt(K m), gravity compensated) -- the
     Panda's operational-space inertia at the insertion pose is 1-3 kg -- with
-    the brick a rigid child of it (the grasp). The wrist F/T is a force
-    sensor between hand and brick. The same bricks, baseplate and breakable
+    the brick a rigid child of it (the grasp). The wrist F/T is the hand's
+    free-joint constraint force, low-passed like runtime.FT_TAU. The same bricks, baseplate and breakable
     clutch joint model (sim/joint_model/clutch.py) as the full cell.
   * actions are §5.2's 6-D EE-frame pose increments (+-2 mm / +-2 deg, tanh,
     integrated by the policy-level action integrator) plus a 7th channel: the
@@ -42,8 +42,8 @@ Critic privileges (+26), each inferable from force history per [InformedAAC]:
   max joint utilisation (1), zeros (3).
 
 The "believed" target is the true socket plus the handoff estimate error
-(sigma 1.5 mm / 1.5 deg): what the plan and ground-truth-ish perception
-give. Curriculum (§5.4) sets the INITIAL error of the start pose from the
+(sigma 0.8 mm / 1 deg per axis): what the plan and a calibrated cell give
+without looking. Curriculum (§5.4) sets the INITIAL error of the start pose from the
 true target; the believed target is what the controller aims at.
 """
 
@@ -70,9 +70,13 @@ PRE_Z = 0.025                     # start above the seat (§2.5 pre-insertion po
 DPOS, DROT = 0.002, math.radians(2.0)
 LEASH = 0.010
 KP_POS = np.array([1200.0, 1200.0, 600.0])
-KP_ROT_INSERT = 150.0             # skills.INSERT_KP_ROT
+KP_ROT_INSERT = np.array([150.0, 150.0, 10.0])   # roll/pitch skills.INSERT_KP_ROT; yaw
+                                  # compliant: in the real grasp the brick twists in the
+                                  # pads, and a 2x4 more than 0.4 deg off in yaw wedges on
+                                  # diagonal studs (0.1 mm clearance over 16 mm)
 ZETA = 1.0
-BELIEF_SIGMA = (0.0015, math.radians(1.5))
+BELIEF_SIGMA = (0.0008, math.radians(1.0))   # a calibrated cell's absolute accuracy
+FT_TAU = 0.005                    # s, the wrist sensor's low-pass (runtime.FT_TAU)
 VISION_SIGMA = (0.0003, math.radians(0.3))
 TYPES = ["1x1", "1x2", "1x4", "1x6", "2x2", "2x3", "2x4", "2x6"]
 OBS_DIM = 121
@@ -111,9 +115,13 @@ class ScriptedBase:
         self.hist = []
 
     def __call__(self, env):
+        """Increments act on the impedance TARGET x_d (as skills.insert sets
+        x_d directly); computing them from the lagging hand position let the
+        target run away along the spiral."""
         dt = 1.0 / POLICY_HZ
         self.t += dt
         x, R = env.hand_pose()
+        xd = env.x_d
         tb, Rb = env.believed
         dp = np.zeros(3)
         drot = np.zeros(3)
@@ -121,15 +129,14 @@ class ScriptedBase:
         z_rel = x[2] - tb[2]              # brick bottom above the believed seat (both TCP-level)
         f_up = env.ft_world()[2]
         if self.phase == "align":
-            e = tb[:2] - x[:2]
-            dp[:2] = np.clip(e, -DPOS, DPOS)
-            drot = C.rot_error(Rb, R)
-            if np.linalg.norm(e) < 0.0003 and np.linalg.norm(drot) < math.radians(0.3):
+            dp[:2] = np.clip(tb[:2] - xd[:2], -DPOS, DPOS)
+            drot = C.rot_error(Rb, env.R_d)
+            if np.linalg.norm(tb[:2] - x[:2]) < 0.0003 and np.linalg.norm(C.rot_error(Rb, R)) < math.radians(0.3):
                 self.phase = "descend"
         elif self.phase == "descend":
             v = 0.005 if z_rel < Bk.STUD_H + 0.003 else 0.020
             dp[2] = -v * dt
-            dp[:2] = np.clip(tb[:2] - x[:2], -0.0005, 0.0005)
+            dp[:2] = np.clip(tb[:2] - xd[:2], -0.0005, 0.0005)
             if f_up > 3.0:
                 self.centre = x.copy()
                 self.phase = "search" if z_rel > 0.00148 + 0.00015 else "press"
@@ -137,6 +144,9 @@ class ScriptedBase:
                 self.hist = []
         elif self.phase == "press":
             press = min(1.0, self.t / 0.5) * self.press
+            drot = C.rot_error(Rb, env.R_d)          # level again after the wiggle
+            dp[:2] = x[:2] - xd[:2]       # laterally free: the chamfer centres the brick
+            dp[2] = min(0.0, x[2] - 0.001 - xd[2])
             self.hist.append(x[2])
             if len(self.hist) > 8 and self.hist[-9] - self.hist[-1] < 0.00003 and self.t > 0.9:
                 self.phase, self.t, self.centre = "search", 0.0, x.copy()
@@ -146,10 +156,13 @@ class ScriptedBase:
             th = math.sqrt(2 * s / a) if s > 0 else 0.0
             r = min(a * th, 0.002)
             goal = self.centre[:2] + r * np.array([math.cos(th), math.sin(th)])
-            dp[:2] = np.clip(goal - x[:2], -DPOS, DPOS)
+            dp[:2] = np.clip(goal - xd[:2], -DPOS, DPOS)
+            dp[2] = min(0.0, x[2] - 0.001 - xd[2])
             press = 8.0
+            # the wiggle is absolute about the aligned orientation (as
+            # increments, the target integrated the sine into a standing tilt)
             w = math.radians(1.5) * math.sin(2 * math.pi * 2.0 * self.t)
-            drot = np.array([w, 0.7 * w, 0.0]) * 0.2
+            drot = C.rot_error(C.rotvec_to_mat([w, 0.7 * w, 0.0]) @ Rb, env.R_d)
             if z_rel < 0.00148 or self.t > 5.0:
                 self.phase, self.t, self.hist = "press", 0.0, []
         # to the policy's units: EE-frame increments in [-1, 1], press in [0, 1]
@@ -162,8 +175,13 @@ class ScriptedBase:
 
 class InsertionEnv:
     def __init__(self, stage=0, mode="residual", reward="sparse", vision=True, dr=True,
-                 seed=0, force_budget=None):
+                 seed=0, force_budget=None, joint="calibrated"):
+        """joint: "calibrated" (§2.3.3 / WP2: 8.9 N insertion, 11.3 N break per
+        stud, 1.2 mm gate) or "handtuned" (ablation A10: the light, lenient
+        joint a simulation-first build would have used -- 3 N / 5 N per stud,
+        2 mm gate, as BrickSim's default gate)."""
         self.stage, self.mode, self.reward_kind = stage, mode, reward
+        self.joint = joint
         self.vision, self.dr = vision, dr
         self.rng = np.random.default_rng(seed)
         self.fixed_budget = force_budget
@@ -214,20 +232,12 @@ class InsertionEnv:
             h.mass = HAND_MASS
             h.inertia = [HAND_I] * 3
 
-        def post(spec):
-            # the wrist F/T: the force between the hand and its child, the brick
-            spec.body("target").add_site(name="target/ft", pos=[0, 0, TCP_ABOVE_BOTTOM],
-                                         size=[0.002, 0, 0])
-            spec.add_sensor(name="ft_force", type=mujoco.mjtSensor.mjSENS_FORCE,
-                            objtype=mujoco.mjtObj.mjOBJ_SITE, objname="target/ft")
-            spec.add_sensor(name="ft_torque", type=mujoco.mjtSensor.mjSENS_TORQUE,
-                            objtype=mujoco.mjtObj.mjOBJ_SITE, objname="target/ft")
 
         # the target brick hangs from the hand, TCP_ABOVE_BOTTOM below it
         attach = {"target": ("hand", [0, 0, -TCP_ABOVE_BOTTOM], [1, 0, 0, 0])}
         pre_ids = [b["id"] for b in bricks if b["id"] != "target"]
         self.cell = S.build_cell(plan, preplaced=set(pre_ids), with_arms=False, pre=pre,
-                                 attach=attach, post=post)
+                                 attach=attach)
         m, d = self.cell.model, self.cell.data
         self.m, self.d = m, d
         self.hand = m.body("hand").id
@@ -235,18 +245,25 @@ class InsertionEnv:
         self.cm = CL.ClutchModel(self.cell)
         for b in pre_ids:
             self.cm.mate_now(b)
-        self.fadr = m.sensor_adr[m.sensor("ft_force").id]
-        self.tadr = m.sensor_adr[m.sensor("ft_torque").id]
+        self.hdof = m.jnt_dofadr[m.joint("hand/free").id]
         # domain randomisation (§5.5, the subset that exists in this twin)
         self.dr_params = np.array([0.6, 11.3, 1.2])
+        f_ins, f_brk, gate0 = (8.9, 11.3, 0.0012) if self.joint == "calibrated" else \
+            (3.0, 5.0, 0.0020)
+        self.cm.p.f_insert_per_stud = f_ins
+        self.cm.p.gate_lateral = gate0
+        for st in self.cm.conn_states:
+            st.patch.coef *= st.patch.f_break / f_brk
+            st.patch.f_break = f_brk
+        self.f_ins = f_ins
         if self.dr:
             mu = self.rng.uniform(0.3, 0.9)
             for g in range(m.ngeom):
                 if m.body(m.geom_bodyid[g]).name.startswith(("target", "nb")) or "stud" in m.geom(g).name:
                     m.geom_friction[g, 0] = mu
-            gate = self.rng.uniform(0.0009, 0.0015)
+            gate = gate0 * self.rng.uniform(0.75, 1.25)
             self.cm.p.gate_lateral = gate
-            fb = self.rng.uniform(9.0, 13.5)          # narrowed to the WP2 range (§5.5 note)
+            fb = f_brk * self.rng.uniform(0.8, 1.2)   # narrowed to the WP2 range (§5.5 note)
             for st in self.cm.conn_states:
                 st.patch.coef *= st.patch.f_break / fb
                 st.patch.f_break = fb
@@ -257,9 +274,11 @@ class InsertionEnv:
             self.gain = 1.0
             self.ft_bias = np.zeros(6)
         n = self.n_studs
-        self.budget = self.fixed_budget or (self.rng.uniform(1.25, 1.8) if self.dr else 1.5) \
-            * n * F_INSERT_PER_STUD
-        self.press_nom = 1.3 * n * F_INSERT_PER_STUD
+        # §5.5's U(20, 45) N cannot seat a 2x4 (8 x 8.9 = 71 N): the budget is
+        # drawn relative to the seating force instead (v3.1 amendment)
+        self.budget = self.fixed_budget or (self.rng.uniform(1.55, 2.0) if self.dr else 1.7) \
+            * n * f_ins
+        self.press_nom = 1.3 * n * f_ins
         # targets: true, believed (handoff estimate), fine (vision)
         self.true_tgt = (tgt + [0, 0, TCP_ABOVE_BOTTOM], np.eye(3))
         eb = self.rng.normal(0, BELIEF_SIGMA[0], 2)
@@ -269,6 +288,7 @@ class InsertionEnv:
         yv = self.rng.normal(0, VISION_SIGMA[1])
         self.fine = (self.true_tgt[0] + [ev[0], ev[1], 0.0], _yaw_rot(yv))
         mujoco.mj_forward(m, d)
+        self.ft_f = np.zeros(6)
         x, R = self.hand_pose()
         self.x_d, self.R_d = x.copy(), R.copy()
         self.f_press = 0.0
@@ -290,12 +310,18 @@ class InsertionEnv:
 
     def ft_world(self):
         """Environment wrench on the brick, as the wrist feels it (world
-        frame, force N, torque N*m about the TCP), with bias."""
-        R = self.d.xmat[self.bid].reshape(3, 3)
-        f = self.d.sensordata[self.fadr:self.fadr + 3]
-        t = self.d.sensordata[self.tadr:self.tadr + 3]
-        mg = self.m.body_mass[self.bid] * self.m.opt.gravity
-        return np.concatenate([-(R @ f) - mg, -(R @ t)]) + self.ft_bias
+        frame, force N, torque N*m about the TCP): low-passed, with bias."""
+        return self.ft_f + self.ft_bias
+
+    def _ft_raw(self):
+        """The environment's wrench on hand + brick: the hand free joint's
+        constraint force (contacts, clutch tendons and welds alike). A MuJoCo
+        force sensor between hand and brick misses the clutch tendons -- they
+        are joint-space forces, absent from cfrc_ext -- and read 0.6 N while
+        the interference held 7 N. Force world frame; torque about the TCP."""
+        f = self.d.qfrc_constraint[self.hdof:self.hdof + 6]
+        R = self.d.xmat[self.hand].reshape(3, 3)
+        return np.concatenate([f[:3], R @ f[3:]])
 
     def _true_err(self):
         x, R = self.hand_pose()
@@ -313,13 +339,17 @@ class InsertionEnv:
         w, vl = v[:3], v[3:]
         mass = HAND_MASS + m.body_mass[self.bid]
         K = KP_POS * self.gain
+        if self.mode == "residual" and self.base.phase == "search":
+            K = K.copy()
+            K[:2] = 4000.0 * self.gain            # skills.SEARCH_KP_XY
         D = 2 * ZETA * np.sqrt(K * mass)
         F = K * (self.x_d - x) - D * vl
         F[2] += -self.f_press
         F -= mass * m.opt.gravity
-        Kr = KP_ROT_INSERT * self.gain
-        Dr = 2 * ZETA * math.sqrt(Kr * HAND_I)
-        T = Kr * C.rot_error(self.R_d, R) - Dr * w
+        Kr = KP_ROT_INSERT * self.gain                   # in the hand frame
+        Dr = 2 * ZETA * np.sqrt(Kr * HAND_I)
+        e = R.T @ C.rot_error(self.R_d, R)
+        T = R @ (Kr * e - Dr * (R.T @ w))
         d.xfrc_applied[self.hand, :3] = F
         d.xfrc_applied[self.hand, 3:] = T
 
@@ -342,14 +372,15 @@ class InsertionEnv:
         self.f_press = (a[6] + 1) / 2 * self.budget
         m, d = self.m, self.d
         fz_max = 0.0
+        a_f = CTRL_EVERY * m.opt.timestep / (FT_TAU + CTRL_EVERY * m.opt.timestep)
         for k in range(PHYS_PER_POLICY):
             if k % CTRL_EVERY == 0:
                 self._impedance()
             mujoco.mj_step(m, d)
             self.cm.update(d)
-            if k % 5 == 4:
-                f = self.ft_world()
-                fz_max = max(fz_max, float(np.linalg.norm(f[:3])))
+            if k % CTRL_EVERY == CTRL_EVERY - 1:
+                self.ft_f += a_f * (self._ft_raw() - self.ft_f)
+                fz_max = max(fz_max, float(np.linalg.norm(self.ft_f[:3])))
         if not np.isfinite(d.qpos).all() or d.warning[mujoco.mjtWarning.mjWARN_BADQACC].number:
             self.done_reason = "diverged"
             return self._obs(), -1.0, True, self._info()

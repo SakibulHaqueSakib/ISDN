@@ -2,9 +2,10 @@
 ## Master Project Report & Executable Build Specification
 
 **Author:** Sakib · HKUST, Dept. of Mechanical & Aerospace Engineering
-**Version:** 3.0 — 15 September 2026
+**Version:** 3.1 — 27 September 2026 (amends 3.0 of 15 September 2026; see §0.6 and §7.7)
 **Supersedes:** plan v1 (MuJoCo), plan v2 (Isaac Lab + Newton), literature validation report
 **Status:** Normative. This document is the single source of truth for the project.
+**Results:** `Docs/results_report.md` (v3.1 execution: gates G0–G7, ablation A6, A1/A3/A4/A10).
 
 ---
 
@@ -55,6 +56,12 @@ This project has two possible framings, and they have different deliverables:
 - **(B) ISDN5240 RoboFab course project** — the course template asks for "the object or installation you plan to fabricate," implying a physical artifact.
 
 If (B) applies, §3 (Work Packages) still holds but a physical execution phase must be appended, and the schedule in §5.2 does not fit. **Resolve this with the course instructor before WP0 begins.** Do not assume simulation-only is acceptable for a fabrication course.
+
+## 0.6 v3.1 execution note
+
+Version 3.1 records how the plan was actually executed end-to-end. The GPU workstation stack of §2.4 (Isaac Sim / Isaac Lab, Newton, BrickSim, cuRobo) was used for WP0–WP2 and the Newton prototype (ledger up to 2026-09-24). The remaining work packages were executed in a **CPU MuJoCo twin** of the same cell (`brickassembly/sim/mj/`, `requirements-twin.txt`), because the execution environment for v3.1 had no GPU and no Isaac/Docker. The twin reproduces the specification where it matters for the contribution — the §2.3 hollow-shell brick geometry, a breakable joint calibrated to WP2's numbers (8.9 N insertion / 11.3 N break per stud, 1.2 mm gate), two Franka Panda arms under the §2.5 impedance law, and the §2.6 JSON contracts — and departs from it where the plan assumed GPU scale. Every departure is an amendment in §7.7, cross-referenced to a ledger entry (`ledger.jsonl`, type `deviation`/`cut`/`decision`).
+
+The mapping is: BrickSim's joint → `sim/joint_model/clutch.py` + `capacity.py`; the StableLego force balance → `stability.py`; bracing → `bracing.py`; cuRobo accessibility → IK reachability + a twin collision check (`sim/mj/checks.py`); the Isaac Lab `DirectRLEnv` → `tasks/insertion_env.py`; `rsl_rl` → `tasks/ppo.py`; the py_trees executor → `orchestration/twin_executor.py`; WP8 → `experiments/`.
 
 ---
 
@@ -1336,7 +1343,39 @@ Keys are used throughout this document.
 | Calibration | VBD deformable reference (novel) | analytic [MechanicsSnapFit] fit; deformable optional, 3-day cap | §1.5.3 |
 | Accessibility claim | "under-explored contribution" | **retracted**; cite [BricksToBots] | §1.2.5 |
 | A6 | one ablation among ten | **main experiment** | §1.6 |
+| **v3.1** Execution platform (WP3–WP8) | Isaac Lab + Newton + BrickSim + cuRobo on GPU | CPU MuJoCo twin of the same cell | §0.6, §7.7 M1 |
+| **v3.1** Stabilizer | Allegro hand pressing down | second parallel jaw **grasping** the structure; coordinated feed-forward | §7.7 M4 |
+| **v3.1** Structures | S3 arch ~18, S4 ~24, S5 ~31 bricks | S3 corbelled bridge 16, S4 staircase 19, S5 tower + balcony 26 | §7.7 M3 |
+| **v3.1** Force targets | 30 N peak, budget U(20, 45) N | normalised by the seating force n·f_insert | §7.7 M6 |
+| **v3.1** RL scale | Isaac Lab, 3–6 h GPU runs, 183-D obs | reduced CPU insertion MDP, 300 k samples, 121-D obs + press channel | §7.7 M8 |
+| **v3.1** Cuts | — | tiling, A2, A5, A7, A8, A9, WP6 | §7.7 M10 |
+
+## 7.7 v3.1 amendments in detail
+
+Each amendment names what changed, why, and the ledger entry that records it. Measured consequences are in `Docs/results_report.md`.
+
+**M1 — Platform (deviation `v31_cpu_twin`).** WP3–WP8 run in a MuJoCo 3.3.7 twin on CPU: two Menagerie Pandas (pinned SHA c96a32d) under torque control with the §2.5 operational-space impedance law (K = 1200/1200/600 N/m, 40 N·m/rad, D = 2ζ√(KΛ), dynamically consistent null space, −ΛJ̇q̇ compensation), hollow-shell bricks per §2.3.1, contact filtering per §2.3.2 by collision bitmasks, and a 500 Hz controller over 1 kHz physics. Brick rotational inertia is scaled ×10 for numerical conditioning (mass, gravity and all contact/joint forces unchanged). Throughput is ~0.5× real time per cell, so every trial count in §4.2 is met by parallel CPU workers, not vectorised environments.
+
+**M2 — Joint model (decision `v31_clutch_model`).** The breakable joint is a pre-allocated weld per connection plus a stud-interference tendon (Coulomb static lock + kinetic friction at n·f_insert) and the §2.3.3 gate (lateral < 1.2 mm, dz ∈ [−0.3, 1.0] mm, tilt < 4°, yaw < 5° modulo symmetry, push > 4 N, 40 ms dwell, 50 ms ramp). Break when the per-connection utilisation — the closed form of the plastic stud-capacity LP, equal to BrickSim's `static_solve` to 1e-15 on that LP — stays ≥ 1 for 5 ms. The G1 test suite (`tests/test_clutch.py`, 11 tests) is the acceptance evidence. Known fidelity difference: a half-lapped 2x4 carries 5.65 N/stud here vs 4.06 in BrickSim (per-connection vs global capacity).
+
+**M3 — Structures (deviation `v31_benchmark_structures`; D14 stands).** The StableLego samples remain unavailable, so S1–S5 are hand-authored and the tiler is cut per §WP3's cut order ("keep bracing, cut tiling"): S1 6-brick column; S2 12-brick staggered wall; **S3 16-brick corbelled bridge** — a symmetric arch was tried first and is unbraceable by one stabilizer (its crown rests on both corbel stacks, s = 2.56 either way), and the second corbel is a 2x6 lapping the first over all 8 studs, because as a 2x4 lapping 4 studs no grasp that clears the placer's hand could hold it; S4 19-brick staircase; S5 26-brick tower with a corbelled balcony and a tip sub-structure. S3 and S5 fail single-arm by the force model (max utilisation 3.43 and 2.52) and in the twin (G2). The §3.3 drop test's "0.5 N lateral impulse" is applied as 0.5 N for 0.1 s along x and y.
+
+**M4 — Bracing semantics (decision `v31_brace_grasp`; cut A9).** D8's Allegro stabilizer is replaced by a second parallel jaw that **grasps** the structure across its x faces, leaning 45° away from the placer. In the force model a brace is a bounded wrench on each gripped brick: pad friction μ·2·grip shared by pad contact area (a brick counts as gripped only with ≥ 4 mm of pad height on it), a pad couple μ·2·grip·5 mm about the grip axis, and a 60 N arm limit, as friction octagons. `none`, `nearest` and `weakest_joint` share one trigger (predicted utilisation × 1.5 ≥ 1, §3.6 step 4), so A6 varies only where the stabilizer holds. The stabilizer is **coordinated**: it feeds forward the least-effort LP wrench that keeps every joint under 0.5 at the press the placer actually applies (1.3·n·f_insert), scaled by the placer's commanded press. A passive stiff hold cannot take its LP share — the welded joints are far stiffer than any arm, so they carry the load and break first (ledger `v31_passive_brace_fails`). Grasp candidates are checked for hand/hand and hand/brick collision in the twin (`checks.BraceClearance`), replacing a fixed 28 mm clearance rule that both admitted colliding grasps and excluded feasible low ones.
+
+**M5 — Grasping (deviation `v31_grip_force`).** The §WP4.1 15 N grip lets a brick slide in the fingers under a 70 N press: grip = clip(0.8 × press, 15, 70) N per finger, the fingers close at ≤ 0.08 m/s (the Franka hand's limit; unrestricted force control flicked bricks out of the feeder), and the grasp slides toward the mating-patch centroid (a corbel gripped at its centre tipped 9°). The brace grips at 70 N.
+
+**M6 — Force targets (deviation `v31_force_targets`).** A brick needs n × 8.9 N to seat (a 2x4: 71 N; §2.3.3 / WP2), so G4's "mean peak force < 30 N" and §5.5's force budget U(20, 45) N are unattainable as written. Peak force is reported normalised by the seating force, and the budget is drawn as U(1.55, 2.0) × n·f_insert. G4's force criterion is read as "peak ≤ 1.6 × seating force".
+
+**M7 — Scripted inserter and executor (decision `v31_scripted_inserter`).** §WP4.4's spiral search is kept, with measured fixes: fast descent to 3 mm above the stud tops, then 5 mm/s; contact on the stud tops (known from the plan) → search, else press; a laterally free press ramped to 1.3·n·f_insert; stuck (no 0.03 mm progress in 0.4 s) → search at 4000 N/m laterally; "in the cavity" requires a level wrist (< 0.12 N·m). The behaviour tree is §WP4 item 5's in py_trees; a joint break anywhere during a placement ends the assembly (a popped joint can re-seat under the press, but the structure has moved).
+
+**M8 — WP5 at CPU scale (deviation `v31_rl_scale`).** The insertion MDP is a reduced cell: a 1.5 kg floating hand (the Panda's operational-space inertia at the insertion pose) under the same impedance law, the brick rigidly held, the same bricks and joint model; 20 Hz policy, 200 steps. The action gains a **press-force channel** (7-D): with the §2.5 impedance and the integrator's 10 mm leash an end-to-end policy can push only 6 N, and a 2x4 needs 71 N. The actor observation is 121-D (proprioception without joints, F/T history, task context, a 9-D "vision" group, brace state, budget, previous action); the critic adds 26 force-inferable privileges. The "vision" group is a stand-in for the wrist-camera embedding: a target estimate with σ 0.3 mm / 0.3°, against the handoff belief's σ 0.8 mm / 1° that both configurations see; R4 zeroes it. Runs are 300 k samples of a small PPO (`tasks/ppo.py`) instead of `rsl_rl`. The yaw of the held brick is compliant (10 N·m/rad): a 2x4 more than 0.4° off in yaw wedges on diagonal studs, and in the real grasp it twists in the pads. `tests/test_env.py` replaces "Newton and PhysX agree" with a determinism check (one backend).
+
+**M9 — Accessibility (deviation `v31_accessibility`).** cuRobo's batched swept-volume check (§3.4) is replaced by the planner's finger-clearance rule, IK reachability of every pre-insertion, target and brace pose in the twin, and the brace clearance check of M4. A 2x2 brick inserted between two in-line neighbours is flagged `accessible: false`: the 17.5 mm pads overhang its 15.8 mm face and touch the neighbours' coplanar faces. This is reported, not hidden; its consequence is measured in the G3 benchmark.
+
+**M10 — Cuts (entries of type `cut`).** Tiling (D14 structures), A2 (no vision pipeline exists to ablate against), A5, A7, A8, A9 (a single stabilizer end effector), and WP6 (conditional on A3; see the results report). A6 and A3 were never cut (§4.3). A10 is run as "WP5 policy trained on the calibrated joint vs on a hand-tuned light joint (3 N insertion / 5 N break per stud, 2 mm gate), both evaluated on the calibrated joint".
+
+**M11 — A6 unit of analysis (decision `v31_a6_protocol`).** A6 is measured on **critical-step trials**: the structure is pre-placed and mated up to a step that any strategy braces, the step is executed by the behaviour tree with each strategy on matched seeds (feeder pose, handoff error, F/T noise), and success means the brick seats with **no joint breaking anywhere** during the step. n = 20 seeds per cell on S3; S5 at the seed count the remaining compute allowed (stated with the result). Full assemblies are the G3 benchmark.
 
 ---
 
-*End of document. Version 3.0. Amendments MUST be recorded in the ledger and reflected in §7.6.*
+*End of document. Version 3.1. Amendments MUST be recorded in the ledger and reflected in §7.6.*
