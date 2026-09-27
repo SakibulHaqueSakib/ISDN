@@ -175,11 +175,19 @@ class RLInserter:
             arm.f_ff[:] = 0
             arm.f_ff[2] = -f_press
             fz_max = 0.0
+            # the policy acts at 20 Hz, but the cell stops the press within
+            # 2 ms of the joint seating or the budget being crossed, as the
+            # scripted skill does: pressing on for the rest of a 50 ms step
+            # after a snap-through overshot the budget and tore a 2x2 column
+            # off the baseplate (G6, S3 step 2)
             for _ in range(int(round(dt / sim.m.opt.timestep)) // 2):
                 sim.step()
                 sim.step()
                 f = self.ft_tcp()
                 fz_max = max(fz_max, float(np.linalg.norm(f[:3])))
+                if clutch.bricks[bid].state == "MATED" or fz_max > self.budget:
+                    arm.f_ff[:] = 0
+                    break
             steps += 1
             f = self.ft_world()
             peak = max(peak, fz_max)
