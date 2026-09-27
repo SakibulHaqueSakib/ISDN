@@ -1,0 +1,225 @@
+diff --git a/demos/demo_assembly.py b/demos/demo_assembly.py
+index 0b3c858..a9fb575 100644
+--- a/demos/demo_assembly.py
++++ b/demos/demo_assembly.py
+@@ -412,8 +412,11 @@ async def assemble_lego_part(
+     specified connection parameters. It relies on physical interaction (pressing)
+     to trigger the automatic assembly connection detection.
+     """
+-    press_depth = 0.0005
+-    press_duration = 1.0
++    # Made tunable: the press force a position-controlled overshoot develops
++    # is stiffness x depth, and at 0.5 mm it measured ~1-2.6 N against the
++    # 8.9 N the §2.3.3 gate asks for. Overridable as demo.PRESS_DEPTH.
++    press_depth = globals().get("PRESS_DEPTH", 0.0005)
++    press_duration = globals().get("PRESS_DURATION", 1.0)
+ 
+     print(f"--- Attempting to assemble {hole_brick_path} onto {stud_brick_path} ---")
+     print(f"-> Offset: {offset}, Yaw Index: {yaw_index}")
+diff --git a/native/tools/static_solve.cpp b/native/tools/static_solve.cpp
+index 7e2ee84..ed29ac9 100644
+--- a/native/tools/static_solve.cpp
++++ b/native/tools/static_solve.cpp
+@@ -41,12 +41,72 @@ std::tuple<Graph, ImportedMapping> load_lego_graph(const std::string &path) {
+ 	return {std::move(g), std::move(mapping)};
+ }
+ 
++// An external load applied to one part, in the root frame. Without one of
++// these the tool reproduces its original gravity-only behaviour exactly.
++struct AppliedLoad {
++	std::int64_t json_part_id;
++	Eigen::Vector3d force{Eigen::Vector3d::Zero()};
++	Eigen::Vector3d torque{Eigen::Vector3d::Zero()};
++	bool has_point{false};
++	Eigen::Vector3d point{Eigen::Vector3d::Zero()};
++};
++
++static std::vector<double> parse_csv(const std::string &s) {
++	std::vector<double> out;
++	std::size_t start = 0;
++	while (start <= s.size()) {
++		std::size_t comma = s.find(',', start);
++		std::string field =
++		    s.substr(start, comma == std::string::npos ? std::string::npos
++		                                              : comma - start);
++		out.push_back(std::stod(field));
++		if (comma == std::string::npos) {
++			break;
++		}
++		start = comma + 1;
++	}
++	return out;
++}
++
+ int main(int argc, char **argv) {
+-	if (argc != 2) {
+-		eprintln("Usage: static_solve <input_lego_json>");
++	std::vector<AppliedLoad> loads;
++	std::string input_path;
++	for (int i = 1; i < argc; ++i) {
++		std::string arg = argv[i];
++		if ((arg == "--load" || arg == "--torque") && i + 1 < argc) {
++			// --load  id,fx,fy,fz[,px,py,pz]   force (N), point in root frame (m)
++			// --torque id,tx,ty,tz             pure couple (Nm)
++			std::vector<double> v = parse_csv(argv[++i]);
++			if (!(v.size() == 4 || (arg == "--load" && v.size() == 7))) {
++				eprintln("Bad {}: expected id,x,y,z{}", arg,
++				         arg == "--load" ? " or id,fx,fy,fz,px,py,pz" : "");
++				return 1;
++			}
++			AppliedLoad ld;
++			ld.json_part_id = static_cast<std::int64_t>(v[0]);
++			if (arg == "--load") {
++				ld.force = Eigen::Vector3d(v[1], v[2], v[3]);
++				if (v.size() == 7) {
++					ld.has_point = true;
++					ld.point = Eigen::Vector3d(v[4], v[5], v[6]);
++				}
++			} else {
++				ld.torque = Eigen::Vector3d(v[1], v[2], v[3]);
++			}
++			loads.push_back(ld);
++		} else if (input_path.empty()) {
++			input_path = arg;
++		} else {
++			eprintln("Unexpected argument: {}", arg);
++			return 1;
++		}
++	}
++	if (input_path.empty()) {
++		eprintln("Usage: static_solve <input_lego_json> "
++		         "[--load id,fx,fy,fz[,px,py,pz]] [--torque id,tx,ty,tz]");
+ 		return 1;
+ 	}
+-	auto [graph, mapping] = load_lego_graph(argv[1]);
++	auto [graph, mapping] = load_lego_graph(input_path);
+ 	eprintln("Loaded LegoGraph with {} parts and {} connections.",
+ 	         graph.parts().size(), graph.connection_segments().size());
+ 
+@@ -127,8 +187,14 @@ int main(int argc, char **argv) {
+ 	in.J.resize(num_parts, 3);
+ 	in.H.resize(num_parts, 3);
+ 	in.dt = dt;
+-	double unbalanced_force = 0.0;
++	Eigen::Vector3d unbalanced_force = Eigen::Vector3d::Zero();
+ 	Eigen::Vector3d unbalanced_torque = Eigen::Vector3d::Zero();
++	for (const AppliedLoad &ld : loads) {
++		if (!mapping.parts.contains(ld.json_part_id)) {
++			eprintln("No part with id {} in the topology.", ld.json_part_id);
++			return 1;
++		}
++	}
+ 	Eigen::Vector3d root_com =
+ 	    graph.parts().visit(rep_part, [&](const auto &pw) {
+ 		    const auto &part = pw.wrapped();
+@@ -150,20 +216,31 @@ int main(int argc, char **argv) {
+ 		in.q.row(index) = q_root_part.normalized().coeffs();
+ 		in.c.row(index) = t_root_part + q_root_part * com;
+ 		if (pid != rep_part) {
+-			in.J.row(index) = Eigen::Vector3d(0.0, 0.0, -mass * gravity * dt);
+-			in.H.row(index).setZero();
+-			unbalanced_force += -mass * gravity;
+-			unbalanced_torque +=
+-			    (t_root_part + q_root_part * com - root_com)
+-			        .cross(Eigen::Vector3d(0.0, 0.0, -mass * gravity));
++			Eigen::Vector3d com_root = t_root_part + q_root_part * com;
++			Eigen::Vector3d F(0.0, 0.0, -mass * gravity);
++			Eigen::Vector3d T = Eigen::Vector3d::Zero();
++			for (const AppliedLoad &ld : loads) {
++				if (mapping.parts.at(ld.json_part_id) != pid) {
++					continue;
++				}
++				F += ld.force;
++				// a force off the part's centre of mass is also a couple on it
++				Eigen::Vector3d p = ld.has_point ? ld.point : com_root;
++				T += ld.torque + (p - com_root).cross(ld.force);
++			}
++			in.J.row(index) = F * dt;
++			in.H.row(index) = T * dt;
++			unbalanced_force += F;
++			unbalanced_torque += (com_root - root_com).cross(F) + T;
+ 		}
+ 	}
+-	eprintln("Unbalanced force: {:.6e} N", unbalanced_force);
++	eprintln("Unbalanced force: [{:.6e}, {:.6e}, {:.6e}] N", unbalanced_force.x(),
++	         unbalanced_force.y(), unbalanced_force.z());
+ 	eprintln("Unbalanced torque: [{:.6e}, {:.6e}, {:.6e}] Nm",
+ 	         unbalanced_torque.x(), unbalanced_torque.y(),
+ 	         unbalanced_torque.z());
+ 	int row_root = sys.part_id_to_index().at(rep_part);
+-	in.J.row(row_root) = Eigen::Vector3d{0, 0, -unbalanced_force * dt};
++	in.J.row(row_root) = -unbalanced_force * dt;
+ 	in.H.row(row_root) = -unbalanced_torque * dt;
+ 
+ 	BreakageState state = checker.build_initial_state(sys, in);
+@@ -212,6 +289,44 @@ int main(int argc, char **argv) {
+ 		}
+ 	}
+ 	result["clutch_utilizations"] = utilizations;
++
++	// Per-clutch generalized force. sol.x is laid out as
++	//   [contact-vertex forces (num_contact_vertices)] ++ [9 per clutch]
++	// and the first of each 9 is the clutch's axial force in newtons (a 35.6 N
++	// press on a 4-stud joint reads 8.9). The remaining two force components
++	// and the six beta/gamma slope terms are emitted as-is; only the axial one
++	// has been checked against a known load.
++	nlohmann::ordered_json clutch_forces;
++	if (sol.x.size() >= static_cast<Eigen::Index>(sys.num_contact_vertices() +
++	                                              9 * sys.num_clutches())) {
++		for (int k = 0; k < sys.num_clutches(); ++k) {
++			ConnSegId csid = sys.clutch_ids().at(k);
++			Eigen::Index base =
++			    static_cast<Eigen::Index>(sys.num_contact_vertices()) + 9 * k;
++			nlohmann::ordered_json entry;
++			entry["axial_n"] = sol.x(base);
++			entry["force"] = {sol.x(base), sol.x(base + 1), sol.x(base + 2)};
++			nlohmann::ordered_json slopes = nlohmann::ordered_json::array();
++			for (int i = 3; i < 9; ++i) {
++				slopes.push_back(sol.x(base + i));
++			}
++			entry["slopes"] = slopes;
++			clutch_forces[std::to_string(csid)] = entry;
++		}
++	}
++	result["clutch_forces"] = clutch_forces;
++	nlohmann::ordered_json applied = nlohmann::ordered_json::array();
++	for (const AppliedLoad &ld : loads) {
++		nlohmann::ordered_json j;
++		j["part"] = ld.json_part_id;
++		j["force"] = {ld.force.x(), ld.force.y(), ld.force.z()};
++		j["torque"] = {ld.torque.x(), ld.torque.y(), ld.torque.z()};
++		if (ld.has_point) {
++			j["point"] = {ld.point.x(), ld.point.y(), ld.point.z()};
++		}
++		applied.push_back(j);
++	}
++	result["applied_loads"] = applied;
+ 	std::cout << result.dump(2) << std::endl;
+ 
+ 	return 0;
+diff --git a/python/isaacsim_rtx_compat.py b/python/isaacsim_rtx_compat.py
+index d784b95..ec7ed65 100644
+--- a/python/isaacsim_rtx_compat.py
++++ b/python/isaacsim_rtx_compat.py
+@@ -41,9 +41,9 @@ from subprocess import run
+ from sys import stderr
+ from urllib.request import urlretrieve
+ 
+-_URL = "https://geo.mirror.pkgbuild.com/extra/os/x86_64/vulkan-profiles-1.4.341.0-1-x86_64.pkg.tar.zst"
+-_PKG = "d52d72259b6c8911c9e3b41985e014cb76954f013b87af45f5ef1fcff1126131"
+-_SO = "99f20d7af6e073eac74a04308be01a3a81505629cff6dc066a7d3282b4dce533"
++_URL = "https://geo.mirror.pkgbuild.com/extra/os/x86_64/vulkan-profiles-1.4.357.0-2-x86_64.pkg.tar.zst"
++_PKG = "149625d97130849026fb3e54acdec6b3d086f2cf35db92797f990b81c9a9cf59"
++_SO = "7d2d622adf83f5075a0a0ee2a16b7cbae0c508e7a0ccea15ef2478452925fa9d"
+ _NAME = "VP_RTX_driver_compat_generated"
+ _NVIDIA = 0x10DE
+ _LAST_KNOWN_GOOD_DRIVER = (590, 48, 1, 0)
+@@ -146,7 +146,7 @@ def _layer() -> Path:
+         msg = "tar is required to extract the Vulkan profiles layer"
+         raise RuntimeError(msg)
+     _CACHE.mkdir(parents=True, exist_ok=True)
+-    package = _CACHE / "vulkan-profiles-1.4.341.0-1-x86_64.pkg.tar.zst"
++    package = _CACHE / "vulkan-profiles-1.4.357.0-2-x86_64.pkg.tar.zst"
+     if force_download:
+         package.unlink(missing_ok=True)
+     if not package.exists() or _hash(package) != _PKG:
