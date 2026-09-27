@@ -26,3 +26,7 @@ Slides/
 
 # Newton/ImGui viewer window layout, rewritten on every run
 imgui.ini
+
+# MuJoCo twin: fetched Menagerie assets and MuJoCo's warning log
+brickassembly/.cache/
+MUJOCO_LOG.TXT

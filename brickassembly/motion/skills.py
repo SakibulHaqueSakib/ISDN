@@ -1,0 +1,277 @@
+"""Scripted skills for the twin -- master_report §WP4 steps 1-4.
+
+    pick(sim, "B", brick)               grasp from the feeder, lift
+    transport(sim, "B", brick, target)  carry the BRICK (not the hand) above its socket
+    insert(sim, "B", brick, ...)        §WP4.4 scripted insertion
+    release(sim, "B")                   open and retract
+    brace(sim, "A", brace)              stabilizer grasp-and-hold (see bracing.py)
+
+Poses are ground truth (§WP4: "a complete pipeline with ground-truth poses").
+
+The scripted insertion is §WP4.4, and it is written to be the residual base
+controller of WP5: descend at 5 mm/s; on contact, a 2 mm Archimedean spiral at
+3 mm/s holding 8 N down with +-1.5 deg wiggle about x/y at 2 Hz; once the
+studs drop into the cavity, press with force feed-forward up to the press
+force until the joint model reports ENGAGING/MATED, or time out (10 s).
+"""
+
+import math
+
+import numpy as np
+
+from sim.mj import control as C
+from sim.mj import bricks as Bk
+
+GRASP_TCP_ABOVE_BOTTOM = 0.012    # pad bottoms (TCP - 9 mm) stay above neighbouring studs
+APPROACH = 0.06                   # m above a grasp or place before descending
+GRIP_FORCE = 15.0                 # N per finger, §WP4.1 -- the floor, see grip_for()
+DESCEND_SPEED = 0.005             # m/s, §WP4.4, over the last APPROACH_SLOW
+FAST_DESCEND = 0.020              # m/s until then (25 mm at 5 mm/s would spend half the
+APPROACH_SLOW = 0.003             # 10 s skill budget before the brick touches anything)
+SEARCH_FORCE = 8.0                # N held down during the spiral, §WP4.4
+SPIRAL_R = 0.002                  # m
+SPIRAL_SPEED = 0.003              # m/s
+SPIRAL_PITCH = 0.0010             # m per turn (the capture window is ~1.4 mm wide)
+SPIRAL_TIME = 5.0                 # s before pressing again (reaches the 2 mm radius)
+SEARCH_KP_XY = 4000.0             # N/m laterally while searching: at 1200 N/m the
+                                  # 4.8 N of friction under 8 N down absorbs 4 mm of spiral
+INSERT_KP_ROT = 150.0             # N*m/rad while inserting: at §2.5's 40 a brick pressed
+                                  # on one wall tips ~2.7 deg and reads as "in" by depth; the
+                                  # scripted skill commands its own wiggle, so it holds level
+LEVEL_TORQUE = 0.12               # N*m: wrist moment above this = one-sided support (tipped)
+IN_CAVITY = 0.00148               # m: anti-stud face this far above seated = the studs are
+                                  # inside the cavity, into the interference (which starts
+                                  # 0.3 mm below the 1.8 mm stud tops). The robot knows this
+                                  # from its own TCP height; it cannot know lateral error.
+WIGGLE_DEG, WIGGLE_HZ = 1.5, 2.0
+CONTACT_FORCE = 3.0               # N on the wrist that counts as contact
+INSERT_TIMEOUT = 10.0             # s, §WP4 behaviour tree
+
+
+def grip_yaw(sim, name, yaw, pos=None, tilt=(0.0, 0.0, 0.0)):
+    """A parallel gripper is 180-deg symmetric: of yaw and yaw + pi, pick the
+    one whose IK solution keeps every joint farthest from its limits (joint 7
+    has only +-166 deg and winds up otherwise)."""
+    arm = sim.arms[name]
+    pos = arm.x_d if pos is None else np.asarray(pos, float)
+    lo = sim.m.jnt_range[arm.joint_ids, 0]
+    hi = sim.m.jnt_range[arm.joint_ids, 1]
+
+    def margin(y):
+        q, err = C.ik(sim.m, arm, pos, C.down_rot(y, tilt), q0=sim.park[name][2])
+        return min(np.min(q - lo), np.min(hi - q)) - 10 * err
+    return max((yaw, yaw + math.pi), key=margin)
+
+
+def grip_for(press_force, mu=1.0):
+    """Grip force per finger that can transmit the seating press.
+
+    §WP4.1's 15 N cannot: two pads at mu = 1 transmit 30 N axially, and a
+    calibrated 2x2 needs 4 x 8.9 = 35.6 N to seat (measured: the brick slips
+    and tilts 7.5 deg in the grasp). 0.8 x press gives a 1.6x margin at mu = 1;
+    a real Franka hand sustains 70 N.
+    """
+    return float(np.clip(0.8 * press_force / mu, GRIP_FORCE, 70.0))
+
+
+def brick_pose(sim, brick):
+    b = sim.m.body(brick).id
+    return sim.d.xpos[b].copy(), sim.d.xmat[b].reshape(3, 3).copy()
+
+
+def pick(sim, name, brick, yaw, grip_force=GRIP_FORCE):
+    """Grasp `brick` where it lies. Returns True if it left the table with the hand."""
+    arm = sim.arms[name]
+    p, _ = brick_pose(sim, brick)
+    grasp = p + [0, 0, GRASP_TCP_ABOVE_BOTTOM]
+    yaw = grip_yaw(sim, name, yaw, grasp)
+    R = C.down_rot(yaw)
+    arm.grip_open = 0.04
+    arm.grip_force = grip_force
+    x, _ = arm.tcp(sim.d)
+    if x[2] < grasp[2] + APPROACH - 0.01:              # lift clear before swinging over
+        sim.goto(name, [x[0], x[1], grasp[2] + APPROACH], arm.R_d, duration=0.5)
+    sim.goto_joint(name, grasp + [0, 0, APPROACH], R)
+    sim.goto(name, grasp, R, duration=0.8, settle=0.6)
+    arm.grip_open = 0.0                      # close: force-limited at grip_force
+    sim.run(0.35)
+    z0 = brick_pose(sim, brick)[0][2]
+    sim.goto(name, grasp + [0, 0, APPROACH], R, duration=0.8, settle=0.1)
+    lifted = brick_pose(sim, brick)[0][2] - z0 > 0.5 * APPROACH
+    return lifted
+
+
+def in_hand_offset(sim, name, brick):
+    """Brick pose in the TCP frame (measured once it is held)."""
+    x, R = sim.arms[name].tcp(sim.d)
+    p, Rb = brick_pose(sim, brick)
+    return R.T @ (p - x), R.T @ Rb
+
+
+def tcp_for_brick(offset, brick_target, R_tcp):
+    """TCP position that puts the brick's frame origin at brick_target."""
+    off_p, _ = offset
+    return brick_target - R_tcp @ off_p
+
+
+def transport(sim, name, brick, target, yaw, clearance_z, dz=0.025):
+    """Carry the held brick to `dz` above target via a travel height."""
+    arm = sim.arms[name]
+    R = C.down_rot(grip_yaw(sim, name, yaw, target + [0, 0, dz + GRASP_TCP_ABOVE_BOTTOM]))
+    off = in_hand_offset(sim, name, brick)
+    x, _ = arm.tcp(sim.d)
+    travel = max(clearance_z, x[2])
+    up = arm.x_d.copy()
+    up[2] = travel
+    sim.goto(name, up, arm.R_d, duration=0.6)
+    above = tcp_for_brick(off, target + [0, 0, dz], R)
+    hi = above.copy()
+    hi[2] = travel
+    sim.goto_joint(name, hi, R)
+    sim.goto(name, above, R, duration=0.8, settle=0.8)
+    # correct residual brick error (ground truth), once
+    off = in_hand_offset(sim, name, brick)
+    above = tcp_for_brick(off, target + [0, 0, dz], R)
+    sim.goto(name, above, R, duration=0.4, settle=0.6)
+    return off
+
+
+def insert(sim, name, brick, target, clutch, press_force, timeout=INSERT_TIMEOUT,
+           search=True, log=None):
+    """§WP4.4 scripted insertion from the pre-insertion pose.
+
+    descend at 5 mm/s -> contact -> PRESS (ramp to press_force over 0.5 s).
+    While the brick keeps going down, keep pressing until the joint model
+    reports MATED. If it has not moved 0.03 mm in the last 0.4 s at full
+    force (and the joint is not engaging) it is stuck -- on the stud tops, or
+    tipped with one wall on them -- so back off to 8 N and SEARCH
+    (Archimedean spiral to 2 mm at 3 mm/s, +-1.5 deg wiggle at 2 Hz, stiffer
+    laterally) until the TCP height says the studs are in, then press again.
+    Depth alone is not enough to call it in: a brick 1.7 mm off tips 2.7 deg
+    with one wall past the edge, and its centre reads 1.36 mm.
+
+    The press comes first because the stud/cavity interference holds an
+    ALIGNED brick at the stud tops too (sim/joint_model/clutch.py): only
+    pushing past n_studs x f_insert tells aligned from misaligned.
+
+    Returns: success, peak_force_N, impulse_Ns, duration_s, phase, searches.
+    """
+    arm = sim.arms[name]
+    b = clutch.bricks[brick]
+    bid = sim.m.body(brick).id
+    t0 = sim.t
+    peak, impulse = 0.0, 0.0
+    R0 = arm.R_d.copy()
+    dt = sim.m.opt.timestep * 2
+    phase = "descend"
+    contact_z = None
+    phase_t = 0.0
+    spiral_t = 0.0
+    centre = None
+    searches = 0
+    press_ramp = 0.5
+    hist = []                         # (t, dz) during the press, for stuck detection
+    arm.kp_rot[:] = INSERT_KP_ROT
+
+    def fz():
+        # the environment pushes the hand UP when the hand presses down
+        return sim.ft(name)[2]
+
+    while sim.t - t0 < timeout:
+        if b.state == "MATED":
+            phase = "mated"
+            break
+        f = fz()
+        peak = max(peak, f)
+        impulse += max(f, 0.0) * dt
+        zb = sim.d.xpos[bid][2]
+        if log is not None:
+            log.append((sim.t - t0, f, zb - target[2], phase))
+        x, _ = arm.tcp(sim.d)
+        phase_t += dt
+        if phase == "descend":
+            v = DESCEND_SPEED if zb - target[2] < Bk.STUD_H + APPROACH_SLOW else FAST_DESCEND
+            arm.x_d = arm.x_d + [0, 0, -v * dt]
+            arm.f_ff[:] = 0
+            if f > CONTACT_FORCE:
+                contact_z = zb
+                centre = arm.x_d.copy()
+                sim.noslip(True)          # the grip must not creep under the press
+                # the plan says where the stud tops are: touching down on them
+                # (rather than at the interference, 0.3 mm lower) means misaligned
+                if search and zb - target[2] > IN_CAVITY + 0.00015:
+                    phase, phase_t, spiral_t = "search", 0.0, 0.0
+                    searches += 1
+                    arm.kp_pos[:2] = SEARCH_KP_XY
+                else:
+                    phase, phase_t = "press", 0.0
+        elif phase == "press":
+            ramp = min(1.0, phase_t / press_ramp)
+            # laterally free (the target follows the hand): once the studs are
+            # on the chamfer the wedge centres the brick; a lateral spring
+            # holding it 0.45 mm off made it jam with the press half-absorbed
+            arm.x_d = np.array([x[0], x[1], x[2]])
+            arm.R_d = R0.copy()
+            arm.f_ff[:] = 0
+            arm.f_ff[2] = -max(SEARCH_FORCE, ramp * press_force)
+            if phase_t >= press_ramp:
+                hist.append((phase_t, zb))
+                while hist and hist[0][0] < phase_t - 0.4:
+                    hist.pop(0)
+            moving = len(hist) < 2 or hist[0][1] - hist[-1][1] > 0.00003 or phase_t < press_ramp + 0.4
+            if b.state == "ENGAGING" or moving:
+                pass                                         # keep pushing
+            elif search:
+                phase, phase_t, spiral_t = "search", 0.0, 0.0
+                hist.clear()
+                searches += 1
+                centre = arm.x_d.copy()
+                arm.kp_pos[:2] = SEARCH_KP_XY
+        elif phase == "search":
+            spiral_t += dt
+            s = SPIRAL_SPEED * spiral_t
+            a = SPIRAL_PITCH / (2 * math.pi)                 # Archimedean r = a*theta
+            th = math.sqrt(2 * s / a) if s > 0 else 0.0
+            r = min(a * th, SPIRAL_R)
+            arm.x_d = np.array([centre[0] + r * math.cos(th), centre[1] + r * math.sin(th), x[2]])
+            arm.f_ff[:] = 0
+            arm.f_ff[2] = -SEARCH_FORCE
+            w = math.radians(WIGGLE_DEG) * math.sin(2 * math.pi * WIGGLE_HZ * spiral_t)
+            arm.R_d = C.rotvec_to_mat([w, 0.7 * w, 0]) @ R0
+            tau = sim.ft(name)[3:5]
+            dropped = zb - target[2] < IN_CAVITY and np.hypot(*tau) < LEVEL_TORQUE
+            if dropped or spiral_t > SPIRAL_TIME:
+                contact_z = min(contact_z, zb)
+                phase, phase_t = "press", 0.0
+                hist.clear()
+                arm.kp_pos[:] = C.KP_POS
+        for _ in range(2):
+            sim.step()
+    arm.f_ff[:] = 0
+    arm.R_d = R0.copy()
+    arm.kp_pos[:] = C.KP_POS
+    arm.kp_rot[:] = C.KP_ROT
+    x, _ = arm.tcp(sim.d)
+    arm.x_d = x.copy()
+    sim.noslip(False)
+    return {"success": b.state == "MATED", "peak_force_N": round(float(peak), 2),
+            "impulse_Ns": round(float(impulse), 3), "duration_s": round(sim.t - t0, 3),
+            "phase": phase, "searches": searches}
+
+
+def release(sim, name, retract=0.06):
+    arm = sim.arms[name]
+    arm.f_ff[:] = 0
+    arm.grip_open = 0.04
+    sim.run(0.25)
+    x, R = arm.tcp(sim.d)
+    sim.goto(name, x + [0, 0, retract], arm.R_d, duration=0.6)
+
+
+def park(sim, name):
+    p, R, _ = sim.park[name]
+    arm = sim.arms[name]
+    x, _ = arm.tcp(sim.d)
+    if x[2] < p[2]:
+        sim.goto(name, [x[0], x[1], p[2]], arm.R_d, duration=0.5)
+    sim.goto_joint(name, p, R)
