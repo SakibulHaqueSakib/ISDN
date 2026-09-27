@@ -55,9 +55,12 @@ def main():
                 key, m["n_pairs"], m["b_only"], m["a_only"], m["diff"], m["diff_ci95"][0],
                 m["diff_ci95"][1], m["p_exact"]))
         if a6.get("peak_force"):
-            out += ["", "Placer peak force (matched seeds, Wilcoxon):", "",
+            out += ["", "Placer peak force (matched seeds, Wilcoxon; cells with at least %d pairs):"
+                    % MIN_PAIRS_SHOWN, "",
                     "| comparison | n | mean a (N) | mean b (N) | change | p |", "|---|---|---|---|---|---|"]
             for key, m in a6["peak_force"].items():
+                if m["n"] < MIN_PAIRS_SHOWN:
+                    continue
                 out.append("| %s | %d | %.1f | %.1f | %+.1f%% | %.3g |" % (
                     key, m["n"], m["mean_a"], m["mean_b"], m["change_pct"], m["p_wilcoxon"]))
         if a6.get("brace_prediction"):

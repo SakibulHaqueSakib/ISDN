@@ -1,4 +1,187 @@
 {
+ "coverage": {
+  "S1": {
+   "voxels": 24,
+   "covered": 24
+  },
+  "S2": {
+   "voxels": 80,
+   "covered": 80
+  },
+  "S3": {
+   "voxels": 88,
+   "covered": 88
+  },
+  "S4": {
+   "voxels": 112,
+   "covered": 112
+  },
+  "S5": {
+   "voxels": 168,
+   "covered": 168
+  }
+ },
+ "strategies": {
+  "S1": {
+   "none": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "nearest": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "weakest_joint": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   }
+  },
+  "S2": {
+   "none": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "nearest": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "weakest_joint": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   }
+  },
+  "S3": {
+   "none": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "nearest": {
+    "braced": 3,
+    "worst_braced_util": 1.9593
+   },
+   "weakest_joint": {
+    "braced": 3,
+    "worst_braced_util": 0.2384
+   }
+  },
+  "S4": {
+   "none": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "nearest": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "weakest_joint": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   }
+  },
+  "S5": {
+   "none": {
+    "braced": 0,
+    "worst_braced_util": 0.0
+   },
+   "nearest": {
+    "braced": 10,
+    "worst_braced_util": 0.2189
+   },
+   "weakest_joint": {
+    "braced": 10,
+    "worst_braced_util": 0.0
+   }
+  }
+ },
+ "single_arm_predicted": {
+  "S1": 0.0,
+  "S2": 0.0,
+  "S3": 3.4311,
+  "S4": 0.0,
+  "S5": 2.5244
+ },
+ "drop_test": {
+  "S1": {
+   "max_disp_mm": 0.0446,
+   "hold_disp_mm": 0.0003,
+   "push_disp_mm": {
+    "x": 0.0446,
+    "y": 0.0446
+   },
+   "breaks": 0,
+   "all_mated": true,
+   "passed": true
+  },
+  "S2": {
+   "max_disp_mm": 0.0028,
+   "hold_disp_mm": 0.0001,
+   "push_disp_mm": {
+    "x": 0.0028,
+    "y": 0.0017
+   },
+   "breaks": 0,
+   "all_mated": true,
+   "passed": true
+  },
+  "S3": {
+   "max_disp_mm": 0.0792,
+   "hold_disp_mm": 0.0012,
+   "push_disp_mm": {
+    "x": 0.0792,
+    "y": 0.0147
+   },
+   "breaks": 0,
+   "all_mated": true,
+   "passed": true
+  },
+  "S4": {
+   "max_disp_mm": 0.0731,
+   "hold_disp_mm": 0.0004,
+   "push_disp_mm": {
+    "x": 0.0731,
+    "y": 0.0731
+   },
+   "breaks": 0,
+   "all_mated": true,
+   "passed": true
+  },
+  "S5": {
+   "max_disp_mm": 0.0959,
+   "hold_disp_mm": 0.0157,
+   "push_disp_mm": {
+    "x": 0.0959,
+    "y": 0.0803
+   },
+   "breaks": 0,
+   "all_mated": true,
+   "passed": true
+  }
+ },
+ "drop_test_30N_S3": {
+  "max_disp_mm": 380226.2145,
+  "hold_disp_mm": 0.0012,
+  "push_disp_mm": {
+   "x": 157420.7128,
+   "y": 380226.2145
+  },
+  "breaks": 12,
+  "all_mated": false,
+  "passed": false
+ },
+ "all_bricks_accessible": {
+  "S1": true,
+  "S2": true,
+  "S3": true,
+  "S4": false,
+  "S5": false
+ },
+ "ik_worst_residual_m": {
+  "S1": 9.95050351457779e-06,
+  "S2": 9.95050351457779e-06,
+  "S3": 9.813609059757282e-06,
+  "S4": 9.889457511152588e-06,
+  "S5": 9.89593776618918e-06
+ },
  "single_arm_twin": {
   "S3": {
    "step": 13,

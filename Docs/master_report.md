@@ -5,7 +5,7 @@
 **Version:** 3.1 — 27 September 2026 (amends 3.0 of 15 September 2026; see §0.6 and §7.7)
 **Supersedes:** plan v1 (MuJoCo), plan v2 (Isaac Lab + Newton), literature validation report
 **Status:** Normative. This document is the single source of truth for the project.
-**Results:** `Docs/results_report.md` (v3.1 execution: gates G0–G7, ablation A6, A1/A3/A4/A10).
+**Results:** `Docs/results_report.md` (v3.1 execution: gates G0–G7, ablation A6, A1/A3/A4/A10). A6 came out negative for weakest-joint placement — bracing is necessary, but the plastic force model misplaces the failure — so the results report carries a new title under the G7 rule (ledger `a6_verdict`); G3, G4 and G6 fail.
 
 ---
 
