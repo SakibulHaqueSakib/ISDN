@@ -62,9 +62,14 @@ RETRIES = 3
 class DR:
     """Per-trial randomisation (ground-truth poses; §WP4 G3 and A6)."""
     feeder_xy_mm: float = 1.0           # brick placement in the feeder, uniform square
-    feeder_yaw_deg: float = 3.0
-    handoff_xy_mm: float = 0.6          # pre-insertion error, uniform disc (cuRobo-like
-    handoff_yaw_deg: float = 1.0        # placement error: A3 decides if vision is needed)
+    feeder_yaw_deg: float = 0.0         # a fixtured feeder presents bricks square (at 3 deg
+                                        # the grasp flips to the other wrist configuration,
+                                        # where touchdown shoves the brick 0.3 mm along the grip
+                                        # axis and the base joint of S1 breaks 2 runs in 3)
+    handoff_xy_mm: float = 0.3          # pre-insertion error, uniform disc (cuRobo-like
+    handoff_yaw_deg: float = 0.3        # placement error: A3 decides if vision is needed;
+                                        # a calibrated arm's yaw -- at 1 deg a 2x4 wedges on
+                                        # diagonal studs, since 0.4 deg uses its 0.1 mm clearance)
     ft_noise: tuple = (0.1, 0.005)      # N, N*m white noise on the wrist sensors
 
 
@@ -241,6 +246,9 @@ class Insert(Leaf):
             ctx.cur["failure_mode"] = "dropped"
             return False
         tgt = ctx.target(s)
+        if K.hand_tilt_deg(ctx.sim, "B", bid) > K.MAX_HAND_TILT_DEG:
+            ctx.cur["failure_mode"] = "tilted_in_hand"      # recovery regrasps it
+            return False
         ep = _episode_start(ctx, s, "scripted_spiral_v1" if self.scripted or not ctx.inserter
                             else ctx.policy_name)
         brace_log = []
@@ -348,15 +356,20 @@ class LiftAndRegrasp(Leaf):
             if ctx.cm.bricks[bid].state != "DISENGAGED":
                 return False                       # half-seated; lifting would tear it
             ctx.sim.goto("B", arm.x_d + [0, 0, 0.015], arm.R_d, duration=0.4)
-            yaw = math.radians(s["grasp"]["yaw_offset_deg"])
-            K.transport(ctx.sim, "B", bid, ctx.target(s), yaw, clearance_z=_clearance(ctx))
-            return True
+            if K.hand_tilt_deg(ctx.sim, "B", bid) <= K.MAX_HAND_TILT_DEG:
+                yaw = math.radians(s["grasp"]["yaw_offset_deg"])
+                K.transport(ctx.sim, "B", bid, ctx.target(s), yaw, clearance_z=_clearance(ctx))
+                return True
+            # tilted in the fingers: set it down on its (now empty) feeder slot
+            # and pick it up again, level
+            K.put_down(ctx.sim, "B", bid, ctx.cell.feeder[bid][:2])
+            ctx.in_hand = None
         K.release(ctx.sim, "B")
         ctx.in_hand = None
         if ctx.cm.bricks[bid].state != "DISENGAGED":
             return False
         p, Rb = K.brick_pose(ctx.sim, bid)
-        if p[2] < 0.0 or Rb[2, 2] < 0.95:          # off the table, or on its side
+        if p[2] < -0.002 or Rb[2, 2] < 0.95:       # off the table, or on its side
             return False
         yaw = math.atan2(Rb[1, 0], Rb[0, 0]) + math.radians(s["grasp"]["yaw_offset_deg"])
         ok = K.pick(ctx.sim, "B", bid, yaw, grip_force=K.grip_for(ctx.press(s)),

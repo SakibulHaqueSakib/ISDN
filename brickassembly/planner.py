@@ -158,9 +158,16 @@ def sequence(bricks):
     tried and reverted: on the arch it pushed the crown last, into a slot
     between two placed bricks with 0.1 mm to spare at each end -- worse than
     the graze it avoided.
+
+    Within a layer, 2x2 bricks go first (v3.1): a 2x2 inserted beside an
+    in-line neighbour is gripped on 15.8 mm faces by 17.5 mm pads that drag
+    the neighbour's coplanar face (twin, S2 step 6 tore a bridging 2x4 off its
+    support); placed first it has no neighbour yet, and the longer bricks
+    placed after it are gripped well inside their faces.
     """
     placed, order = [], []
-    for b in sorted(bricks, key=lambda b: (b[4], b[2], b[3])):
+    narrow = lambda b: 0 if BRICKS[b[1]][0] == BRICKS[b[1]][1] else 1
+    for b in sorted(bricks, key=lambda b: (b[4], narrow(b), b[2], b[3])):
         if b[4] > 0 and not supports(b, placed):
             raise ValueError("%s is floating: no support below" % b[0])
         placed.append(b)
@@ -407,6 +414,7 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
         sup = supports(b, placed)
         x, y, z = brick_pose(b)
         nx, ny = footprint(btype, yaw)
+        r0 = None
         if brace_model == "grasp_lp":
             r0 = stability.insertion_utilisation(b, placed) if placed else None
             utils.append((r0.s, r0.weakest) if r0 else (0.0, None))
@@ -414,6 +422,11 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
                                    clearance=clearance) if placed else None
         else:
             brace = brace_for(b, placed, strategy)
+        grasp = grasp_for(b, placed)
+        if brace_model == "grasp_lp" and r0 is not None and r0.s > 0.2:
+            # force-aware grip point (stability.best_press_point)
+            grasp["tcp_offset_m"], grasp["press_point_util"] = stability.best_press_point(
+                b, placed, grasp)
         yaw_rad = math.pi / 2 * yaw
         # Gripper points down: Rz(yaw) * Rx(pi), as xyzw.
         quat = [math.cos(yaw_rad / 2), math.sin(yaw_rad / 2), 0.0, 0.0]
@@ -424,7 +437,7 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
             "requires_brace": brace is not None and brace.get("feasible", True),
             "brace": brace,
             "predicted_util_unbraced": round(utils[-1][0], 4) if utils else None,
-            "grasp": grasp_for(b, placed),
+            "grasp": grasp,
             "pre_insertion_pose": [x, y, z + PRE_INSERTION_DZ] + quat,
             "target_pose": [x, y, z] + quat,
             "mating_studs": [[s, n_studs] for s, n_studs in sup.items()],

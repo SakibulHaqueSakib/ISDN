@@ -308,6 +308,49 @@
   },
   {
    "step": 4,
+   "brick_id": "b_006",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "predicted_util_unbraced": 0.0,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 90,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0,
+    "tcp_offset_m": [
+     0.0,
+     0.0
+    ],
+    "accessible": true
+   },
+   "pre_insertion_pose": [
+    0.0,
+    0.039999999999999994,
+    0.0378,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.0,
+    0.039999999999999994,
+    0.012799999999999999,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_002",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 5,
    "brick_id": "b_004",
    "placer_arm": "B",
    "requires_brace": false,
@@ -354,7 +397,7 @@
    ]
   },
   {
-   "step": 5,
+   "step": 6,
    "brick_id": "b_005",
    "placer_arm": "B",
    "requires_brace": false,
@@ -394,49 +437,6 @@
      "b_001",
      4
     ],
-    [
-     "b_002",
-     4
-    ]
-   ]
-  },
-  {
-   "step": 6,
-   "brick_id": "b_006",
-   "placer_arm": "B",
-   "requires_brace": false,
-   "brace": null,
-   "predicted_util_unbraced": 0.0,
-   "grasp": {
-    "face_pair": "long",
-    "yaw_offset_deg": 90,
-    "grip_width_m": 0.0148,
-    "grip_force_N": 15.0,
-    "tcp_offset_m": [
-     0.0,
-     0.0
-    ],
-    "accessible": false
-   },
-   "pre_insertion_pose": [
-    0.0,
-    0.039999999999999994,
-    0.0378,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "target_pose": [
-    0.0,
-    0.039999999999999994,
-    0.012799999999999999,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "mating_studs": [
     [
      "b_002",
      4
@@ -575,11 +575,11 @@
    ],
    "mating_studs": [
     [
-     "b_005",
+     "b_006",
      4
     ],
     [
-     "b_006",
+     "b_005",
      4
     ]
    ]
@@ -678,7 +678,7 @@
   "weakest_joint": null,
   "max_util_unbraced": 0.0,
   "single_arm_fails": false,
-  "all_bricks_accessible": false,
+  "all_bricks_accessible": true,
   "brace_required_count": 0,
   "brace_infeasible_count": 0,
   "brace_clearance": "twin collision check (sim/mj/checks.py)",

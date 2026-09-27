@@ -41,7 +41,11 @@ from sim.joint_model.capacity import F_BREAK_PER_STUD, F_INSERT_PER_STUD, Patch
 G = 9.81
 MASS_PER_STUD = 0.0025 / 8
 LATERAL_UNCERTAINTY = 3.0        # N, §3.6 step 1
-SAFETY_FACTOR = 1.5              # §3.6 step 4
+SAFETY_FACTOR = 3.0         # §3.6 step 4 default is 1.5. v3.1: the twin broke S3's pier
+                            # at a step this rigid-plastic model rates 0.40 -- its joints are
+                            # brittle and compliant (the pier leans 2 deg, P-delta), which a
+                            # lower-bound plastic LP does not see -- so the margin is set from
+                            # that measured gap (ledger v31_safety_factor)
 
 
 @dataclass
@@ -340,6 +344,42 @@ def insertion_utilisation(brick, placed, braces=(), press=None):
         if worst is None or r.s > worst.s:
             worst = r
     return worst
+
+
+def best_press_point(brick, placed, grasp, press=None, step=0.002):
+    """Where along the brick to grip it (so where the press goes in): the
+    offset, among those that keep the pads on the brick, that minimises the
+    force-balance utilisation with the new brick in the model and the press
+    applied at the TCP, over the lateral-uncertainty directions along the
+    slide axis. The planner's default -- toward the mating patch's centroid --
+    put a corbel's press exactly over the pier's edge (S3 step 11: the pier's
+    base joint broke in the twin at a predicted 0.66).
+    Returns (tcp_offset_m, utilisation)."""
+    nx, ny = P.footprint(brick[1], brick[5])
+    off = list(grasp["tcp_offset_m"])
+    along = 1 if grasp["yaw_offset_deg"] == 90 else 0      # fingers on x faces: slide along y
+    n_along = (nx, ny)[along]
+    room = max(0.0, n_along * P.PITCH / 2 - 0.0085 - 0.001)
+    sup = P.supports(brick, placed)
+    Q = press if press is not None else sum(sup.values()) * F_INSERT_PER_STUD
+    if not sup or room <= 0:
+        return off, None
+    bx, by, bz = P.brick_pose(brick)
+    top = bz + P.BRICK_H
+    best = None
+    for o in np.arange(-room, room + 1e-9, step):
+        px, py = (bx, by + o) if along == 1 else (bx + o, by)
+        worst = 0.0
+        for lat in (0.0, LATERAL_UNCERTAINTY, -LATERAL_UNCERTAINTY):
+            f = (0.0, lat, -Q) if along == 1 else (lat, 0.0, -Q)
+            r = analyze(list(placed) + [brick], loads=[(brick[0], np.array(f), np.array([px, py, top]))])
+            worst = max(worst, r.s)
+        key = (round(worst, 3), abs(o - off[along]))
+        if best is None or key < best[0]:
+            best = (key, float(o), worst)
+    new = [0.0, 0.0]
+    new[along] = round(best[1], 4)
+    return new, best[2]
 
 
 if __name__ == "__main__":

@@ -122,13 +122,26 @@ def _quat_conj(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 
 
-def _rel_pose(d, body_l, body_u):
-    """Pose of U in L's frame (L = -1 means world)."""
+def _rz(theta):
+    c, s = math.cos(theta), math.sin(theta)
+    return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+
+
+def _qz(theta):
+    return np.array([math.cos(theta / 2), 0.0, 0.0, math.sin(theta / 2)])
+
+
+def _rel_pose(d, body_l, body_u, theta_l=0.0):
+    """Pose of U in L's frame (L = -1 means world). theta_l: L's symmetry
+    rotation about its own z (see ClutchModel.theta) -- the pose is expressed
+    in L's symmetry-reduced frame, R_l Rz(-theta_l), so that a 2x4 mated 180
+    deg from nominal still has its studs where the plan put them."""
     pu, qu = d.xpos[body_u], d.xquat[body_u]
     if body_l < 0:
         return pu.copy(), qu.copy()
     pl, ql = d.xpos[body_l], d.xquat[body_l]
-    Rl = d.xmat[body_l].reshape(3, 3)
+    Rl = d.xmat[body_l].reshape(3, 3) @ _rz(-theta_l)
+    ql = _quat_mul(ql, _qz(-theta_l))
     return Rl.T @ (pu - pl), _quat_mul(_quat_conj(ql), qu)
 
 
@@ -158,13 +171,66 @@ class ClutchModel:
         self.lower_body = {id(st): (-1 if st.conn.lower is None else m.body(st.conn.lower).id)
                            for st in self.conn_states}
         self.square = {n: cell.dims[n][0] == cell.dims[n][1] for n in self.bricks}
+        # Symmetry. A brick may seat at any orientation its footprint allows
+        # (2x2: 90 deg steps, 2xN: 180) -- and a robot-placed one does, since
+        # the wrist yaw is chosen by IK margin. theta[b] is that rotation about
+        # the brick's own z from its nominal orientation; every connection is
+        # expressed in the symmetry-reduced frame R Rz(-theta). Without it a
+        # brick bridging onto a support mated 180 deg round had its gate see a
+        # 32 mm error (never mated), its weld target 32 mm away and its
+        # interference tendon anchored under the wrong end of the support.
+        self.theta = {n: 0.0 for n in self.bricks}
+        self.as_lower = {}
+        for st in self.conn_states:
+            c = st.conn
+            tag = "%s_on_%s" % (c.upper, c.lower or "plate")
+            st.site_u = m.site("clutch/%s/U" % tag).id
+            st.site_l = m.site("clutch/%s/L" % tag).id
+            st.site_u_nom = m.site_pos[st.site_u].copy()
+            st.site_l_nom = m.site_pos[st.site_l].copy()
+            if c.lower is not None:
+                self.as_lower.setdefault(c.lower, []).append(st)
         self.events = []          # (t, kind, brick, detail)
         self.enabled = True
+
+    # --- symmetry -------------------------------------------------------------------
+    def _theta_l(self, st):
+        return 0.0 if st.conn.lower is None else self.theta[st.conn.lower]
+
+    def sym_theta(self, d, name):
+        """The multiple of the brick's symmetry period nearest its current yaw
+        relative to its nominal (target) orientation."""
+        q_nom = self.cell.targets[name][1]
+        R_nom = np.zeros(9)
+        mujoco.mju_quat2Mat(R_nom, np.asarray(q_nom, float))
+        R = R_nom.reshape(3, 3).T @ d.xmat[self.bricks[name].body].reshape(3, 3)
+        yaw = math.atan2(R[1, 0], R[0, 0])
+        period = math.pi / 2 if self.square[name] else math.pi
+        return (round(yaw / period) * period) % (2 * math.pi)
+
+    def _set_theta(self, name, th):
+        if abs(((th - self.theta[name] + math.pi) % (2 * math.pi)) - math.pi) < 1e-9:
+            return
+        self.theta[name] = th
+        Rz = _rz(-th)
+        b = self.bricks[name]
+        for st in b.conns:
+            self.m.site_pos[st.site_u] = Rz @ st.site_u_nom
+        for st in self.as_lower.get(name, ()):
+            self.m.site_pos[st.site_l] = Rz @ st.site_l_nom
+
+    def _refresh_symmetry(self, d):
+        """A mated brick keeps the symmetry it was mated at; a free one takes
+        the nearest to where it is now."""
+        for name, b in self.bricks.items():
+            if b.state == DISENGAGED:
+                self._set_theta(name, self.sym_theta(d, name))
 
     # --- external control ---------------------------------------------------------
     def mate_now(self, name):
         """Put a brick straight into MATED at full stiffness (pre-placed bricks)."""
         b = self.bricks[name]
+        self._set_theta(name, self.sym_theta(self.cell.data, name))
         for st in b.conns:
             self._weld_on(st, self.p.weld_timeconst)
             st.state = MATED
@@ -189,16 +255,17 @@ class ClutchModel:
         turned 180 deg and launched it when the gripper let go."""
         m, d = self.m, self.cell.data
         c = st.conn
+        th_l = self._theta_l(st)
         _, q_now = _rel_pose(d, self.lower_body[id(st)], self.bricks[c.upper].body)
         period = math.pi / 2 if self.square[c.upper] else math.pi
-        best, best_ang = c.rel_quat, 9.0
+        base = _quat_mul(_qz(-th_l), c.rel_quat)            # nominal, in L's actual frame
+        best, best_ang = base, 9.0
         for k in range(int(round(2 * math.pi / period))):
-            qz = np.array([math.cos(k * period / 2), 0.0, 0.0, math.sin(k * period / 2)])
-            cand = _quat_mul(c.rel_quat, qz)
+            cand = _quat_mul(base, _qz(k * period))
             ang = 2 * math.acos(min(1.0, abs(float(np.dot(cand, q_now)))))
             if ang < best_ang:
                 best, best_ang = cand, ang
-        m.eq_data[c.eq_id, 3:6] = c.rel_pos
+        m.eq_data[c.eq_id, 3:6] = _rz(-th_l) @ c.rel_pos
         m.eq_data[c.eq_id, 6:10] = best
         m.eq_solref[c.eq_id] = [timeconst, 1.0]
         d.eq_active[c.eq_id] = 1
@@ -249,7 +316,8 @@ class ClutchModel:
     def _gate_one(self, d, st):
         """Relative-pose errors of one connection vs its seated pose."""
         c = st.conn
-        pos, quat = _rel_pose(d, self.lower_body[id(st)], self.bricks[c.upper].body)
+        pos, quat = _rel_pose(d, self.lower_body[id(st)], self.bricks[c.upper].body,
+                              self._theta_l(st))
         dp = pos - c.rel_pos
         dq = _quat_mul(_quat_conj(c.rel_quat), quat)
         R = np.zeros(9)
@@ -315,7 +383,7 @@ class ClutchModel:
             if r is None:
                 continue
             f = d.efc_force[r:r + 6]
-            R = d.xmat[self.bricks[st.conn.upper].body].reshape(3, 3)
+            R = d.xmat[self.bricks[st.conn.upper].body].reshape(3, 3) @ _rz(-self.theta[st.conn.upper])
             F = R.T @ (-f[:3])
             M = R.T @ (-0.5 * f[3:6]) - np.cross(st.conn.patch_center_u, F)
             st.wrench = np.concatenate([F, M])
@@ -324,6 +392,7 @@ class ClutchModel:
     def update(self, d):
         if not self.enabled:
             return
+        self._refresh_symmetry(d)
         dt = self.m.opt.timestep
         t = d.time
         p = self.p

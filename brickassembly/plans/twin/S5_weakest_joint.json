@@ -424,6 +424,49 @@
   },
   {
    "step": 3,
+   "brick_id": "b_004",
+   "placer_arm": "B",
+   "requires_brace": false,
+   "brace": null,
+   "predicted_util_unbraced": 0.0,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 90,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0,
+    "tcp_offset_m": [
+     0.0,
+     0.0
+    ],
+    "accessible": true
+   },
+   "pre_insertion_pose": [
+    0.0,
+    0.008,
+    0.0378,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.0,
+    0.008,
+    0.012799999999999999,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_001",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 4,
    "brick_id": "b_003",
    "placer_arm": "B",
    "requires_brace": false,
@@ -463,49 +506,6 @@
      "b_000",
      4
     ],
-    [
-     "b_001",
-     4
-    ]
-   ]
-  },
-  {
-   "step": 4,
-   "brick_id": "b_004",
-   "placer_arm": "B",
-   "requires_brace": false,
-   "brace": null,
-   "predicted_util_unbraced": 0.0,
-   "grasp": {
-    "face_pair": "long",
-    "yaw_offset_deg": 90,
-    "grip_width_m": 0.0148,
-    "grip_force_N": 15.0,
-    "tcp_offset_m": [
-     0.0,
-     0.0
-    ],
-    "accessible": false
-   },
-   "pre_insertion_pose": [
-    0.0,
-    0.008,
-    0.0378,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "target_pose": [
-    0.0,
-    0.008,
-    0.012799999999999999,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "mating_studs": [
     [
      "b_001",
      4
@@ -890,9 +890,10 @@
     "grip_force_N": 15.0,
     "tcp_offset_m": [
      0.0,
-     -0.008
+     -0.0145
     ],
-    "accessible": true
+    "accessible": true,
+    "press_point_util": 0.566794386061947
    },
    "pre_insertion_pose": [
     0.0,
@@ -1027,9 +1028,10 @@
     "grip_force_N": 15.0,
     "tcp_offset_m": [
      0.0,
-     0.0
+     -0.0065
     ],
-    "accessible": true
+    "accessible": true,
+    "press_point_util": 0.5867058904867256
    },
    "pre_insertion_pose": [
     0.0,
@@ -1073,13 +1075,13 @@
     "feasible": true,
     "target_brick_id": "b_010",
     "gripped_bricks": [
-     "b_008",
-     "b_010"
+     "b_010",
+     "b_012"
     ],
     "brace_pose": [
      0.0,
-     0.004,
-     0.0536
+     0.012,
+     0.0584
     ],
     "brace_tilt_rotvec": [
      0.7854,
@@ -1094,19 +1096,19 @@
     ],
     "expected_reaction_wrench": [
      0.0,
-     -4.8239,
-     35.8453,
-     0.7,
+     -0.0613,
+     35.7472,
+     0.4233,
      0.0,
      0.0
     ],
-    "predicted_util_braced": 0.2163,
+    "predicted_util_braced": 0.0,
     "press_nominal_N": 46.28,
-    "predicted_util_feedforward": 0.2555,
+    "predicted_util_feedforward": 0.0,
     "feedforward_wrench_per_N": [
      0.0,
-     -0.03506,
-     1.19777,
+     0.0,
+     0.87057,
      0.0,
      0.0,
      0.0
@@ -1123,7 +1125,8 @@
      0.0,
      -0.0065
     ],
-    "accessible": true
+    "accessible": true,
+    "press_point_util": 1.1413084900442476
    },
    "pre_insertion_pose": [
     0.0,
@@ -1252,7 +1255,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": false,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1346,7 +1350,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": false,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1388,15 +1393,15 @@
     ],
     "predicted_util_unbraced": 1.1044,
     "feasible": true,
-    "target_brick_id": "b_008",
+    "target_brick_id": "b_012",
     "gripped_bricks": [
-     "b_008",
-     "b_010"
+     "b_010",
+     "b_012"
     ],
     "brace_pose": [
      0.0,
-     0.004,
-     0.0512
+     0.02,
+     0.0632
     ],
     "brace_tilt_rotvec": [
      0.7854,
@@ -1411,19 +1416,19 @@
     ],
     "expected_reaction_wrench": [
      0.0,
-     -6.1374,
-     35.9924,
-     0.7,
+     -0.1901,
+     35.7104,
+     0.1362,
      0.0,
      0.0
     ],
-    "predicted_util_braced": 0.2363,
+    "predicted_util_braced": 0.0,
     "press_nominal_N": 46.28,
-    "predicted_util_feedforward": 0.2555,
+    "predicted_util_feedforward": 0.0,
     "feedforward_wrench_per_N": [
      0.0,
-     -0.04647,
-     1.19777,
+     0.0,
+     0.67782,
      0.0,
      0.0,
      0.0
@@ -1440,7 +1445,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": false,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1534,7 +1540,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": false,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1563,104 +1570,6 @@
   },
   {
    "step": 22,
-   "brick_id": "b_022",
-   "placer_arm": "B",
-   "requires_brace": true,
-   "brace": {
-    "arm": "A",
-    "rationale": "weakest_joint_lp",
-    "strategy": "weakest_joint",
-    "predicted_failure_joint": [
-     "b_008",
-     "b_006"
-    ],
-    "predicted_util_unbraced": 0.9282,
-    "feasible": true,
-    "target_brick_id": "b_009",
-    "gripped_bricks": [
-     "b_008",
-     "b_009"
-    ],
-    "brace_pose": [
-     0.0,
-     -0.044,
-     0.0536
-    ],
-    "brace_tilt_rotvec": [
-     0.7854,
-     0.0,
-     0.0
-    ],
-    "brace_force_N": 70.0,
-    "brace_axis": [
-     1,
-     0,
-     0
-    ],
-    "expected_reaction_wrench": [
-     0.0,
-     0.0,
-     -40.7768,
-     0.0,
-     0.0,
-     0.0
-    ],
-    "predicted_util_braced": 0.0,
-    "press_nominal_N": 92.56,
-    "predicted_util_feedforward": 0.0,
-    "feedforward_wrench_per_N": [
-     0.0,
-     0.0,
-     -0.29334,
-     0.0,
-     0.0,
-     0.0
-    ],
-    "end_effector": "parallel_jaw"
-   },
-   "predicted_util_unbraced": 0.9282,
-   "grasp": {
-    "face_pair": "long",
-    "yaw_offset_deg": 90,
-    "grip_width_m": 0.0148,
-    "grip_force_N": 15.0,
-    "tcp_offset_m": [
-     0.0,
-     0.0
-    ],
-    "accessible": true
-   },
-   "pre_insertion_pose": [
-    0.0,
-    0.0,
-    0.11459999999999998,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "target_pose": [
-    0.0,
-    0.0,
-    0.08959999999999999,
-    1.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "mating_studs": [
-    [
-     "b_018",
-     4
-    ],
-    [
-     "b_019",
-     4
-    ]
-   ]
-  },
-  {
-   "step": 23,
    "brick_id": "b_023",
    "placer_arm": "B",
    "requires_brace": true,
@@ -1672,7 +1581,7 @@
      "b_008",
      "b_006"
     ],
-    "predicted_util_unbraced": 1.1254,
+    "predicted_util_unbraced": 1.1251,
     "feasible": true,
     "target_brick_id": "b_012",
     "gripped_bricks": [
@@ -1698,8 +1607,8 @@
     "expected_reaction_wrench": [
      0.0,
      -0.1901,
-     35.7594,
-     0.136,
+     35.7349,
+     0.1365,
      0.0,
      0.0
     ],
@@ -1709,14 +1618,14 @@
     "feedforward_wrench_per_N": [
      0.0,
      0.0,
-     0.67876,
+     0.67853,
      0.0,
      0.0,
      0.0
     ],
     "end_effector": "parallel_jaw"
    },
-   "predicted_util_unbraced": 1.1254,
+   "predicted_util_unbraced": 1.1251,
    "grasp": {
     "face_pair": "long",
     "yaw_offset_deg": 90,
@@ -1726,7 +1635,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": true,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1754,7 +1664,7 @@
    ]
   },
   {
-   "step": 24,
+   "step": 23,
    "brick_id": "b_024",
    "placer_arm": "B",
    "requires_brace": true,
@@ -1766,7 +1676,7 @@
      "b_008",
      "b_006"
     ],
-    "predicted_util_unbraced": 1.5195,
+    "predicted_util_unbraced": 1.5193,
     "feasible": true,
     "target_brick_id": "b_015",
     "gripped_bricks": [
@@ -1791,9 +1701,9 @@
     ],
     "expected_reaction_wrench": [
      0.0,
-     -0.2333,
+     -0.2061,
      35.6613,
-     0.1378,
+     0.1385,
      0.0,
      0.0
     ],
@@ -1810,7 +1720,7 @@
     ],
     "end_effector": "parallel_jaw"
    },
-   "predicted_util_unbraced": 1.5195,
+   "predicted_util_unbraced": 1.5193,
    "grasp": {
     "face_pair": "long",
     "yaw_offset_deg": 90,
@@ -1820,7 +1730,8 @@
      0.0,
      0.0
     ],
-    "accessible": false
+    "accessible": false,
+    "press_point_util": null
    },
    "pre_insertion_pose": [
     0.0,
@@ -1843,6 +1754,105 @@
    "mating_studs": [
     [
      "b_021",
+     4
+    ]
+   ]
+  },
+  {
+   "step": 24,
+   "brick_id": "b_022",
+   "placer_arm": "B",
+   "requires_brace": true,
+   "brace": {
+    "arm": "A",
+    "rationale": "weakest_joint_lp",
+    "strategy": "weakest_joint",
+    "predicted_failure_joint": [
+     "b_008",
+     "b_006"
+    ],
+    "predicted_util_unbraced": 0.929,
+    "feasible": true,
+    "target_brick_id": "b_009",
+    "gripped_bricks": [
+     "b_008",
+     "b_009"
+    ],
+    "brace_pose": [
+     0.0,
+     -0.044,
+     0.0536
+    ],
+    "brace_tilt_rotvec": [
+     0.7854,
+     0.0,
+     0.0
+    ],
+    "brace_force_N": 70.0,
+    "brace_axis": [
+     1,
+     0,
+     0
+    ],
+    "expected_reaction_wrench": [
+     0.0,
+     0.0,
+     -40.8188,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "predicted_util_braced": 0.0,
+    "press_nominal_N": 92.56,
+    "predicted_util_feedforward": 0.0,
+    "feedforward_wrench_per_N": [
+     0.0,
+     0.0,
+     -0.29379,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "end_effector": "parallel_jaw"
+   },
+   "predicted_util_unbraced": 0.929,
+   "grasp": {
+    "face_pair": "long",
+    "yaw_offset_deg": 90,
+    "grip_width_m": 0.0148,
+    "grip_force_N": 15.0,
+    "tcp_offset_m": [
+     0.0,
+     -0.0065
+    ],
+    "accessible": true,
+    "press_point_util": 0.6292418418141599
+   },
+   "pre_insertion_pose": [
+    0.0,
+    0.0,
+    0.11459999999999998,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "target_pose": [
+    0.0,
+    0.0,
+    0.08959999999999999,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mating_studs": [
+    [
+     "b_018",
+     4
+    ],
+    [
+     "b_019",
      4
     ]
    ]
@@ -1912,9 +1922,10 @@
     "grip_force_N": 15.0,
     "tcp_offset_m": [
      0.0,
-     0.0
+     -0.0065
     ],
-    "accessible": true
+    "accessible": true,
+    "press_point_util": 2.225188467920355
    },
    "pre_insertion_pose": [
     0.0,

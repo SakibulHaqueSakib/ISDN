@@ -45,6 +45,13 @@ IN_CAVITY = 0.00148               # m: anti-stud face this far above seated = th
                                   # from its own TCP height; it cannot know lateral error.
 WIGGLE_DEG, WIGGLE_HZ = 1.5, 2.0
 CONTACT_FORCE = 3.0               # N on the wrist that counts as contact
+SEARCH_KP_ROT = 20.0              # N*m/rad during the spiral: the +-1.5 deg wiggle at the
+                                  # 150 of INSERT_KP_ROT put up to 3.9 N*m into the structure,
+                                  # and a 2x2 pier's joints hold ~0.4 (S3 step 8); compliant,
+                                  # it is ~0.5 N*m
+PRESS_SPEED = 0.008               # m/s: pressing faster than this sheds force...
+PRESS_DAMPING = 6000.0            # ...at this rate (N per m/s)
+MAX_HAND_TILT_DEG = 1.5           # a brick tilted more than this in the fingers is regrasped
 INSERT_TIMEOUT = 10.0             # s, §WP4 behaviour tree
 
 
@@ -68,10 +75,10 @@ def grip_for(press_force, mu=1.0):
 
     §WP4.1's 15 N cannot: two pads at mu = 1 transmit 30 N axially, and a
     calibrated 2x2 needs 4 x 8.9 = 35.6 N to seat (measured: the brick slips
-    and tilts 7.5 deg in the grasp). 0.8 x press gives a 1.6x margin at mu = 1;
+    and tilts 7.5 deg in the grasp). 1.2 x press gives a 2.4x margin at mu = 1;
     a real Franka hand sustains 70 N.
     """
-    return float(np.clip(0.8 * press_force / mu, GRIP_FORCE, 70.0))
+    return float(np.clip(1.2 * press_force / mu, 20.0, 70.0))
 
 
 def brick_pose(sim, brick):
@@ -213,10 +220,12 @@ def insert(sim, name, brick, target, clutch, press_force, timeout=INSERT_TIMEOUT
                 # (rather than at the interference, 0.3 mm lower) means misaligned
                 if search and zb - target[2] > IN_CAVITY + 0.00015:
                     phase, phase_t, spiral_t = "search", 0.0, 0.0
+                    arm.kp_rot[:] = SEARCH_KP_ROT
                     searches += 1
                     arm.kp_pos[:2] = SEARCH_KP_XY
                 else:
                     phase, phase_t = "press", 0.0
+                    arm.kp_rot[:] = INSERT_KP_ROT
         elif phase == "press":
             ramp = min(1.0, phase_t / press_ramp)
             # laterally free (the target follows the hand): once the studs are
@@ -225,7 +234,13 @@ def insert(sim, name, brick, target, clutch, press_force, timeout=INSERT_TIMEOUT
             arm.x_d = np.array([x[0], x[1], x[2]])
             arm.R_d = R0.copy()
             arm.f_ff[:] = 0
-            arm.f_ff[2] = -max(SEARCH_FORCE, ramp * press_force)
+            # a force-controlled press with a speed limit: when the stud
+            # interference lets go, a constant 93 N drove the hand into the
+            # seat at 40 mm/s, and the 676 N impact tipped the brick 5 deg in
+            # the grasp before the gate's 40 ms dwell (S2 step 2)
+            vz = float(arm.tcp_vel(sim.d)[2])
+            relief = PRESS_DAMPING * max(0.0, -vz - PRESS_SPEED)
+            arm.f_ff[2] = -max(SEARCH_FORCE, ramp * press_force - relief)
             if phase_t >= press_ramp:
                 hist.append((phase_t, zb))
                 while hist and hist[0][0] < phase_t - 0.4:
@@ -235,6 +250,7 @@ def insert(sim, name, brick, target, clutch, press_force, timeout=INSERT_TIMEOUT
                 pass                                         # keep pushing
             elif search:
                 phase, phase_t, spiral_t = "search", 0.0, 0.0
+                arm.kp_rot[:] = SEARCH_KP_ROT
                 hist.clear()
                 searches += 1
                 centre = arm.x_d.copy()
@@ -255,6 +271,7 @@ def insert(sim, name, brick, target, clutch, press_force, timeout=INSERT_TIMEOUT
             if dropped or spiral_t > SPIRAL_TIME:
                 contact_z = min(contact_z, zb)
                 phase, phase_t = "press", 0.0
+                arm.kp_rot[:] = INSERT_KP_ROT
                 hist.clear()
                 arm.kp_pos[:] = C.KP_POS
         for _ in range(2):
@@ -278,6 +295,32 @@ def release(sim, name, retract=0.06):
     sim.run(0.25)
     x, R = arm.tcp(sim.d)
     sim.goto(name, x + [0, 0, retract], arm.R_d, duration=0.6)
+
+
+def hand_tilt_deg(sim, name, brick):
+    """How far the held brick is tilted relative to the fingers' frame."""
+    _, R = sim.arms[name].tcp(sim.d)
+    _, Rb = brick_pose(sim, brick)
+    return float(np.degrees(np.arccos(np.clip(abs((R.T @ Rb)[2, 2]), -1, 1))))
+
+
+def put_down(sim, name, brick, spot):
+    """Set the held brick down at `spot` (world xy on the table) and let go --
+    the first half of a regrasp (§WP4 LiftAndRegrasp)."""
+    arm = sim.arms[name]
+    x, R = arm.tcp(sim.d)
+    off = in_hand_offset(sim, name, brick)
+    spot = np.array([spot[0], spot[1], 0.0])
+    up = arm.x_d.copy()
+    up[2] = max(up[2], x[2] + 0.04)
+    sim.goto(name, up, arm.R_d, duration=0.5)
+    above = tcp_for_brick(off, spot + [0, 0, APPROACH], R)
+    sim.goto_joint(name, above, R)
+    low = tcp_for_brick(off, spot + [0, 0, 0.002], R)
+    sim.goto(name, low, R, duration=1.0, settle=0.2,
+             until=lambda s_: s_.ft(name)[2] > CONTACT_FORCE)
+    release(sim, name)
+    sim.run(0.3)
 
 
 def park(sim, name):

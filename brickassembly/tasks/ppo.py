@@ -169,28 +169,36 @@ def squash_logp(dist, u):
 
 # --- training --------------------------------------------------------------------------
 
-def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, out=None):
+def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, out=None,
+          resume=False):
     torch.manual_seed(seed)
     torch.set_num_threads(1)
     from tasks.insertion_env import ACT_DIM, OBS_DIM, PRIV_DIM
     cfg = RUNS[run]
     out = Path(out or OUT / run)
     out.mkdir(parents=True, exist_ok=True)
-    venv = VecEnv(workers, per_worker, dict(stage=stage0, **cfg), seed=seed * 7919)
-    n = venv.n
     # a residual starts at the scripted base: exploration noise of 0.4 (0.8 mm
     # per step) against 0.1 mm stud clearance halved its success rate
     net = ActorCritic(OBS_DIM, PRIV_DIM, ACT_DIM, init_std=0.15 if cfg["mode"] == "residual" else 0.4)
-    opt = torch.optim.Adam(net.parameters(), lr=3e-4)
     an, cn = RunningNorm(OBS_DIM), RunningNorm(OBS_DIM + PRIV_DIM)
-    stage = stage0
+    stage, done0 = stage0, 0
+    if resume and (out / "policy.pt").exists():
+        ck = torch.load(out / "policy.pt", weights_only=False)
+        net.load_state_dict(ck["net"])
+        an.load(ck["an"])
+        cn.load(ck["cn"])
+        stage, done0 = ck["stage"], ck["samples"]
+        print("resumed %s at %d samples, stage %d" % (run, done0, stage), flush=True)
+    opt = torch.optim.Adam(net.parameters(), lr=3e-4)
+    venv = VecEnv(workers, per_worker, dict(stage=stage, **cfg), seed=seed * 7919 + done0)
+    n = venv.n
     window = deque(maxlen=100)
     log = open(out / "train.jsonl", "a")
     obs = venv.obs()
     ep_states = [[] for _ in range(n)]            # actor obs per running episode (success head)
     succ_x, succ_y = [], []
     t0 = time.time()
-    done_samples, update = 0, 0
+    done_samples, update = done0, done0 // (horizon * n)
     while done_samples < samples:
         A = np.stack([o["actor"] for o in obs])
         Cb = np.stack([o["critic"] for o in obs])
@@ -413,6 +421,7 @@ if __name__ == "__main__":
     ap.add_argument("--episodes", type=int, default=100)
     ap.add_argument("--no-vision", action="store_true")
     ap.add_argument("--eval-all", nargs="*", default=None, help="evaluate these runs (all if empty)")
+    ap.add_argument("--resume", action="store_true")
     a = ap.parse_args()
     if a.eval_all is not None:
         eval_all(a.episodes, only=a.eval_all or None)
@@ -421,4 +430,4 @@ if __name__ == "__main__":
                      scripted=a.scripted)
         print(json.dumps(r, indent=1))
     else:
-        train(a.run, a.samples, a.workers, a.per_worker, seed=a.seed)
+        train(a.run, a.samples, a.workers, a.per_worker, seed=a.seed, resume=a.resume)

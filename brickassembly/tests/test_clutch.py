@@ -124,7 +124,9 @@ def test_wrench_readback_matches_JTf():
 def test_equal_and_opposite():
     """§2.3.3 invariant 1: any joint wrench is equal and opposite on both bodies
     (sum of forces ~ 0 across each mated pair, and for the insertion tendon)."""
-    plan, cell, cm = make("S3", preplaced=[f"b_00{i}" for i in range(5)])
+    # the v3.0 pier + cantilever (planner.S3C), kept fixed for this test while
+    # the benchmark's S3 changed
+    plan, cell, cm = make("S3C", preplaced=[f"b_00{i}" for i in range(5)])
     m, d = cell.model, cell.data
     # 5 N at the cantilever tip: loaded, below capacity (20 N pries it off)
     d.xfrc_applied[m.body("b_004").id] = [0.8, 0.0, -5.0, 0.0, 0.0, 0.0]
@@ -132,7 +134,7 @@ def test_equal_and_opposite():
     worst = 0.0
     assert not cm.breaks()
     for st in cm.conn_states:
-        if st.conn.lower is None:
+        if st.conn.lower is None or st.state != "MATED":
             continue                               # the world absorbs its half
         U, L = m.body(st.conn.upper).id, m.body(st.conn.lower).id
         rows = weld_rows(d, st.conn.eq_id)
