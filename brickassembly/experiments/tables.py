@@ -115,6 +115,18 @@ def main():
                     "%.2f, %.2f (n = %d)" % (v["success_prob_mean"], v["success_head_auc"],
                                              v["n_with_success_prob"])
                     if v.get("success_head_auc") is not None else "—"))
+        if g6.get("vs_g3"):
+            out += ["", "Full system (weakest-joint bracing) with the RL-first inserter vs G3's "
+                    "scripted-only pipeline:", "",
+                    "| structure | G6 complete | G3 complete | p (Fisher) | mean fraction placed, G6 → G3 |",
+                    "|---|---|---|---|---|"]
+            for sid, v in g6["vs_g3"].items():
+                out.append("| %s | %d/%d | %d/%d | %.3g | %.2f → %.2f |" % (
+                    sid, v["g6_success"], v["g6_n"], v["g3_success"], v["g3_n"], v["p_fisher"],
+                    v["g6_placed_frac"], v["g3_placed_frac"]))
+        if g6.get("ended"):
+            out += ["", "How the failed runs ended: " + "; ".join(
+                "%s %d" % kv for kv in sorted(g6["ended"].items(), key=lambda kv: -kv[1])) + "."]
         out.append("")
     print("\n".join(out))
 

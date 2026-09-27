@@ -13,7 +13,7 @@ with an effect size. Success is binary, so:
 
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -212,6 +212,21 @@ def g6():
                                 "success_head_auc": auc,
                                 "success_prob_mean": float(np.mean([p for p, _ in probs])) if probs else None,
                                 "n_with_success_prob": len(probs)}
+    # the full system (weakest-joint bracing) with the RL-first inserter
+    # against G3's scripted-only pipeline, per structure (Fisher exact)
+    g3t = [r for r in rows(RES / "g3" / "trials.jsonl") if r.get("kind", "assembly") == "assembly"]
+    out["ended"] = dict(Counter(v["ended"] for v in out["runs"].values() if not v["success"]))
+    out["vs_g3"] = {}
+    for sid in sorted({r["structure_id"] for r in trials}):
+        a = [r for r in trials if r["structure_id"] == sid and r["strategy"] == "weakest_joint"]
+        b = [r for r in g3t if r["structure_id"] == sid]
+        if a and b:
+            ka, kb = sum(bool(r.get("success")) for r in a), sum(bool(r.get("success")) for r in b)
+            out["vs_g3"][sid] = {"g6_success": ka, "g6_n": len(a), "g3_success": kb, "g3_n": len(b),
+                                 "g6_placed_frac": float(np.mean([r["placed"] / r["of"] for r in a])),
+                                 "g3_placed_frac": float(np.mean([r["placed"] / r["of"] for r in b])),
+                                 "p_fisher": float(stats.fisher_exact([[ka, len(a) - ka],
+                                                                       [kb, len(b) - kb]])[1])}
     br = [e for e in eps if e.get("brace_measured_wrench") and e.get("brace_expected_wrench")]
     if br:
         err = [float(np.linalg.norm(np.array(e["brace_measured_wrench"][:3])
