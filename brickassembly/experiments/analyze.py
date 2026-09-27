@@ -171,10 +171,26 @@ def g6():
     trials = [r for r in rows(RES / "g6" / "trials.jsonl") if r.get("kind") == "assembly"]
     eps = rows(RES / "g6" / "episodes.jsonl")
     out = {"runs": {}, "inserter": {}, "brace": {}}
+    by_run = defaultdict(list)
+    for e in eps:
+        by_run[e.get("run_id")].append(e)
     for r in trials:
+        run_id = "%s_%s_seed%02d" % (r["structure_id"], r["strategy"], r["seed"])
+        last = by_run.get(run_id, [])[-1:] or [{}]
+        # where the assembly ended: a break during an insertion (whose), or
+        # after the brick had seated (verify / release)
+        if r.get("success"):
+            ended = None
+        elif last[0].get("joint_breaks"):
+            ended = "during %s insertion" % last[0].get("policy")
+        elif str(r.get("fatal", "")).startswith("joint_break"):
+            ended = "after a %s seat" % last[0].get("policy")
+        else:
+            ended = r.get("fatal")
         out["runs"]["%s/%s/seed%d" % (r["structure_id"], r["strategy"], r["seed"])] = {
             "success": bool(r.get("success")), "placed": r.get("placed"), "of": r.get("of"),
-            "fatal": r.get("fatal"), "attempts": r.get("attempts")}
+            "fatal": r.get("fatal"), "attempts": r.get("attempts"), "ended": ended,
+            "planned": r["seed"] == 0}
     by_pol = defaultdict(list)
     for e in eps:
         by_pol[e.get("policy")].append(e)
@@ -182,11 +198,19 @@ def g6():
         ok = [e for e in es if e.get("success")]
         probs = [(e["predicted_success_prob"], float(e["success"])) for e in es
                  if e.get("predicted_success_prob") is not None]
+        auc = None
+        if probs and 0 < sum(y for _, y in probs) < len(probs):
+            pp, yy = np.array([p for p, _ in probs]), np.array([y for _, y in probs])
+            auc = float(np.mean([(a > b) + 0.5 * (a == b) for a in pp[yy == 1] for b in pp[yy == 0]]))
         out["inserter"][pol] = {"attempts": len(es), "success": len(ok),
                                 "rate": len(ok) / len(es) if es else None,
+                                "ci95": wilson(len(ok), len(es)) if es else None,
                                 "peak_force_mean_N": float(np.mean([e["peak_force_N"] for e in es
                                                                     if e.get("peak_force_N") is not None]))
                                 if es else None,
+                                "breaks_during": sum(1 for e in es if e.get("joint_breaks")),
+                                "success_head_auc": auc,
+                                "success_prob_mean": float(np.mean([p for p, _ in probs])) if probs else None,
                                 "n_with_success_prob": len(probs)}
     br = [e for e in eps if e.get("brace_measured_wrench") and e.get("brace_expected_wrench")]
     if br:

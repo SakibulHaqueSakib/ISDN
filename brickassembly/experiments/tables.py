@@ -96,18 +96,25 @@ def main():
     g6 = a.get("G6", {})
     if g6.get("runs"):
         out += ["### G6 — full loop, RL-first inserter with scripted fallback", "",
-                "| run | complete | placed | attempts | first failure |", "|---|---|---|---|---|"]
-        for key, v in g6["runs"].items():
-            out.append("| %s | %s | %s/%s | %s | %s |" % (key, "yes" if v["success"] else "no",
-                                                     v["placed"], v["of"], v["attempts"],
-                                                     (v["fatal"] or "—")[:70]))
+                "| run | complete | placed | attempts | ended | joints broken |",
+                "|---|---|---|---|---|---|"]
+        runs = sorted(g6["runs"].items(), key=lambda kv: (not kv[1].get("planned", True), kv[0]))
+        for key, v in runs:
+            out.append("| %s%s | %s | %s/%s | %s | %s | %s |" % (
+                key, "" if v.get("planned", True) else " (extra)", "yes" if v["success"] else "no",
+                v["placed"], v["of"], v["attempts"], v.get("ended") or "—",
+                (v["fatal"] or "—").replace("joint_break: ", "")[:60]))
         if g6.get("inserter"):
-            out += ["", "| inserter | attempts | seated | rate | peak force mean (N) |",
-                    "|---|---|---|---|---|"]
+            out += ["", "| inserter | attempts | seated [95% CI] | breaks during its insertions | "
+                    "peak force mean (N) | success head: mean p, AUC |", "|---|---|---|---|---|---|"]
             for pol, v in g6["inserter"].items():
-                out.append("| %s | %d | %d | %s | %s |" % (
+                out.append("| %s | %d | %d = %s %s | %d | %s | %s |" % (
                     pol, v["attempts"], v["success"], pct(v["rate"]),
-                    "%.1f" % v["peak_force_mean_N"] if v["peak_force_mean_N"] is not None else "—"))
+                    ci(v["ci95"][1:]) if v.get("ci95") else "", v.get("breaks_during", 0),
+                    "%.1f" % v["peak_force_mean_N"] if v["peak_force_mean_N"] is not None else "—",
+                    "%.2f, %.2f (n = %d)" % (v["success_prob_mean"], v["success_head_auc"],
+                                             v["n_with_success_prob"])
+                    if v.get("success_head_auc") is not None else "—"))
         out.append("")
     print("\n".join(out))
 
