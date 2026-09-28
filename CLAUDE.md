@@ -8,17 +8,18 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 
 | agent | model, effort | use for |
 |---|---|---|
-| `orchestrator` | opus, high | main session: dispatches per the plan, verifies every output, commits |
-| `planner` | opus, xhigh | deciding how to do a non-trivial task - steps with owners, checks, risks |
-| `logic-reviewer` | opus, high | reviewing the plan before building and the diff before commit |
+| `orchestrator` | opus, high | main session: runs the plan task by task, verifies every output, commits |
+| `planner` | opus, xhigh | the plan of record at the start (experiments, gates, what to report); revisions when it is faulty |
+| `logic-reviewer` | opus, high | reviewing the plan (and revisions) and diffs before commit |
 | `implementer` | sonnet, medium | executing code steps of an approved plan |
 | `doc-writer` | opus, medium | docs, report prose, ledger entries, WORKLOG |
 | `scout` | haiku, low | finding code, reading logs/result files - read-only facts |
 | `work-reviewer` | opus, medium | independently re-checking a scout/worker output the orchestrator doubts |
 
-Flow for any non-trivial task: **scout -> planner -> logic-reviewer (plan) -> implementer / doc-writer -> orchestrator verifies (doubts -> work-reviewer) -> logic-reviewer (diff) -> commit**.
-- Keep it proportional: a question is scout-only; a one-line fix skips planning but is still verified.
-- Anything that changes a conclusion, protocol or pinned version goes to the user before building.
+- **Once, at the start of a project or phase:** planner writes the plan of record -> logic-reviewer reviews it -> user decides what it raises -> doc-writer records it (`Docs/master_report.md`, ledger).
+- **Every task after that** (the orchestrator breaks the plan down itself; no planner): scout -> implementer / doc-writer -> orchestrator verifies (doubts -> work-reviewer) -> logic-reviewer (diff, when it changes code, results or conclusions) -> commit.
+- **Plan found faulty:** orchestrator gives the planner the evidence -> revision -> logic-reviewer -> user if it changes a conclusion or protocol -> doc-writer records the amendment and a ledger `deviation`.
+- Keep it proportional: a question is scout-only; a small fix goes straight to its owner and is still verified.
 - `CHANGES REQUESTED` goes back to the owner; after two rounds, escalate to the user.
 - Long jobs (experiment batches, training) run in the background from the main session; a scout digests their logs.
 
