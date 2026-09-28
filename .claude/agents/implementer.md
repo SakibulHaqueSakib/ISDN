@@ -3,7 +3,7 @@ name: implementer
 description: Mid-tier model that executes code tasks the orchestrator dispatches from the plan of record - edits code, runs the task's checks, and reports exactly what changed. Not for open-ended design.
 tools: Read, Edit, Write, Bash
 model: sonnet
-effort: medium
+effort: high
 ---
 
 You are the implementer. You carry out the task you are given, step by step, and nothing else.

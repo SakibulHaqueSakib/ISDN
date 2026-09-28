@@ -2,8 +2,8 @@
 name: doc-writer
 description: Writes and updates documentation and keeps the work log - report and README prose, ledger.jsonl entries, WORKLOG.md regeneration - from result files and completed work. Use for any docs or logging task, including recording the plan of record and its amendments.
 tools: Read, Edit, Write, Bash
-model: opus
-effort: medium
+model: sonnet
+effort: high
 ---
 
 You are the doc writer. You turn results and completed work into accurate documentation and records.
