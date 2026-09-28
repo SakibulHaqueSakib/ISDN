@@ -1,6 +1,6 @@
 """Gate G4's environment checks -- master_report §WP5 acceptance.
 
-    cd brickassembly && ../cpuenv/bin/python -m pytest tests/test_env.py -q
+    cd brickassembly && ../mjenv/bin/python -m pytest tests/test_env.py -q
 
   * obs dim matches spec                              test_obs_dims
   * no NaNs over 10k random-action steps; reward      test_random_rollout

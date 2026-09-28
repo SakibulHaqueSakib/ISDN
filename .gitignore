@@ -1,5 +1,6 @@
-# Virtualenv
+# Virtualenvs
 isdnenv/
+mjenv/
 
 # Third-party source installed in-tree (clone from https://github.com/NVlabs/curobo)
 curobo/

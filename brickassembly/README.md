@@ -10,10 +10,13 @@ Full instructions in [PROGRESS.md](PROGRESS.md).
 ## v3.1 — the MuJoCo twin (CPU)
 
 WP3–WP8 were executed in a CPU MuJoCo twin of the cell (master_report §0.6,
-amendments §7.7). No GPU, Isaac or Docker is needed:
+amendments §7.7). No Isaac or Docker is needed. Physics is CPU MuJoCo, one
+process per core (`--workers`, default = physical cores for the runner, 8 for
+PPO); the PPO update runs on CUDA when torch sees a GPU (`--device`):
 
 ```bash
-python3.11 -m venv ../mjenv && ../mjenv/bin/pip install -r requirements-twin.txt
+uv venv ../mjenv --python 3.11
+uv pip install --python ../mjenv/bin/python -r requirements-twin.txt --torch-backend cu130
 cd brickassembly            # every command below runs from here
 export MJ_PY=../mjenv/bin/python     # or use bash scripts/run.sh <script>
 ```

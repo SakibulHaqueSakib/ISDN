@@ -1,10 +1,12 @@
 """PPO for the WP5 insertion task -- runs R1-R4 of master_report §5.3.
 
-    python -m tasks.ppo --run R1 --samples 150000 --workers 2
+    python -m tasks.ppo --run R1 --samples 150000
     python -m tasks.ppo --eval results/wp5/R1/policy.pt --stage 3 --episodes 100
 
 A small, dependency-free PPO (the report names rsl_rl; its Isaac Lab runner
-is not available on this CPU box):
+is not available on this CPU box). The update runs on --device (CUDA when
+there is one); the environments are CPU MuJoCo, one per worker process, so
+wall time is set by --workers, not by the GPU:
   * tanh-squashed Gaussian actor over the 121-D observation (§5.2)
   * asymmetric critic on actor obs + 26 privileged dims [InformedAAC]
   * a success head on the actor trunk (§5.6, [FORGE]): P(episode succeeds |
@@ -174,21 +176,25 @@ def squash_logp(dist, u):
 
 # --- training --------------------------------------------------------------------------
 
-def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, out=None,
-          resume=False):
+def train(run, samples, workers=8, per_worker=1, horizon=128, seed=0, stage0=0, out=None,
+          resume=False, device=None):
+    """workers x per_worker environments (8, the batch R1-R4 were trained
+    with, 2 x 4 on the 4-core box); one per process is fastest."""
     torch.manual_seed(seed)
     torch.set_num_threads(1)
+    dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     from tasks.insertion_env import ACT_DIM, OBS_DIM, PRIV_DIM
     cfg = RUNS[run]
     out = Path(out or OUT / run)
     out.mkdir(parents=True, exist_ok=True)
     # a residual starts at the scripted base: exploration noise of 0.4 (0.8 mm
     # per step) against 0.1 mm stud clearance halved its success rate
-    net = ActorCritic(OBS_DIM, PRIV_DIM, ACT_DIM, init_std=0.15 if cfg["mode"] == "residual" else 0.4)
+    net = ActorCritic(OBS_DIM, PRIV_DIM, ACT_DIM,
+                      init_std=0.15 if cfg["mode"] == "residual" else 0.4).to(dev)
     an, cn = RunningNorm(OBS_DIM), RunningNorm(OBS_DIM + PRIV_DIM)
     stage, done0 = stage0, 0
     if resume and (out / "policy.pt").exists():
-        ck = torch.load(out / "policy.pt", weights_only=False)
+        ck = torch.load(out / "policy.pt", weights_only=False, map_location=dev)
         net.load_state_dict(ck["net"])
         an.load(ck["an"])
         cn.load(ck["cn"])
@@ -212,13 +218,13 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
         for t in range(horizon):
             an.update(A)
             cn.update(Cb)
-            a_t, c_t = torch.as_tensor(an(A)), torch.as_tensor(cn(Cb))
+            a_t, c_t = torch.as_tensor(an(A), device=dev), torch.as_tensor(cn(Cb), device=dev)
             with torch.no_grad():
                 dist, _ = net.dist(a_t)
                 u = dist.sample()
                 logp = squash_logp(dist, u)
                 v = net.value(c_t)
-            res = venv.step(torch.tanh(u).numpy())
+            res = venv.step(torch.tanh(u).cpu().numpy())
             for k in range(n):
                 ep_states[k].append(an(A[k]))
             buf["a"].append(a_t)
@@ -226,8 +232,8 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
             buf["u"].append(u)
             buf["logp"].append(logp)
             buf["v"].append(v)
-            buf["r"].append(torch.tensor([x[1] for x in res], dtype=torch.float32))
-            buf["d"].append(torch.tensor([float(x[2]) for x in res]))
+            buf["r"].append(torch.tensor([x[1] for x in res], dtype=torch.float32, device=dev))
+            buf["d"].append(torch.tensor([float(x[2]) for x in res], device=dev))
             obs = [x[0] for x in res]
             A = np.stack([o["actor"] for o in obs])
             Cb = np.stack([o["critic"] for o in obs])
@@ -244,14 +250,14 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
                     succ_y += [lab] * len(idx)
                     ep_states[k] = []
         with torch.no_grad():
-            last_v = net.value(torch.as_tensor(cn(Cb)))
+            last_v = net.value(torch.as_tensor(cn(Cb), device=dev))
         # GAE; a timeout is treated as terminal (the episode length is part of the task)
         T = horizon
         R = torch.stack(buf["r"])
         D = torch.stack(buf["d"])
         V = torch.stack(buf["v"])
-        adv = torch.zeros(T, n)
-        gae = torch.zeros(n)
+        adv = torch.zeros(T, n, device=dev)
+        gae = torch.zeros(n, device=dev)
         for t in reversed(range(T)):
             nv = last_v if t == T - 1 else V[t + 1]
             delta = R[t] + 0.99 * nv * (1 - D[t]) - V[t]
@@ -263,11 +269,11 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
             flat(torch.stack(buf["u"])), flat(torch.stack(buf["logp"]))
         advb, retb = flat(adv), flat(ret)
         advb = (advb - advb.mean()) / (advb.std() + 1e-8)
-        sx = torch.as_tensor(np.array(succ_x[-4096:])) if succ_x else None
-        sy = torch.as_tensor(np.array(succ_y[-4096:]), dtype=torch.float32) if succ_y else None
+        sx = torch.as_tensor(np.array(succ_x[-4096:]), device=dev) if succ_x else None
+        sy = torch.as_tensor(np.array(succ_y[-4096:]), dtype=torch.float32, device=dev) if succ_y else None
         stats = []
         for epoch in range(5):
-            perm = torch.randperm(T * n)
+            perm = torch.randperm(T * n, device=dev)
             for mb in perm.chunk(4):
                 dist, _ = net.dist(Ab[mb])
                 lp = squash_logp(dist, Ub[mb])
@@ -277,7 +283,7 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
                 ent = dist.entropy().sum(-1).mean()
                 loss = pg + 0.5 * vl - 0.001 * ent
                 if sx is not None and len(sx) > 32:
-                    j = torch.randint(len(sx), (256,))
+                    j = torch.randint(len(sx), (256,), device=dev)
                     loss = loss + 0.1 * nn.functional.binary_cross_entropy_with_logits(
                         net.success_logit(sx[j]), sy[j])
                 opt.zero_grad()
@@ -311,7 +317,9 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
         log.flush()
         print(json.dumps(row), flush=True)
         if update % 10 == 0 or done_samples >= samples:
-            torch.save({"net": net.state_dict(), "an": an.state(), "cn": cn.state(),
+            # CPU tensors: the checkpoint loads on a box without CUDA
+            torch.save({"net": {k: v.cpu() for k, v in net.state_dict().items()},
+                        "an": an.state(), "cn": cn.state(),
                         "run": run, "cfg": cfg, "stage": stage, "samples": done_samples},
                        out / "policy.pt")
     venv.close()
@@ -320,7 +328,7 @@ def train(run, samples, workers=2, per_worker=4, horizon=128, seed=0, stage0=0, 
 
 def load(path):
     from tasks.insertion_env import ACT_DIM, OBS_DIM, PRIV_DIM
-    ck = torch.load(path, weights_only=False)
+    ck = torch.load(path, weights_only=False, map_location="cpu")
     net = ActorCritic(OBS_DIM, PRIV_DIM, ACT_DIM)
     net.load_state_dict(ck["net"])
     an = RunningNorm(OBS_DIM)
@@ -330,7 +338,9 @@ def load(path):
 
 class Policy:
     """Deterministic policy (mean action) + success probability, for eval and
-    for the WP7 executor."""
+    for the WP7 executor. CPU on purpose: one observation per call, inside
+    every executor worker -- a CUDA round trip and a context per process
+    would cost more than the 0.1 ms forward pass."""
 
     def __init__(self, path):
         self.net, self.an, self.ck = load(path)
@@ -400,25 +410,34 @@ def eval_all(episodes=100, stages=(0, 3), only=None, joint="calibrated"):
     the one named), one row per (policy, stage) in results/wp5/eval.jsonl."""
     out = OUT / "eval.jsonl"
     names = ["scripted"] + [r for r in RUNS if (OUT / r / "policy.pt").exists()]
-    for name in names:
-        if only and name not in only:
-            continue
-        for st in stages:
-            r = evaluate(None if name == "scripted" else OUT / name / "policy.pt", st, episodes,
-                         scripted=name == "scripted", joint=joint)
-            r["name"] = name
+    jobs = [(name, st, episodes, joint) for name in names if not only or name in only
+            for st in stages]
+    # one process per (policy, stage): each is a single CPU-bound env
+    with mp.get_context("spawn").Pool(max(1, min(len(jobs), os.cpu_count() // 2))) as pool:
+        for r in pool.imap(_eval_job, jobs):
             with open(out, "a") as fh:
                 fh.write(json.dumps(r) + "\n")
-            print(name, st, round(r["success_rate"], 3), round(r["peak_force_mean_N"], 1),
-                  r.get("success_head_auc"), flush=True)
+            print(r["name"], r["stage"], round(r["success_rate"], 3),
+                  round(r["peak_force_mean_N"], 1), r.get("success_head_auc"), flush=True)
+
+
+def _eval_job(job):
+    os.environ["OMP_NUM_THREADS"] = "1"
+    torch.set_num_threads(1)
+    name, st, episodes, joint = job
+    r = evaluate(None if name == "scripted" else OUT / name / "policy.pt", st, episodes,
+                 scripted=name == "scripted", joint=joint)
+    r["name"] = name
+    return r
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", choices=list(RUNS))
     ap.add_argument("--samples", type=int, default=150000)
-    ap.add_argument("--workers", type=int, default=2)
-    ap.add_argument("--per-worker", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--per-worker", type=int, default=1)
+    ap.add_argument("--device", default=None, help="torch device for the update (default: cuda if available)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--eval", default=None)
     ap.add_argument("--scripted", action="store_true", help="evaluate the scripted base alone")
@@ -437,4 +456,4 @@ if __name__ == "__main__":
                      scripted=a.scripted)
         print(json.dumps(r, indent=1))
     else:
-        train(a.run, a.samples, a.workers, a.per_worker, seed=a.seed, resume=a.resume)
+        train(a.run, a.samples, a.workers, a.per_worker, seed=a.seed, resume=a.resume, device=a.device)

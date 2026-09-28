@@ -10,7 +10,8 @@
 #   BrickSim/.venv   bricksim + Isaac Sim 5.1   BrickSim physics runs
 #   isdnenv          cuRobo + Viser             planner, viewer, force queries
 #   Issac            Isaac Sim 6.0 + Newton     dual_arm_sim, USD viewers, WP0
-#   mjenv            MuJoCo twin (CPU, v3.1)    tests/test_{clutch,planner,control,env}.py,
+#   mjenv            MuJoCo twin (v3.1; CPU     tests/test_{clutch,planner,control,env}.py,
+#                    physics, CUDA torch)
 #                                               orchestration/twin_executor.py, experiments/*,
 #                                               tasks/*, stability.py, bracing.py,
 #                                               planner.py --frame twin

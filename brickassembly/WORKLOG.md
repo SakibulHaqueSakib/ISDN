@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-82 entries. Later entries supersede earlier ones; retractions are marked.
+141 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -23,6 +23,18 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
     - implication: Isaac Lab's OperationSpaceController is unstable when given a pose_abs command against the default (identity) task frame, even with correct gains. The task frame MUST be placed at the target and the command sent relative to it, as scripts/tutorials/05_controllers/run_osc.py does. The docstring's '(x,y,z,w)' quaternion note is also stale -- the code is wxyz throughout.
 
 - **problem** `bricksim_cli_rtx_404`
+
+- **deviated** `v31_cpu_twin`
+
+- **decided** `two_interpreters`
+    - outcome: superseded in v3.1: coarse motion in the twin is IK + joint-space min-jerk in the same interpreter as the physics (runtime.goto_joint); cuRobo is not on the v3.1 path
+
+- **decided** `docker`
+    - outcome: v3.1: the twin runs from a pinned venv (requirements-twin.txt, env.lock [mujoco]); no container in either path
+
+- **decided** `local_gpu_twin`
+    - outcome: the v3.1 twin re-resolved on the GPU workstation (env.lock [mujoco]): same pins, torch 2.14.0+cu130. The PPO update runs on CUDA (tasks/ppo.py --device, checkpoints saved as CPU tensors); physics stays CPU MuJoCo 3.3.7, one process per core: runner --workers defaults to physical cores (16), PPO to 8 workers x 1 env (the batch of 8 R1-R4 used), eval_all runs its (policy, stage) jobs in parallel. Re…
+    - finding: MuJoCo Warp 3.8.0.3 (Issac env) loads and steps the insertion model on the GPU, but a batched twin is a port, not a flag: noslip (runtime.Sim's press/brace phases) is not implemented, and tendon_limited and geom_conaffinity -- which the clutch model switches per env (static-friction lock, mated walls) -- are shared across worlds; curriculum stages 1-3 also change the model per episode
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
@@ -87,6 +99,19 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `double_mate_rescoped`
     - outcome: guarded on our side; upstream behaviour recorded as a limitation
 
+- **decided** `v31_clutch_model`
+    - outcome: weld pool + stud-interference tendon (Coulomb static lock + kinetic friction n*f_insert) + 2.3.3 gate; break when the closed-form plastic utilisation >= 1 for 5 ms
+
+- **decided** `bricksim_stack_mismatch`
+    - outcome: superseded in v3.1: BrickSim's joint is re-implemented in the twin (sim/joint_model/clutch.py + capacity.py), matching static_solve's per-connection LP to 1e-15; BrickSim remains the GPU-path reference
+
+- **decided** `bricksim_batching_scaling`
+    - outcome: v3.1: the batching branch is moot on CPU; contribution (2) (GPU-batched snap mechanics) is not claimed. Contributions reported: (1) the bracing/insertion relationship (A6), (3) joint-model fidelity (A10)
+
+- **problem** `v31_clutch_symmetry_bug`
+    - finding: the twin's joint model expressed each connection in the LOWER brick's actual frame; a support mated 180 deg from nominal (the wrist yaw is chosen by IK margin) mirrored every off-centre patch: the gate saw 32 mm of error on a seated bridging 2x4 (never mated), the weld target sat 32 mm away, and the interference tendon was anchored under the wrong end
+    - fix: symmetry-reduced frames (theta per brick) for gate, weld, tendon sites and wrenches; step trials never saw it because pre-placed bricks are never flipped
+
 ## WP2 — Joint calibration — static solver
 
 - **result** `calibration_transfer_function`
@@ -107,6 +132,9 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `two_path_calibration`
     - outcome: joint_calibration.json now carries SEPARATE preloads per path: static_solve 18.832 N, live_sim 120 N
     - rationale: both produce ~11.3 N/stud on a 2x4, but in different solvers. Applying the dynamic value to static_solve would model a joint 6.4x too strong (72 N/stud) and would corrupt every bracing and stability query.
+
+- **decided** `total_force_ceiling`
+    - outcome: not carried into v3.1: the twin's capacity is per stud by construction (utilisation = plastic LP of the patch); the ceiling was a property of BrickSim's live-sim joint, recorded as a fidelity difference
 
 ## WP3 — Build planner & bracing
 
@@ -151,6 +179,32 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `grasp_accessibility_and_order`
     - result: grasp_for picks the closing axis whose fingers touch the fewest placed bricks (FR3 fingertip 17.5 mm wide: on a 16 mm face it grazes diagonal and in-line neighbours). Order stays layer-raster; S1/S2/S3/S3L plans keep their order.
     - finding: a 2-stud ring around a 2x2 hole cannot be built by a stock parallel gripper in any order (a fingertip does not fit a 16 mm hole); the hollow-box sample uses 1-stud walls. Sliding the grip off-centre to dodge a graze was tried and removed: on a 16 mm end face it lets the brick swing ~24 deg about the pad axis.
+
+- **deviated** `v31_benchmark_structures`
+
+- **CUT** ``
+
+- **decided** `v31_stability_lp`
+    - outcome: stability.py: StableLego-style global force balance as an LP (scipy HiGHS): minimax joint utilisation, then least total utilisation + brace effort; weakest joint ties go to the joint nearest the load
+
+- **decided** `v31_brace_grasp`
+    - outcome: the stabilizer GRASPS the structure (parallel jaw across x faces, 45 deg lean away from the placer); brace = friction-bounded wrench per gripped brick (shares by pad area, >= 4 mm pad height to count), pad couple mu*2*grip*5 mm, 60 N arm limit, as friction octagons
+
+- **deviated** `v31_accessibility`
+
+- **decided** `static_solve_gravity_only`
+    - outcome: resolved: stability.py solves the global force balance UNDER THE INSERTION WRENCH (n x f_insert per patch + +-3 N lateral, 3.6 step 1) with braces as bounded wrenches
+
+- **decided** `s3_does_not_fail_single_arm_in_sim`
+    - outcome: resolved: the v3.1 S3 (corbelled bridge) fails single-arm in the twin under the press the inserter applies (step 12: 0/20 unbraced, joint-break cascades) -- see results/a6
+
+- **decided** `s3_not_failing_when_calibrated`
+    - outcome: resolved by the v3.1 S3 redesign (single-arm util 3.43; fails in the twin)
+
+- **decided** `v31_sequence_press_point`
+    - outcome: 2x2 bricks first within a layer; force-aware press point (stability.best_press_point)
+
+- **deviated** `v31_safety_factor`
 
 ## WP4 — Motion stack & scripted baseline
 
@@ -244,6 +298,106 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **result** `prototype_end_to_end`
 
+- **problem** `v31_passive_brace_fails`
+    - finding: a stiff passive hold (15 kN/m) does not take the LP's brace share: the welded joints are far stiffer than the arm, carry the load and break first (S3 step 12: brace z -12 N measured vs -35 N needed, 35 breaks)
+    - fix: coordinated stabilizer: feed forward the least-effort LP wrench keeping joints <= 0.5 at 1.3 n f_insert, scaled by the placer's commanded press; the hold is re-latched before the press
+
+- **problem** `v31_brace_collisions`
+    - finding: the placer carried the brick at structure height + 60 mm straight into the stabilizer's leaning hand (25 joint breaks before the press); a fixed 28 mm brace/placer clearance both admitted colliding grasps and excluded feasible low ones
+    - fix: travel height clears arm A's hand; brace candidates are checked in the twin (checks.BraceClearance: IK both arms, narrowphase A vs B + carried brick, 1.5 mm margin) -- mj_geomDistance returned 0.0 for box-box pairs cm apart and is not used
+
+- **deviated** `v31_grip_force`
+
+- **decided** `v31_scripted_inserter`
+    - outcome: fast descent then 5 mm/s; touchdown on stud tops -> spiral search (2 mm, 3 mm/s, 8 N, 4000 N/m lateral, +-1.5 deg wiggle); else laterally free press to 1.3 n f_insert; stuck -> search; in-cavity needs a level wrist
+
+- **decided** `v31_controller_fixes`
+    - outcome: OSC gains -Lambda Jdot qdot (null-space leak 0.29 -> 0.013 mm), posture reference slewed at 0.5 rad/s, F/T low-pass 5 ms, noslip only while pressing/bracing, brick rotational inertia x10 (conditioning)
+
+- **decided** `positional_press_saturates`
+    - outcome: resolved: the twin's scripted inserter is force-controlled (press ramped to 1.3 n f_insert through the impedance's force feed-forward) per 2.5 / WP4.4
+
+- **decided** `rendering_path_not_taken`
+    - outcome: unchanged in v3.1: the twin runs headless; no rendering is needed for any gate
+
+- **problem** `v31_feeder_yaw`
+    - decision: feeder yaw jitter off (a fixtured feeder); position jitter kept
+    - finding: with 3 deg feeder yaw jitter the grasp flips to the other wrist configuration; on touchdown the brick was shoved 0.3 mm along the grip axis, loaded the studs on one edge, turned ~1 deg in the pads during the press, and the engaging weld broke the support's base joint (S1: 3/3 failures with feeder jitter alone, 0/3 without)
+
+- **problem** `v31_snap_backoff_reverted`
+    - decision: reverted; the placer keeps pressing until MATED
+    - finding: backing the press off when the joint engages made every structure fail: the weld then seats the brick by pulling the SUPPORT up, which breaks its base joint
+
+- **result** `v31_executor_validation`
+    - result: frozen executor (commit 5a432ed): S1 full assembly 5/5, S2 3/3 in validation; S3 0/4 -- step 11 (second corbel onto the pier) breaks the pier even braced, and 2x2 column bases break on some seeds at steps 3-4
+
+- **problem** `v31_search_regression`
+    - finding: G1's slow check (scripted insertion from <= 2 mm initial error, 10 trials) passed 9/10 at the first twin commit (one search each, 58-72 N peaks) and fails 2/10 on the frozen code: every trial with more than ~1.1 mm error needs 2-5 spiral searches and times out. On three of those trials the pre-freeze commit e76377c seats 2/3 and the frozen code 0/3; restoring the stiff search wiggle (150 N*m/rad) …
+    - implication: the frozen scripted inserter does not recover from 1-2 mm lateral errors; G3, A6 and G6 hand it 0.3 mm (and re-centre on ground truth after a failed attempt), where it rarely searches, so their results stand, but the §WP4.4 claim 'snaps reliably from <= 2 mm' does not hold at the final code. Not fixed: changing the inserter now would invalidate the G3 and A6 batches. The test stays failing
+
+## WP5 — RL insertion
+
+- **deviated** `v31_force_targets`
+
+- **deviated** `v31_rl_scale`
+
+- **problem** `v31_env_ft_sensor`
+    - finding: a MuJoCo force sensor between hand and held brick read 0.6 N while the stud interference held 7 N: tendon constraint forces are joint-space and absent from cfrc_ext
+    - fix: wrist F/T = the hand free joint's constraint force (contacts + tendons + welds), low-passed 5 ms
+
+- **problem** `v31_env_yaw_jam`
+    - finding: the scripted base jammed a 2x4 at diagonal studs: > 0.4 deg of yaw wedges it (0.1 mm clearance over 16 mm); the rigid env grasp cannot twist as a real pad grasp does
+    - fix: yaw compliance 10 N*m/rad about the tool axis (roll/pitch 150)
+
+- **decided** `v31_a10_budget_confound`
+    - decision: keep R1ht as run (it is what a builder who trusted the hand-tuned model would get) and add R1hc: hand-tuned joint with the budget and base press held at the calibrated seating force, so that only the joint's mechanics differ; evaluate both on the calibrated joint and on their own
+    - finding: R1ht (A10, hand-tuned joint) collapsed in training: success on its own joint fell from 0.42 to 0.00 and the final policy never touches (every episode a 0 N timeout). The env scales the force budget and the scripted base's press by the joint model's insertion force, so on the 3 N/stud joint a 2x4's budget is 37-48 N, below the touchdown transient; the sparse -1 for a force violation made not pressi…
+
+- **result** `a10_result`
+    - result: positive in distribution: with the force budget held at the calibrated seating force, a policy trained on the hand-tuned joint seats 61% on it and 23% on the calibrated joint (R1: 66%, p = 1e-9), with 35 force violations per 100 against R1's 2; with the budget derived from the hand-tuned model, training collapses (R1ht, 0% on its own joint). Stage 3: no difference (19/12/18%)
+
+- **probe** `mjwarp_insertion_probe`
+    - finding: MuJoCo Warp 3.8.0.3 on the RTX 5090 D, insertion scene mid-press, physics only: stage 0 (2x4) 1.6M / 5.1M / 7.4M / 11.5M physics steps/s at 1k / 4k / 8k / 32k worlds; stage 3 plateaus at 5.9M from 8k worlds. CPU MuJoCo on the same states: 55k (stage 0) / 78k (stage 3) per core, ~0.9M / 1.25M on 16 cores. BUT the GPU numbers are for different physics: over every policy step of scripted insertions, …
+    - implication: a GPU insertion env is blocked on contact fidelity before anything else (unit rescaling or different stud/wall primitives, gated by per-state contact parity against the CPU twin); the physics-only speedup over 16 CPU cores is ~5-13x, before the clutch model, impedance and scripted base are ported
+
+## WP6 — Perception
+
+- **decided** `vision_decision`
+    - outcome: vision group not needed; WP6 skipped (cut M10); G5 not triggered
+
+## WP7 — Integration
+
+- **problem** `v31_rl_inserter_frame`
+    - decision: observations in a task frame turned by the seated hand's yaw (orientation, position, velocity, wrench); on exit the arm holds the pose it is in. After the fix the head reads 0.07-0.31 and R1 seats 8 of 9 first attempts on S2's 2x4s; the first run's data were discarded
+    - finding: the first G6 run (S1 x3, S2 x2, S3 x2, all failed) handed the policy world-frame poses of a hand at the plan's yaw (90 deg on S1); the training cell's hand is always near yaw 0, so the observation was out of distribution: the success head read 0.002 on every attempt and 7 of 12 first attempts failed. The inserter also left its accumulated orientation target in place on exit, so the restored stiff …
+
+- **decided** `v31_rl_fallback_half_seated`
+    - decision: with an RL inserter active, a half-seated brick goes straight to the scripted fallback, which presses it home; the scripted-only tree (G3, A6) is unchanged
+    - finding: when the RL policy stops on its force budget mid-press the brick is half-seated; LiftAndRegrasp refused to lift it, so the tree retried the policy three times and never reached the scripted fallback of 7.1
+
+- **problem** `v31_rl_press_stop`
+    - decision: the adapter stops the press within 2 ms of MATED or of the budget being crossed; the policy still acts at 20 Hz. G6 was restarted from scratch on this code (the second run mixed adapter versions and was discarded). Remaining G6 failures include G3's base-joint break of a 2x2 at mating (scripted fallback after a failed RL attempt; G3 S1 seeds 5, 11, 14 fail the same way)
+    - finding: the RL inserter checked for a seated joint and the force budget once per 50 ms policy step; on S3 step 2 the brick snapped home early in a step, the press ran on to 68 N (budget 57 N) and the 2x2 column's base broke 6 ms after the skill exited. The scripted skill stops within 2 ms
+
+- **decided** `v31_g6_extra_seeds`
+    - decision: add seeds 1-4 of the full system (weakest-joint bracing) on S1-S3; G6's gate verdict still reads the planned 15
+    - finding: G6 as planned (S1-S5 x 3 strategies, one seed) is 15 assemblies, but S1, S2 and S4 trigger no brace, so their three strategies are the same deterministic run; the per-placement statistics of the RL-first inserter rest on few placements
+
+- **probe** ``
+    - result: holding the press 0.1 s after MATED and ramping it out over 0.2 s (RL path only, not committed): S1 seed 1 completes 6/6 (fails without the ramp), seed 2 still breaks. Inconclusive at n = 2; a real test changes the frozen scripted inserter and re-runs G3
+    - status: open hypothesis, reported as such
+
+## WP8 — Experiments & analysis
+
+- **decided** `v31_a6_protocol`
+    - outcome: A6 on critical-step trials: structure pre-placed and mated up to a step any strategy braces; each strategy on matched seeds; success = seated with no joint breaking anywhere during the step; n = 20 per cell on S3
+
+- **result** `a6_result`
+    - result: bracing is necessary: unbraced, S3's critical steps succeed 10/60 and S5's 0/50. Weakest-joint placement beats nearest at S3 step 14 (100% vs 65%, p = 0.016), S5 steps 24-25 (100% vs 60% and 0%), and cuts the placer's peak force 31% at S3 step 13 (p = 6e-6); it loses at S3 step 11 (0% vs 90%) and five S5 steps. Pooled, nearest beats weakest-joint on both structures: S3 85% vs 67% (p = 0.04), S5 58…
+
+- **decided** `a6_verdict`
+    - outcome: A6 is negative for the proposed method: placement matters (single steps differ by up to 100 points between strategies), but choosing it with the plastic force model is worse overall than the nearest-brick heuristic. Neither of 4.4's anticipated outcomes (positive / null); the G7 rule for a non-positive A6 applies: the results report is retitled around what was found (bracing necessary; the force m…
+
 ## Unfiled
 
 - **decided** `project_start` — Isaac Lab v3.0.0-beta2, Isaac Sim 6.0.0.1, Newton 1.2.1 and cuRobo 0.8.0 are all already installed on this workstation; WP0 is runnable without a new install.
@@ -256,20 +410,33 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **GATE** `G1` — 
 - **GATE** `G1` — 
 - **GATE** `G1` — 
+- **CUT** `` — 
+- **CUT** `` — 
+- **CUT** `` — 
+- **CUT** `` — 
+- **CUT** `` — 
+- **GATE** `G0` — 
+- **GATE** `G1` — 
+- **GATE** `G2` — 
+- **GATE** `G3` — 
+- **GATE** `G4` — 
+- **GATE** `G5` — 
+- **GATE** `G6` — 
+- **GATE** `G7` — 
 
 ## Gate history (latest wins)
 
-- **G0**: pass — 
-- **G1**: pass_with_recorded_exceptions — 5 criteria pass, 1 guarded on our side, 1 N/A for branch 3a, 2 cut with reasons
+- **G0**: pass — v3.1 twin: OSC impedance with -Lambda*Jdot*qdot and dynamically consistent null space, 500 Hz over 1 kHz physics
+- **G1**: pass_with_recorded_exceptions — v3.1 twin joint model: 10/10 fast checks pass; the slow scripted-insertion check fails at the frozen code (2/10 from <= 2 mm, was 9/10) -- a scripted-search reg…
 - **WP2**: pass_with_recorded_gap — 
+- **G2**: pass_with_recorded_exceptions — drop test, plans for all strategies, single-arm failure of S3/S5 in the twin pass; accessibility fails for S4 and S5 (flanked 2x2 grasps, strict xfail)
+- **G3**: fail — S1 17/20, S2 5/20, S3 0/20 (criterion S1, S2 >= 90%, S3 >= 60%); 37 of 38 failures are joint breaks and one a disconnected structure -- none is a failed inserti…
+- **G4**: fail — best stage-3 success 24% (R4; criterion 85%); success-head AUC 0.41-0.78 on held-out episodes (criterion 0.85); comparisons R1 vs R3, R4 recorded; test_env 4/4
+- **G5**: not_applicable — WP6 skipped on A3 (decision vision_decision)
+- **G6**: fail — 0/15 planned full-loop assemblies (RL-first inserter R1, scripted fallback); full system on S1-S3 x 5 seeds: 1/15; RL seats 54% of its attempts, the fallback 10…
+- **G7**: pass_with_recorded_exceptions — results report written (Docs/results_report.md): Wilson CIs, exact McNemar on matched seeds, Wilcoxon for peak force, Fisher for WP5/G6; S5's A6 cells have 5 se…
 
 ## Open — needs a decision
 
 - `docker` (WP0): The Isaac stack is installed and working in ~/Codes/CAIRSS/Issac (a venv, not system python). Containerising now costs days and re-runs the risk R9 install that already broke this machine once.
-- `two_interpreters` (WP0): D5 assumes cuRobo is callable for coarse motion. It cannot be imported in the interpreter that runs Isaac Lab, so M3 cannot run in-process with the sim.
-- `bricksim_stack_mismatch` (WP1): BrickSim cannot be imported into this project's Isaac env. It installs its own uv venv with a second copy of Isaac Sim (5.1). No Newton support anywhere in the repo -- 'newton' appears only as the force unit. Adopting Br…
 - `?` (WP1): The report frames the branch as 3a-if-it-batches / 3b-otherwise. The measurement says 3a on throughput. Contribution (2) -- 'GPU-batched snap mechanics at RL scale' -- is separately weakened: a Warp kernel would optimise…
-- `static_solve_gravity_only` (WP3): §3.6 needs the force distribution under the INSERTION WRENCH, not under self-weight. As shipped, the tool cannot answer that question.
-- `total_force_ceiling` (WP2b): dynamic release force saturates at roughly 88-90 N per CONNECTION regardless of how many studs are mated. Per-stud capacity therefore falls as bricks get larger rather than staying constant -- the opposite of how a real …
-- `s3_does_not_fail_single_arm_in_sim` (WP3): ABLATION A6 HAS NO SUBJECT until a structure demonstrably fails single-arm under the press the inserter really applies. Either the inserter must press with the specified force, or the structures must be made weaker, or t…
-- `positional_press_saturates` (WP4): the demo's scripted inserter is fundamentally the wrong instrument for a force-specified insertion. §WP4.4 already specifies the right one: descend at 5 mm/s, and on contact run a 2 mm Archimedean spiral search while HOL…

@@ -76,7 +76,8 @@ def main():
     ap.add_argument("--strategies", nargs="*", default=["none", "nearest", "weakest_joint"])
     ap.add_argument("--seeds", type=int, default=20)
     ap.add_argument("--trials", type=int, default=None, help="alias of --seeds")
-    ap.add_argument("--workers", type=int, default=3)
+    # one single-threaded trial per physical core (SMT adds little to MuJoCo)
+    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     n = a.trials or a.seeds

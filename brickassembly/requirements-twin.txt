@@ -1,6 +1,8 @@
-# MuJoCo (CPU) twin -- master_report v3.1 §0.6 / §7.7. Python 3.11, no GPU needed.
-#   python -m venv ../mjenv && ../mjenv/bin/pip install -r requirements-twin.txt
-# torch is only needed for WP5 (RL); the CPU wheel from PyPI is enough.
+# MuJoCo (CPU) twin -- master_report v3.1 §0.6 / §7.7. Python 3.11.
+#   uv venv ../mjenv --python 3.11
+#   uv pip install --python ../mjenv/bin/python -r requirements-twin.txt --torch-backend cu130
+# torch is only needed for WP5 (RL). cu130 runs the PPO update on the GPU
+# (RTX 50xx needs cu128 or newer); --torch-backend cpu on a box without one.
 mujoco==3.3.7
 numpy==2.4.6
 scipy==1.17.1
