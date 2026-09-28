@@ -1,0 +1,162 @@
+{
+ "liveness_control": {
+  "fell_mm": 96.81795968936473
+ },
+ "wrench_readback": {
+  "worst_rel_err": 6.93564342387421e-07
+ },
+ "equal_and_opposite": {
+  "weld_worst_rel": 1.1544094194515943e-16
+ },
+ "mated_pair_holds_30s": {
+  "drift_mm": 3.531599999592738e-05,
+  "connected": true
+ },
+ "release_at_f_break": {
+  "release_N": 45.26999999999896,
+  "expected_N": 45.2,
+  "broke": "b_001"
+ },
+ "asymmetry": {
+  "insertion_N": 35.64999999999713,
+  "extraction_N": 45.26999999999896,
+  "ratio": 1.2698457223002133,
+  "expected_insertion_N": 35.6
+ },
+ "gate_boundaries": {
+  "n_cases": 36,
+  "wrong": []
+ },
+ "no_double_mate": {
+  "rival_state": "DISENGAGED"
+ },
+ "energy": {
+  "mated_S3": {
+   "E0_J": 0.0019623749999999997,
+   "E_end_J": 0.0019619869040327464,
+   "window_max_J": [
+    0.0019620450498930345,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464,
+    0.0019619869040327464
+   ],
+   "largest_single_step_gain_J": 4.896062710639526e-09,
+   "nudge_J": 3.7500000000000006e-07
+  },
+  "interference_lock": {
+   "E0_J": 0.0004271094406276687,
+   "E_end_J": 0.00042598779043594333,
+   "window_max_J": [
+    0.0004270473927162432,
+    0.0004259889286197235,
+    0.00042598880268099917,
+    0.00042598867659703223,
+    0.00042598855036764184,
+    0.0004259884239926462,
+    0.00042598829747186406,
+    0.00042598817080511335,
+    0.00042598804399221203,
+    0.00042598791703297783
+   ],
+   "largest_single_step_gain_J": 2.3948999093538134e-09,
+   "nudge_J": 3.7500000000000006e-07
+  }
+ },
+ "identical_alone_and_batched": {
+  "release_N": 45.26999999999896,
+  "identical": true,
+  "workers": 4
+ },
+ "scripted_insertion_from_2mm": {
+  "successes": 2,
+  "trials": 10,
+  "rows": [
+   {
+    "err_mm": 1.581,
+    "success": false,
+    "held_s": 30.0,
+    "drift_mm": 0.012103109909233033,
+    "peak_N": 46.39,
+    "searches": 2
+   },
+   {
+    "err_mm": 1.761,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.00023870575183260819,
+    "peak_N": 47.4,
+    "searches": 4
+   },
+   {
+    "err_mm": 1.096,
+    "success": true,
+    "held_s": 2.0,
+    "drift_mm": 2.6272752025229927e-06,
+    "peak_N": 47.05,
+    "searches": 2
+   },
+   {
+    "err_mm": 0.145,
+    "success": true,
+    "held_s": 2.0,
+    "drift_mm": 6.857391569879405e-06,
+    "peak_N": 46.95,
+    "searches": 5
+   },
+   {
+    "err_mm": 1.786,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.0006915048801017839,
+    "peak_N": 46.91,
+    "searches": 3
+   },
+   {
+    "err_mm": 1.101,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.00033799638623980085,
+    "peak_N": 47.39,
+    "searches": 4
+   },
+   {
+    "err_mm": 1.01,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.0003383652822523556,
+    "peak_N": 47.35,
+    "searches": 4
+   },
+   {
+    "err_mm": 1.421,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.0006630488123272021,
+    "peak_N": 47.32,
+    "searches": 3
+   },
+   {
+    "err_mm": 1.995,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.002287340975261053,
+    "peak_N": 46.3,
+    "searches": 2
+   },
+   {
+    "err_mm": 1.578,
+    "success": false,
+    "held_s": 2.0,
+    "drift_mm": 0.0011695643181571513,
+    "peak_N": 46.3,
+    "searches": 2
+   }
+  ]
+ }
+}

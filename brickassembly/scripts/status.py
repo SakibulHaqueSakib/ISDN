@@ -66,7 +66,7 @@ def summary(rows):
     print("=" * 66)
 
     print("\nGATES")
-    for gate in ("G0", "G1", "WP2"):
+    for gate in ("G0", "G1", "WP2", "G2", "G3", "G4", "G5", "G6", "G7"):
         g = latest_gate(rows, gate)
         if not g:
             print("  %-4s  not reached" % gate)
@@ -130,6 +130,39 @@ def summary(rows):
         for name, ok in gate["verdict"].items():
             print("  [%-5s] %s" % (verdict_for(name, ok), name))
 
+    # v3.1 twin test suites and experiment summaries (artifacts written by the
+    # tests themselves; nothing is recomputed here)
+    twin = [("tests/test_clutch.json", "G1 twin joint"), ("tests/test_planner.json", "G2 planner"),
+            ("tests/test_control.json", "G3 controller"), ("tests/test_env.json", "G4 environment")]
+    shown = [(f, lab) for f, lab in twin if artifact(f)]
+    if shown:
+        print("\nTWIN TEST ARTIFACTS  (re-run the suite to refresh)")
+        for f, lab in shown:
+            print("  %-16s %s" % (lab, f))
+    runs = sorted((ROOT / "results" / "wp5").glob("*/train.jsonl"))
+    if runs:
+        print("\nTRAINING  (WP5, last line of results/wp5/<run>/train.jsonl)")
+        for f in runs:
+            lines = f.read_text().strip().splitlines()
+            if lines:
+                t = json.loads(lines[-1])
+                print("  %-5s %7d samples  stage %d  success(last 100) %.2f  peak %.0f N" % (
+                    t["run"], t["samples"], t["stage"], t["success_100"], t["peak_force_mean"]))
+    ana = artifact("results/analysis.json")
+    if ana and not ana.get("_raw"):
+        print("\nEXPERIMENTS  (results/analysis.json)")
+        for k, v in ana.get("G3", {}).items():
+            print("  G3 %-4s %d/%d assemblies" % (k, v["success"], v["n"]))
+        for k, v in ana.get("A6", {}).get("cells", {}).items():
+            print("  A6 %-10s " % k + "  ".join("%s %d/%d" % (st, v[st]["success"], v[st]["n"])
+                                                 for st in ("none", "nearest", "weakest_joint")
+                                                 if st in v))
+        for k, v in ana.get("WP5", {}).get("comparisons", {}).items():
+            print("  %-48s %.2f -> %.2f (p=%.3g)" % (k, v["rate_a"], v["rate_b"], v["p_fisher"]))
+        for k, v in ana.get("G6", {}).get("runs", {}).items():
+            print("  G6 %-24s %s  %s/%s placed" % (k, "complete" if v["success"] else "failed",
+                                                   v["placed"], v["of"]))
+
     # An escalation answered by a later decision, or retracted by a later
     # entry, is not still open.
     settled = {r.get("id") for r in rows if r.get("type") == "decision"}
@@ -137,8 +170,9 @@ def summary(rows):
                 for r in rows if r.get("retracts")}
     settled |= {r.get("retracts", "").split("entry ")[-1].split(" ")[0]
                 for r in rows if r.get("retracts")}
+    key = lambda r: r.get("id") or r.get("item") or r.get("probe")
     blockers = [r for r in rows
-                if r.get("escalate") and r.get("id") not in settled]
+                if r.get("escalate") and key(r) not in settled]
     if blockers:
         print("\nESCALATED / NEEDS A DECISION  (%d)" % len(blockers))
         for r in blockers:

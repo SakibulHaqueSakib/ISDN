@@ -1,0 +1,12 @@
+# MuJoCo (CPU) twin -- master_report v3.1 §0.6 / §7.7. Python 3.11, no GPU needed.
+#   python -m venv ../mjenv && ../mjenv/bin/pip install -r requirements-twin.txt
+# torch is only needed for WP5 (RL); the CPU wheel from PyPI is enough.
+mujoco==3.3.7
+numpy==2.4.6
+scipy==1.17.1
+torch==2.14.0
+matplotlib==3.11.2
+py_trees==2.6.0
+pytest==9.1.1
+PyYAML==6.0.3
+pillow==12.3.0

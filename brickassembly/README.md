@@ -1,10 +1,49 @@
 # brickassembly
 
-Execution of `Docs/master_report.md` v3.0. `ledger.jsonl` is the record of every
+Execution of `Docs/master_report.md` (v3.1). `ledger.jsonl` is the record of every
 gate, decision, deviation and failure — read it before `git log`.
 
 **To see where the project stands: `python scripts/status.py`.**
+**Results: [`Docs/results_report.md`](../Docs/results_report.md).**
 Full instructions in [PROGRESS.md](PROGRESS.md).
+
+## v3.1 — the MuJoCo twin (CPU)
+
+WP3–WP8 were executed in a CPU MuJoCo twin of the cell (master_report §0.6,
+amendments §7.7). No GPU, Isaac or Docker is needed:
+
+```bash
+python3.11 -m venv ../mjenv && ../mjenv/bin/pip install -r requirements-twin.txt
+cd brickassembly            # every command below runs from here
+export MJ_PY=../mjenv/bin/python     # or use bash scripts/run.sh <script>
+```
+
+| what | command | writes |
+|---|---|---|
+| G1 joint model (11 tests) | `$MJ_PY -m pytest tests/test_clutch.py -m "not slow"` | `tests/test_clutch.json` |
+| G2 planner (+ single-arm failure in the twin) | `$MJ_PY -m pytest tests/test_planner.py [-m slow]` | `tests/test_planner.json` |
+| G3 controller checks | `$MJ_PY -m pytest tests/test_control.py` | `tests/test_control.json` |
+| G4 environment checks | `$MJ_PY -m pytest tests/test_env.py` | `tests/test_env.json` |
+| plans (twin frame, hand-clearance checked) | `$MJ_PY planner.py --frame twin` | `plans/twin/*.json` |
+| one assembly through the behaviour tree | `$MJ_PY -m orchestration.twin_executor --structure S3 --strategy weakest_joint --seed 0` | `results/twin_episodes.jsonl` |
+| one A6 critical-step trial | `... twin_executor --structure S3 --step 12 --strategy nearest --seed 3` | |
+| G3 benchmark (S1–S3 × 20) | `$MJ_PY -m experiments.runner g3 --trials 20` | `results/g3/` |
+| A6 (every critical step × 3 strategies × seeds) | `$MJ_PY -m experiments.runner a6 --structures S3 --seeds 20` (or `--steps S3:11,13`) | `results/a6/` |
+| WP5 runs R1–R4; R1ht, R1hc (A10) | `$MJ_PY -m tasks.ppo --run R1 --samples 300000` | `results/wp5/<run>/` |
+| WP5 evaluation (calibrated joint; `--joint handtuned --stages 0` for A10's own joint) | `$MJ_PY -m tasks.ppo --eval-all` | `results/wp5/eval.jsonl` |
+| G6 full loop (RL-first inserter, S1–S5 × 3 strategies) | `$MJ_PY -m experiments.runner g6 --policy R1 --seeds 1` | `results/g6/` |
+| statistics + figures, report tables | `$MJ_PY -m experiments.analyze && $MJ_PY -m experiments.tables` | `results/analysis.json`, `results/figures/` |
+
+Layout: `sim/mj/` (scene, bricks, impedance control, runtime, plan checks),
+`sim/joint_model/` (clutch + capacity), `stability.py` (force-balance LP),
+`bracing.py` (none / nearest / weakest_joint), `planner.py` (S1–S5, plans),
+`motion/skills.py` (pick, transport, scripted insertion, brace),
+`orchestration/twin_executor.py` (py_trees executor, §2.6 episode logs),
+`orchestration/rl_inserter.py` (WP7: policy as the tree's inserter),
+`tasks/` (WP5 environment + PPO), `experiments/` (batches, statistics).
+
+The sections below this one describe the v3.0 GPU path (Isaac Sim, BrickSim,
+Newton) and remain accurate for it.
 
 ## Status
 
