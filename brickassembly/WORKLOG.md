@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-141 entries. Later entries supersede earlier ones; retractions are marked.
+144 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -398,6 +398,12 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `a6_verdict`
     - outcome: A6 is negative for the proposed method: placement matters (single steps differ by up to 100 points between strategies), but choosing it with the plastic force model is worse overall than the nearest-brick heuristic. Neither of 4.4's anticipated outcomes (positive / null); the G7 rule for a non-positive A6 applies: the results report is retitled around what was found (bracing necessary; the force m…
 
+- **result** `a6_s5_20seeds`
+    - result: A6 S5 extended from 5 to 20 seeds per cell (450 new trials, seeds 5-19, on the workstation: 16 workers, 18 min; no crashed trials). S5 pooled: none 0/200, nearest 114/200 = 57% [50, 64], weakest_joint 59/200 = 30% [24, 36]; nearest vs weakest_joint paired McNemar p = 2.9e-7 (0.008 at 5 seeds), none vs weakest_joint +29.5 points (p = 3e-18). The 5-seed per-step pattern holds and is now individually…
+
+- **decided** `a6_verdict_20seeds`
+    - outcome: a6_verdict stands and is strengthened: with 20 seeds per cell on both structures, pooled nearest beats weakest_joint on S5 at p = 3e-7 (S3 unchanged, p = 0.04). The results report's title and conclusions are unchanged; its S5 numbers, G7 row and limitations were updated
+
 ## Unfiled
 
 - **decided** `project_start` — Isaac Lab v3.0.0-beta2, Isaac Sim 6.0.0.1, Newton 1.2.1 and cuRobo 0.8.0 are all already installed on this workstation; WP0 is runnable without a new install.
@@ -423,6 +429,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **GATE** `G5` — 
 - **GATE** `G6` — 
 - **GATE** `G7` — 
+- **GATE** `G7` — 
 
 ## Gate history (latest wins)
 
@@ -434,7 +441,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **G4**: fail — best stage-3 success 24% (R4; criterion 85%); success-head AUC 0.41-0.78 on held-out episodes (criterion 0.85); comparisons R1 vs R3, R4 recorded; test_env 4/4
 - **G5**: not_applicable — WP6 skipped on A3 (decision vision_decision)
 - **G6**: fail — 0/15 planned full-loop assemblies (RL-first inserter R1, scripted fallback); full system on S1-S3 x 5 seeds: 1/15; RL seats 54% of its attempts, the fallback 10…
-- **G7**: pass_with_recorded_exceptions — results report written (Docs/results_report.md): Wilson CIs, exact McNemar on matched seeds, Wilcoxon for peak force, Fisher for WP5/G6; S5's A6 cells have 5 se…
+- **G7**: pass_with_recorded_exceptions — S5's A6 exception removed (20 seeds per cell, a6_s5_20seeds); remaining exception: G6 has one planned seed plus 4 extra on S1-S3
 
 ## Open — needs a decision
 

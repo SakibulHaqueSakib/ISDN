@@ -2,7 +2,7 @@
 ### Dual-arm robotic assembly of interlocking brick structures — v3.1 results
 
 **Companion to** `Docs/master_report.md` v3.1 (plan, amendments §7.7) · **Data** `brickassembly/results/` · **Ledger** `brickassembly/ledger.jsonl`
-**Date** 27 September 2026 · **Execution platform** CPU MuJoCo twin (master_report §0.6) · **Title** changed from the plan's under the G7 rule for a non-positive A6 (ledger `a6_verdict`)
+**Date** 27 September 2026 · **Execution platform** CPU MuJoCo twin (master_report §0.6) · **Title** changed from the plan's under the G7 rule for a non-positive A6 (ledger `a6_verdict`) · **Updated** 28 September 2026: A6's S5 cells extended from 5 to 20 seeds (ledger `a6_s5_20seeds`)
 
 Every table below is produced by `brickassembly/experiments/analyze.py` from the raw trial logs and rendered by `experiments/tables.py`, unedited; the test-suite numbers come from the JSON files the suites write. The narrative quotes those tables.
 
@@ -13,13 +13,13 @@ Every table below is produced by `brickassembly/experiments/analyze.py` from the
 The plan's question was whether a second arm, bracing the structure where a force-balance model says it is weakest, lets a robot assemble interlocking-brick structures that one arm cannot. It was executed in a CPU MuJoCo twin of the cell (no GPU was available; amendments M1–M14 of the master report say what changed and why). Every gate was evaluated and every experiment the plan marks as required (A6, A3, A10) was run, along with A1, A4 and a dense-reward ablation; **three gates fail and the main hypothesis does not hold as stated.**
 
 **What holds.**
-* **A second arm is necessary.** Unbraced, the critical steps of the corbelled bridge (S3) succeed 10 times in 60 and those of the tower (S5) never (0/50); braced, 67–85 % and 28–58 %.
+* **A second arm is necessary.** Unbraced, the critical steps of the corbelled bridge (S3) succeed 10 times in 60 and those of the tower (S5) never (0/200); braced, 67–85 % and 30–57 %.
 * **Where to brace matters.** At single steps the two bracing strategies differ by up to 100 points. Where the force model names the joint that actually fails, weakest-joint bracing beats the nearest-brick heuristic (S3 step 14: 100 % vs 65 %; S5 step 25: 100 % vs 0 %) and cuts the placer's peak force by 31 %, the effect size the literature reports.
 * **Joint-model fidelity changes what an insertion policy learns (A10).** A policy trained on a light hand-tuned joint, with the force limits held equal, learns to press hard; on the calibrated joint it seats 23 % against 66 % (p = 1e-9). Derive the force limits from the light model as well, and training collapses entirely.
 * **Force sensing was enough; vision was not needed (A3),** so the perception package (WP6) was skipped.
 
 **What does not.**
-* **A6, the main experiment, is negative for the proposed method.** Pooled, the naive heuristic beats weakest-joint bracing on both structures (S3 85 % vs 67 %, p = 0.04; S5 58 % vs 28 %, p = 0.008). The rigid-plastic force model (StableLego's formulation) misplaces the failure in brittle, compliant joints: it braces a pier's base while its upper joints fail, and it rates four S5 steps safe unbraced that fail every time. That model — not the idea of bracing — is the bottleneck.
+* **A6, the main experiment, is negative for the proposed method.** Pooled, the naive heuristic beats weakest-joint bracing on both structures (S3 85 % vs 67 %, p = 0.04; S5 57 % vs 30 %, p = 3e-7). The rigid-plastic force model (StableLego's formulation) misplaces the failure in brittle, compliant joints: it braces a pier's base while its upper joints fail, and it rates four S5 steps safe unbraced that fail every time. That model — not the idea of bracing — is the bottleneck.
 * **G3 fails:** the scripted pipeline completes S1 17/20, S2 5/20, S3 0/20 (targets 90 / 90 / 60 %); nearly every failure is a joint break during a later placement, not a failed insertion.
 * **G4 fails:** no insertion policy reaches the 85 % stage-3 target (best 24 %), and the success head's AUC stays below 0.85. An end-to-end policy with a press channel beat the residual one (A4), against the plan's prior.
 * **G6 fails:** with the RL policy inserting first, no planned full assembly completes (0/15), and the full system is worse than scripted-only on S1 (1/5 vs 17/20).
@@ -35,7 +35,7 @@ The failures are reported with their causes and the fixes that were tried. Four 
 | G4 RL insertion | **fail** |
 | G5 perception | not triggered (A3) |
 | G6 full loop | **fail** |
-| G7 analysis | pass, with S5 at 5 seeds per cell instead of 20 |
+| G7 analysis | pass, with G6 at one planned seed |
 
 ---
 
@@ -67,7 +67,7 @@ The GPU stack of §2.4 (Isaac Sim / Isaac Lab, Newton, BrickSim, cuRobo) carried
 | **G4** RL | ≥ 85 % at stage 3, peak ≤ 1.6× seating (M6); R1 vs R3; R4 recorded; predictor AUC > 0.85; test_env | **fail** (success, AUC); comparisons recorded | best stage-3 success 24 % (R4); AUC 0.41–0.78; `tests/test_env.py` 4/4 |
 | **G5** perception | only if A3 shows vision is needed | **not triggered** — WP6 skipped | A3: removing the vision group did not hurt (§6) |
 | **G6** full loop | S1–S5 × 3 strategies without intervention; brace wrench predicted vs measured | **fail** — 0/15 planned assemblies; the full system completes 1/15 on S1–S3 | §7 |
-| **G7** analysis | mean ± 95 % CI over 20 seeds, paired tests, effect sizes | **pass with an exception** | this report, `results/analysis.json`; Wilson CIs, exact McNemar on matched seeds, Wilcoxon, Fisher. S5's A6 cells have 5 seeds (CPU time), G6 one planned seed |
+| **G7** analysis | mean ± 95 % CI over 20 seeds, paired tests, effect sizes | **pass with an exception** | this report, `results/analysis.json`; Wilson CIs, exact McNemar on matched seeds, Wilcoxon, Fisher. G6 has one planned seed (A6's S5 cells, at 5 seeds in the first version of this report, now have 20) |
 
 A gate that fails here is reported, not re-scoped: §WP4 says a G3 failure stops forward work, and v3.1 ran the downstream work packages anyway only because the experiments that depend on G3 (A6's critical-step trials, WP5) were designed not to depend on a full assembly succeeding (M11).
 
@@ -97,7 +97,7 @@ Three defects found on the way were fixed and are in the frozen code (commit 5a4
 
 ## 5. A6 — does principled bracing help? (main experiment)
 
-**Design (M11).** At every step that any strategy braces, the structure is pre-placed and mated up to that step, and the step is executed by the behaviour tree with each strategy on the same seeds (feeder position, handoff error, F/T noise). A placement succeeds if the brick seats and **no joint anywhere breaks**. The three strategies share one trigger (predicted utilisation × 3.0 ≥ 1) and one stabilizer controller, so they differ only in *where* the stabilizer grasps. n = 20 seeds per cell on S3 (60 trials per strategy) and 5 on S5 (ten critical steps; 50 per strategy — CPU time: the 150 S5 trials took two hours).
+**Design (M11).** At every step that any strategy braces, the structure is pre-placed and mated up to that step, and the step is executed by the behaviour tree with each strategy on the same seeds (feeder position, handoff error, F/T noise). A placement succeeds if the brick seats and **no joint anywhere breaks**. The three strategies share one trigger (predicted utilisation × 3.0 ≥ 1) and one stabilizer controller, so they differ only in *where* the stabilizer grasps. n = 20 seeds per cell: 60 trials per strategy on S3 (three critical steps) and 200 on S5 (ten). S5's seeds 0–4 ran on the 4-core machine of the original execution (two hours for 150 trials) and seeds 5–19 on a 16-core workstation (18 minutes for 450), in the same pinned environment, which reproduces the first machine's trials exactly (ledger `local_gpu_twin`).
 
 ### A6 — placement success at the critical steps (no joint may break)
 
@@ -106,20 +106,20 @@ Three defects found on the way were fixed and are in the frozen code (commit 5a4
 | S3/11 | 0/20 = 0% [0, 16] | 18/20 = 90% [70, 97] | 0/20 = 0% [0, 16] |
 | S3/13 | 0/20 = 0% [0, 16] | 20/20 = 100% [84, 100] | 20/20 = 100% [84, 100] |
 | S3/14 | 10/20 = 50% [30, 70] | 13/20 = 65% [43, 82] | 20/20 = 100% [84, 100] |
-| S5/12 | 0/5 = 0% [0, 43] | 4/5 = 80% [38, 96] | 0/5 = 0% [0, 43] |
-| S5/14 | 0/5 = 0% [0, 43] | 5/5 = 100% [57, 100] | 0/5 = 0% [0, 43] |
-| S5/15 | 0/5 = 0% [0, 43] | 5/5 = 100% [57, 100] | 4/5 = 80% [38, 96] |
-| S5/19 | 0/5 = 0% [0, 43] | 4/5 = 80% [38, 96] | 0/5 = 0% [0, 43] |
-| S5/20 | 0/5 = 0% [0, 43] | 5/5 = 100% [57, 100] | 0/5 = 0% [0, 43] |
-| S5/21 | 0/5 = 0% [0, 43] | 0/5 = 0% [0, 43] | 0/5 = 0% [0, 43] |
-| S5/22 | 0/5 = 0% [0, 43] | 3/5 = 60% [23, 88] | 0/5 = 0% [0, 43] |
-| S5/23 | 0/5 = 0% [0, 43] | 0/5 = 0% [0, 43] | 0/5 = 0% [0, 43] |
-| S5/24 | 0/5 = 0% [0, 43] | 3/5 = 60% [23, 88] | 5/5 = 100% [57, 100] |
-| S5/25 | 0/5 = 0% [0, 43] | 0/5 = 0% [0, 43] | 5/5 = 100% [57, 100] |
+| S5/12 | 0/20 = 0% [0, 16] | 18/20 = 90% [70, 97] | 0/20 = 0% [0, 16] |
+| S5/14 | 0/20 = 0% [0, 16] | 20/20 = 100% [84, 100] | 0/20 = 0% [0, 16] |
+| S5/15 | 0/20 = 0% [0, 16] | 18/20 = 90% [70, 97] | 19/20 = 95% [76, 99] |
+| S5/19 | 0/20 = 0% [0, 16] | 17/20 = 85% [64, 95] | 0/20 = 0% [0, 16] |
+| S5/20 | 0/20 = 0% [0, 16] | 18/20 = 90% [70, 97] | 0/20 = 0% [0, 16] |
+| S5/21 | 0/20 = 0% [0, 16] | 0/20 = 0% [0, 16] | 0/20 = 0% [0, 16] |
+| S5/22 | 0/20 = 0% [0, 16] | 11/20 = 55% [34, 74] | 0/20 = 0% [0, 16] |
+| S5/23 | 0/20 = 0% [0, 16] | 0/20 = 0% [0, 16] | 0/20 = 0% [0, 16] |
+| S5/24 | 0/20 = 0% [0, 16] | 12/20 = 60% [39, 78] | 20/20 = 100% [84, 100] |
+| S5/25 | 0/20 = 0% [0, 16] | 0/20 = 0% [0, 16] | 20/20 = 100% [84, 100] |
 | S3/pooled | 10/60 = 17% [9, 28] | 51/60 = 85% [74, 92] | 40/60 = 67% [54, 77] |
-| S5/pooled | 0/50 = 0% [0, 7] | 29/50 = 58% [44, 71] | 14/50 = 28% [17, 42] |
+| S5/pooled | 0/200 = 0% [0, 2] | 114/200 = 57% [50, 64] | 59/200 = 30% [24, 36] |
 
-Paired comparisons on matched seeds (exact McNemar; difference in success rate, b − a, with 95% CI). Comparisons with fewer than 10 pairs (S5's single steps) are in `results/analysis.json` only:
+Paired comparisons on matched seeds (exact McNemar; difference in success rate, b − a, with 95% CI). Comparisons with fewer than 10 pairs are in `results/analysis.json` only:
 
 | comparison | pairs | only b succeeds | only a succeeds | difference [95% CI] | p |
 |---|---|---|---|---|---|
@@ -132,10 +132,40 @@ Paired comparisons on matched seeds (exact McNemar; difference in success rate, 
 | S3/14 none->weakest_joint | 20 | 10 | 0 | +0.50 [+0.28, +0.72] | 0.00195 |
 | S3/14 nearest->weakest_joint | 20 | 7 | 0 | +0.35 [+0.14, +0.56] | 0.0156 |
 | S3/14 none->nearest | 20 | 5 | 2 | +0.15 [-0.11, +0.41] | 0.453 |
+| S5/12 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/12 nearest->weakest_joint | 20 | 0 | 18 | -0.90 [-1.03, -0.77] | 7.63e-06 |
+| S5/12 none->nearest | 20 | 18 | 0 | +0.90 [+0.77, +1.03] | 7.63e-06 |
+| S5/14 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/14 nearest->weakest_joint | 20 | 0 | 20 | -1.00 [-1.00, -1.00] | 1.91e-06 |
+| S5/14 none->nearest | 20 | 20 | 0 | +1.00 [+1.00, +1.00] | 1.91e-06 |
+| S5/15 none->weakest_joint | 20 | 19 | 0 | +0.95 [+0.85, +1.05] | 3.81e-06 |
+| S5/15 nearest->weakest_joint | 20 | 2 | 1 | +0.05 [-0.12, +0.22] | 1 |
+| S5/15 none->nearest | 20 | 18 | 0 | +0.90 [+0.77, +1.03] | 7.63e-06 |
+| S5/19 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/19 nearest->weakest_joint | 20 | 0 | 17 | -0.85 [-1.01, -0.69] | 1.53e-05 |
+| S5/19 none->nearest | 20 | 17 | 0 | +0.85 [+0.69, +1.01] | 1.53e-05 |
+| S5/20 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/20 nearest->weakest_joint | 20 | 0 | 18 | -0.90 [-1.03, -0.77] | 7.63e-06 |
+| S5/20 none->nearest | 20 | 18 | 0 | +0.90 [+0.77, +1.03] | 7.63e-06 |
+| S5/21 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/21 nearest->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/21 none->nearest | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/22 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/22 nearest->weakest_joint | 20 | 0 | 11 | -0.55 [-0.77, -0.33] | 0.000977 |
+| S5/22 none->nearest | 20 | 11 | 0 | +0.55 [+0.33, +0.77] | 0.000977 |
+| S5/23 none->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/23 nearest->weakest_joint | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/23 none->nearest | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
+| S5/24 none->weakest_joint | 20 | 20 | 0 | +1.00 [+1.00, +1.00] | 1.91e-06 |
+| S5/24 nearest->weakest_joint | 20 | 8 | 0 | +0.40 [+0.18, +0.62] | 0.00781 |
+| S5/24 none->nearest | 20 | 12 | 0 | +0.60 [+0.38, +0.82] | 0.000488 |
+| S5/25 none->weakest_joint | 20 | 20 | 0 | +1.00 [+1.00, +1.00] | 1.91e-06 |
+| S5/25 nearest->weakest_joint | 20 | 20 | 0 | +1.00 [+1.00, +1.00] | 1.91e-06 |
+| S5/25 none->nearest | 20 | 0 | 0 | +0.00 [+0.00, +0.00] | 1 |
 | S3/pooled none->weakest_joint | 60 | 30 | 0 | +0.50 [+0.37, +0.63] | 1.86e-09 |
 | S3/pooled nearest->weakest_joint | 60 | 7 | 18 | -0.18 [-0.34, -0.03] | 0.0433 |
-| S5/pooled none->weakest_joint | 50 | 14 | 0 | +0.28 [+0.15, +0.41] | 0.000122 |
-| S5/pooled nearest->weakest_joint | 50 | 7 | 22 | -0.30 [-0.50, -0.10] | 0.00813 |
+| S5/pooled none->weakest_joint | 200 | 59 | 0 | +0.29 [+0.23, +0.36] | 3.47e-18 |
+| S5/pooled nearest->weakest_joint | 200 | 30 | 85 | -0.28 [-0.37, -0.18] | 2.86e-07 |
 
 Placer peak force (matched seeds, Wilcoxon; cells with at least 10 pairs):
 
@@ -150,23 +180,53 @@ Placer peak force (matched seeds, Wilcoxon; cells with at least 10 pairs):
 | S3/14 none->weakest_joint | 20 | 73.9 | 76.9 | +4.1% | 0.0362 |
 | S3/14 nearest->weakest_joint | 20 | 72.2 | 76.9 | +6.5% | 0.00831 |
 | S3/14 none->nearest | 20 | 73.9 | 72.2 | -2.2% | 0.0484 |
+| S5/12 none->weakest_joint | 20 | 110.1 | 174.2 | +58.2% | 0.0107 |
+| S5/12 nearest->weakest_joint | 20 | 55.1 | 174.2 | +216.3% | 8.84e-05 |
+| S5/12 none->nearest | 20 | 110.1 | 55.1 | -50.0% | 1.91e-06 |
+| S5/14 none->weakest_joint | 20 | 106.2 | 96.8 | -8.9% | 5.72e-06 |
+| S5/14 nearest->weakest_joint | 20 | 81.7 | 96.8 | +18.4% | 1.91e-06 |
+| S5/14 none->nearest | 20 | 106.2 | 81.7 | -23.0% | 1.91e-06 |
+| S5/15 none->weakest_joint | 20 | 59.6 | 42.3 | -29.1% | 1.91e-06 |
+| S5/15 nearest->weakest_joint | 20 | 42.1 | 42.3 | +0.5% | 0.0438 |
+| S5/15 none->nearest | 20 | 59.6 | 42.1 | -29.4% | 1.91e-06 |
+| S5/19 none->weakest_joint | 20 | 55.6 | 46.7 | -16.0% | 1.91e-06 |
+| S5/19 nearest->weakest_joint | 20 | 47.5 | 46.7 | -1.6% | 0.00102 |
+| S5/19 none->nearest | 20 | 55.6 | 47.5 | -14.6% | 1.91e-06 |
+| S5/20 none->weakest_joint | 20 | 65.4 | 55.9 | -14.5% | 1.91e-05 |
+| S5/20 nearest->weakest_joint | 20 | 45.7 | 55.9 | +22.4% | 8.84e-05 |
+| S5/20 none->nearest | 20 | 65.4 | 45.7 | -30.1% | 1.91e-06 |
+| S5/21 none->weakest_joint | 20 | 60.2 | 43.9 | -27.1% | 1.91e-06 |
+| S5/21 nearest->weakest_joint | 20 | 45.5 | 43.9 | -3.5% | 0.154 |
+| S5/21 none->nearest | 20 | 60.2 | 45.5 | -24.4% | 1.91e-06 |
+| S5/22 none->weakest_joint | 20 | 53.2 | 42.3 | -20.6% | 1.91e-06 |
+| S5/22 nearest->weakest_joint | 20 | 41.3 | 42.3 | +2.3% | 0.546 |
+| S5/22 none->nearest | 20 | 53.2 | 41.3 | -22.4% | 3.81e-06 |
+| S5/23 none->weakest_joint | 20 | 61.3 | 47.4 | -22.6% | 1.91e-06 |
+| S5/23 nearest->weakest_joint | 20 | 48.6 | 47.4 | -2.5% | 0.00068 |
+| S5/23 none->nearest | 20 | 61.3 | 48.6 | -20.7% | 3.81e-06 |
+| S5/24 none->weakest_joint | 20 | 100.4 | 96.1 | -4.3% | 0.0073 |
+| S5/24 nearest->weakest_joint | 20 | 83.4 | 96.1 | +15.2% | 1.91e-06 |
+| S5/24 none->nearest | 20 | 100.4 | 83.4 | -16.9% | 3.81e-06 |
+| S5/25 none->weakest_joint | 20 | 253.6 | 97.0 | -61.7% | 0.00944 |
+| S5/25 nearest->weakest_joint | 20 | 58.1 | 97.0 | +67.0% | 1.91e-06 |
+| S5/25 none->nearest | 20 | 253.6 | 58.1 | -77.1% | 0.000463 |
 
 Brace force, predicted (`expected_reaction_wrench`) vs measured at the placer's peak (forces only):
 
 | strategy | placements | predicted mean (N) | measured mean (N) | |error| mean (N) | median (N) |
 |---|---|---|---|---|---|
-| nearest | 107 | 25.6 | 23.0 | 15.4 | 11.1 |
-| weakest_joint | 110 | 32.7 | 29.4 | 16.9 | 13.3 |
+| nearest | 254 | 34.0 | 28.3 | 18.1 | 13.7 |
+| weakest_joint | 259 | 36.6 | 37.0 | 16.0 | 12.5 |
 
 **Reading.**
 
-* **A second arm is necessary.** Unbraced, S3's critical steps succeed 10 times in 60 (all at the crown, step 14) and S5's never (0/50). Weakest-joint bracing against none, pooled: +50 points on S3 (paired McNemar p = 2e-9) and +28 on S5 (p = 1e-4). The premise of the project is measured, not assumed.
+* **A second arm is necessary.** Unbraced, S3's critical steps succeed 10 times in 60 (all at the crown, step 14) and S5's never (0/200). Weakest-joint bracing against none, pooled: +50 points on S3 (paired McNemar p = 2e-9) and +29.5 on S5 (p = 3e-18). The premise of the project is measured, not assumed.
 * **Where the stabilizer grasps matters a great deal** — single steps differ by up to 100 points between the two bracing strategies — **and the plastic force model chooses well at some steps and badly at others.**
-  * Weakest-joint wins where the model names the joint that actually fails: S3's crown (step 14: 100 % vs 65 %, p = 0.016) and S5's last two steps (24: 100 % vs 60 %; 25, the step the model rates worst at 2.52: 100 % vs 0 %). At S3 step 13 both succeed, but weakest-joint's brace carries the load where it should: **the placer's peak force falls 31 % against nearest and 58 % against no brace** (Wilcoxon p = 6e-6, 5e-5), the size of §4.4's benchmark ([DualArmSnapFit], 30 %).
-  * It loses where the model names the wrong joint: S3 step 11 (0 % vs 90 %, p = 8e-6) — the model braces the pier's base, and the pier's upper joints fail — and five of S5's ten steps (12, 14, 19, 20, 22), where nearest succeeds 60–100 % and weakest-joint 0 %.
-* **Pooled, the naive heuristic is better on both structures**: nearest 85 % vs weakest-joint 67 % on S3 (p = 0.04), 58 % vs 28 % on S5 (p = 0.008). **A6 is negative for the proposed method.** It is not §4.4's null (placement clearly matters); it says that a lower-bound plastic force model is not a good enough guide to *where* (ledger `a6_verdict`).
-* **Why the model is wrong.** StableLego's formulation (and ours) is a lower-bound plastic analysis of a rigid structure: joints are assumed to redistribute load until the best static distribution is reached. LEGO joints are brittle and the welded columns compliant — S3's pier leans ~2° under the corbel press — so load follows stiffness, not the optimum, and the first joint to break is often not the one the LP loads most. The model is also unconservative: on S5, the four critical steps it rates *below* 1 unbraced (0.71–0.93, braced only because of the safety factor) fail unbraced in all 20 trials, as S3's step 11 does at a rating of 0.40 (M13). An elastic analysis, or choosing the brace by simulating the candidates in the twin, is the change these results point to; neither was run.
-* **Brace prediction.** The brace force the plan predicts (`expected_reaction_wrench`) and the force the stabilizer measures at the placer's peak agree on average (predicted 26 N / 33 N, measured 23 N / 29 N for nearest / weakest-joint), but not placement by placement: the mean absolute error is 15–17 N (median 11–13 N). Forces only; the measured torque is about the wrist, not the brace point.
+  * Weakest-joint wins where the model names the joint that actually fails: S3's crown (step 14: 100 % vs 65 %, p = 0.016) and S5's last two steps (24: 100 % vs 60 %, p = 0.008; 25, the step the model rates worst at 2.52: 100 % vs 0 %, p = 2e-6). At S3 step 13 both succeed, but weakest-joint's brace carries the load where it should: **the placer's peak force falls 31 % against nearest and 58 % against no brace** (Wilcoxon p = 6e-6, 5e-5), the size of §4.4's benchmark ([DualArmSnapFit], 30 %).
+  * It loses where the model names the wrong joint: S3 step 11 (0 % vs 90 %, p = 8e-6) — the model braces the pier's base, and the pier's upper joints fail — and five of S5's ten steps (12, 14, 19, 20, 22), where nearest succeeds 55–100 % and weakest-joint 0 % (each p ≤ 0.001). Of S5's other three, step 15 is a tie (nearest 90 %, weakest-joint 95 %) and no strategy places steps 21 or 23.
+* **Pooled, the naive heuristic is better on both structures**: nearest 85 % vs weakest-joint 67 % on S3 (p = 0.04), 57 % vs 30 % on S5 (p = 3e-7). **A6 is negative for the proposed method.** It is not §4.4's null (placement clearly matters); it says that a lower-bound plastic force model is not a good enough guide to *where* (ledger `a6_verdict`).
+* **Why the model is wrong.** StableLego's formulation (and ours) is a lower-bound plastic analysis of a rigid structure: joints are assumed to redistribute load until the best static distribution is reached. LEGO joints are brittle and the welded columns compliant — S3's pier leans ~2° under the corbel press — so load follows stiffness, not the optimum, and the first joint to break is often not the one the LP loads most. The model is also unconservative: on S5, the four critical steps it rates *below* 1 unbraced (0.71–0.93, braced only because of the safety factor) fail unbraced in all 80 trials, as S3's step 11 does at a rating of 0.40 (M13). An elastic analysis, or choosing the brace by simulating the candidates in the twin, is the change these results point to; neither was run.
+* **Brace prediction.** The brace force the plan predicts (`expected_reaction_wrench`) and the force the stabilizer measures at the placer's peak agree on average (predicted 34 N / 37 N, measured 28 N / 37 N for nearest / weakest-joint, over 254 / 259 braced placements on S3 and S5), but not placement by placement: the mean absolute error is 16–18 N (median 12.5–13.7 N). Forces only; the measured torque is about the wrist, not the brace point.
 
 ![A6](../brickassembly/results/figures/a6_success.png)
 
@@ -293,7 +353,7 @@ How the failed runs ended: during R1 insertion 8; after a scripted_spiral_v1 sea
 
 ## 8. Findings, in one place
 
-1. Bracing is necessary: without a stabilizer the critical steps succeed 17 % of the time on the corbelled bridge (S3) and never on the tower (S5); with one, 67–85 % and 28–58 %.
+1. Bracing is necessary: without a stabilizer the critical steps succeed 17 % of the time on the corbelled bridge (S3) and never on the tower (S5); with one, 67–85 % and 30–57 %.
 2. Where the static force model identifies the failing joint correctly, principled (weakest-joint) bracing beats the naive nearest-brick heuristic in success (S3 step 14, +35 points; S5 steps 24–25) and in the placer's peak force (S3 step 13, −31 %, the size of the effect the literature reports). Where it does not — a compliant column whose upper joints fail while the model names the base — it loses badly (S3 step 11, five S5 steps). Pooled, the naive heuristic is better on both structures: **A6 is negative for the proposed method.**
 3. The plastic force-balance model (StableLego-style) is unconservative for brittle, compliant LEGO joints: it misses a 2° lean of a four-high pier, and rates four of S5's steps safe unbraced that fail every time in the twin. An elastic joint model in the planner is the change these results point to.
 4. Joint-model fidelity changes what an insertion policy learns. With the force limits held equal, a policy trained on a light hand-tuned joint learns to press hard and seats 23 % on the calibrated joint against 66 % for one trained on it (A10, R1hc); with force limits derived from the light model, training collapses altogether (R1ht).
@@ -307,7 +367,7 @@ How the failed runs ended: during R1 insertion 8; after a scripted_spiral_v1 sea
 ## 9. Limitations and threats to validity
 
 * **Everything is simulated, in a twin of the cell.** The joint model is calibrated to WP2's numbers but is a model: weld-based seating, a Coulomb interference, and a 5 ms break rule. The findings about bracing depend on its stiffness and brittleness — which is also what finding 3 is about.
-* **Hand-authored structures (D14), few seeds on S5.** A6's conclusions rest on S3's three critical steps (20 seeds each) and S5's ten (5 seeds each: per-step S5 differences are not individually significant; the pooled ones are). The structures were revised during the work (M3); the last revision (the 2x6 second corbel) predates every A6 trial reported here.
+* **Hand-authored structures (D14).** A6's conclusions rest on two structures: S3's three critical steps and S5's ten, 20 seeds each. On S5 the bracing strategies differ significantly at seven of the ten steps (McNemar p ≤ 0.008); the other three are a tie (step 15) and two steps no strategy places (21, 23). The structures were revised during the work (M3); the last revision (the 2x6 second corbel) predates every A6 trial reported here.
 * **The safety factor was set from S3 (M13)**, the structure A6 is measured on. It changes which steps are critical (it made step 11 critical), not how any strategy is scored.
 * **RL at CPU scale.** 300 k samples per run, one seed per run: the WP5 comparisons carry run-to-run variance that a single seed cannot measure. No calibrated-joint run's curriculum reached stage 3.
 * **Brace wrench comparison** uses forces only; the measured torque is about the wrist sensor.
@@ -327,7 +387,7 @@ $PY -m pytest tests/test_clutch.py tests/test_planner.py -m slow        # G1 / G
 $PY planner.py --frame twin                                          # plans/twin/*.json
 $PY -m experiments.runner g3 --structures S1 S2 S3 --trials 20       # results/g3
 $PY -m experiments.runner a6 --structures S3 --seeds 20              # results/a6
-$PY -m experiments.runner a6 --structures S5 --seeds 5
+$PY -m experiments.runner a6 --structures S5 --seeds 20
 for r in R1 R2 R3 R4 R1ht R1hc; do $PY -m tasks.ppo --run $r --samples 300000; done
 $PY -m tasks.ppo --eval-all --episodes 100                           # results/wp5/eval.jsonl
 $PY -m tasks.ppo --eval-all R1 R1ht R1hc --joint handtuned --stages 0 --episodes 100
@@ -336,4 +396,4 @@ $PY -m experiments.runner g6 --policy R1 --structures S1 S2 S3 --strategies weak
 $PY -m experiments.analyze && $PY -m experiments.tables              # analysis.json, figures, tables
 ```
 
-Trials run in parallel worker processes and are resumable (a rerun skips trials already in `trials.jsonl`). The S5 batch in `results/a6` was run with `--seeds 10` and stopped at 5 seeds per cell; `--seeds 5` reproduces the same trials.
+Trials run in parallel worker processes and are resumable (a rerun skips trials already in `trials.jsonl`). The S5 batch in `results/a6` was run to 5 seeds per cell on the original 4-core machine and extended to 20 on the workstation by rerunning with `--seeds 20`; `--workers` defaults to one process per physical core.

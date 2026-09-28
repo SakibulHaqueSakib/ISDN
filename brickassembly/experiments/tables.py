@@ -44,7 +44,7 @@ def main():
                 "%d/%d = %s %s" % (cell[s]["success"], cell[s]["n"], pct(cell[s]["rate"]), ci(cell[s]["ci95"]))
                 if cell.get(s, {}).get("n") else "—" for s in STRATS) + " |")
         out += ["", "Paired comparisons on matched seeds (exact McNemar; difference in success rate, "
-                "b − a, with 95%% CI). Comparisons with fewer than %d pairs (S5's single steps) are in "
+                "b − a, with 95%% CI). Comparisons with fewer than %d pairs are in "
                 "`results/analysis.json` only:" % MIN_PAIRS_SHOWN, "",
                 "| comparison | pairs | only b succeeds | only a succeeds | difference [95% CI] | p |",
                 "|---|---|---|---|---|---|"]
