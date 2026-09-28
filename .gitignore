@@ -31,3 +31,9 @@ imgui.ini
 # MuJoCo twin: fetched Menagerie assets and MuJoCo's warning log
 brickassembly/.cache/
 MUJOCO_LOG.TXT
+
+# graphify: machine-local paths and the free-to-rebuild AST cache
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/ast/
+graphify-out/cache/stat-index.json

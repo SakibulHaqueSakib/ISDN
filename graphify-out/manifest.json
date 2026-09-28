@@ -1,0 +1,1586 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1790562126.0409718,
+    "seen": 1790634309.0460536,
+    "ast_hash": "7e2150b56fdbba790023af8dd2d052ee",
+    "semantic_hash": "7e2150b56fdbba790023af8dd2d052ee"
+  },
+  ".vscode/c_cpp_properties.json": {
+    "mtime": 1789445201.146609,
+    "seen": 1790634309.046057,
+    "ast_hash": "a03107282eb37583791f04a12db2c1b8",
+    "semantic_hash": "a03107282eb37583791f04a12db2c1b8"
+  },
+  ".vscode/settings.json": {
+    "mtime": 1790050025.9855866,
+    "seen": 1790634309.0460582,
+    "ast_hash": "37e7919182cf81d47445517a229ee428",
+    "semantic_hash": "37e7919182cf81d47445517a229ee428"
+  },
+  "BrickSim/.vscode/extensions.json": {
+    "mtime": 1789889155.1591492,
+    "seen": 1790634309.046059,
+    "ast_hash": "2a9319f5a1e0e8b63afd4d68df83956d",
+    "semantic_hash": "2a9319f5a1e0e8b63afd4d68df83956d"
+  },
+  "BrickSim/.vscode/launch.json": {
+    "mtime": 1789889155.159159,
+    "seen": 1790634309.0460598,
+    "ast_hash": "cc272f9544e996cda7daac851842d106",
+    "semantic_hash": "cc272f9544e996cda7daac851842d106"
+  },
+  "BrickSim/.vscode/settings.json": {
+    "mtime": 1789889155.159159,
+    "seen": 1790634309.0460603,
+    "ast_hash": "cbe72fa0cc87755e28820ed2893dc573",
+    "semantic_hash": "cbe72fa0cc87755e28820ed2893dc573"
+  },
+  "BrickSim/.vscode/tasks.json": {
+    "mtime": 1789889155.159159,
+    "seen": 1790634309.0460608,
+    "ast_hash": "b125f8af90d2018e785fec644118feeb",
+    "semantic_hash": "b125f8af90d2018e785fec644118feeb"
+  },
+  "BrickSim/demos/demo_assembly.py": {
+    "mtime": 1789971326.2557554,
+    "seen": 1790634309.046061,
+    "ast_hash": "80768c398a03f9e9424ce5620ba405b1",
+    "semantic_hash": "80768c398a03f9e9424ce5620ba405b1"
+  },
+  "BrickSim/demos/demo_assembly_structure1.json": {
+    "mtime": 1789889155.1594055,
+    "seen": 1790634309.0460615,
+    "ast_hash": "dd27fb57d3cc56f81bd44dd72b9f8287",
+    "semantic_hash": "dd27fb57d3cc56f81bd44dd72b9f8287"
+  },
+  "BrickSim/demos/demo_inhand.py": {
+    "mtime": 1789889155.1594865,
+    "seen": 1790634309.046062,
+    "ast_hash": "f3e9d8fcc913c17a2f8befec0ce34639",
+    "semantic_hash": "f3e9d8fcc913c17a2f8befec0ce34639"
+  },
+  "BrickSim/demos/demo_keyboard_teleop.py": {
+    "mtime": 1789889155.1595144,
+    "seen": 1790634309.0460627,
+    "ast_hash": "6bc221db77fe9f063098c45c68e5cfb0",
+    "semantic_hash": "6bc221db77fe9f063098c45c68e5cfb0"
+  },
+  "BrickSim/demos/demo_teleop.py": {
+    "mtime": 1789889155.1595538,
+    "seen": 1790634309.0460632,
+    "ast_hash": "3b6fb6b36895b848e1dbb17a10e61ad0",
+    "semantic_hash": "3b6fb6b36895b848e1dbb17a10e61ad0"
+  },
+  "BrickSim/experiments/evaluate_stability.py": {
+    "mtime": 1789889155.1613326,
+    "seen": 1790634309.046064,
+    "ast_hash": "b7d27e167d3a8ac7d8fccb205799e3d3",
+    "semantic_hash": "b7d27e167d3a8ac7d8fccb205799e3d3"
+  },
+  "BrickSim/experiments/static_analysis.py": {
+    "mtime": 1789889155.1613827,
+    "seen": 1790634309.0460641,
+    "ast_hash": "56473622a4f972e0d097606a15533fc2",
+    "semantic_hash": "56473622a4f972e0d097606a15533fc2"
+  },
+  "BrickSim/native/CMakePresets.json": {
+    "mtime": 1789889155.1614609,
+    "seen": 1790634309.0460646,
+    "ast_hash": "d0378883e1ce71a74a381dd3d7df0d38",
+    "semantic_hash": "d0378883e1ce71a74a381dd3d7df0d38"
+  },
+  "BrickSim/native/cmake/prepare_artifacts.py": {
+    "mtime": 1789889155.1615446,
+    "seen": 1790634309.046065,
+    "ast_hash": "76c6af207007a7975cd2ee12739a3d75",
+    "semantic_hash": "76c6af207007a7975cd2ee12739a3d75"
+  },
+  "BrickSim/native/py/pybind11.cpp": {
+    "mtime": 1789889155.1634536,
+    "seen": 1790634309.0460653,
+    "ast_hash": "9dcb5afdde522e0080b6afcbe15ce517",
+    "semantic_hash": "9dcb5afdde522e0080b6afcbe15ce517"
+  },
+  "BrickSim/native/py/pybind11_json.hpp": {
+    "mtime": 1789889155.1634915,
+    "seen": 1790634309.0460658,
+    "ast_hash": "100a02b32f650515d8eef0dc91f13847",
+    "semantic_hash": "100a02b32f650515d8eef0dc91f13847"
+  },
+  "BrickSim/native/shims/bits/c++config.h": {
+    "mtime": 1789889155.1635802,
+    "seen": 1790634309.0460663,
+    "ast_hash": "e168927be499dcb609fffd73fd715d92",
+    "semantic_hash": "e168927be499dcb609fffd73fd715d92"
+  },
+  "BrickSim/native/shims/features.h": {
+    "mtime": 1789889155.1635802,
+    "seen": 1790634309.0460668,
+    "ast_hash": "5bfe07c6e25164700f26230d443163c0",
+    "semantic_hash": "5bfe07c6e25164700f26230d443163c0"
+  },
+  "BrickSim/native/shims/pxr/base/arch/defines.h": {
+    "mtime": 1789889155.1636095,
+    "seen": 1790634309.046067,
+    "ast_hash": "d6b625ae4fec3e0745344e6e3ad78591",
+    "semantic_hash": "d6b625ae4fec3e0745344e6e3ad78591"
+  },
+  "BrickSim/native/tests/TestBrickSpecs.cpp": {
+    "mtime": 1789889155.1636434,
+    "seen": 1790634309.0460675,
+    "ast_hash": "53741f21e64df2bff8e19b47fd7330ba",
+    "semantic_hash": "53741f21e64df2bff8e19b47fd7330ba"
+  },
+  "BrickSim/native/tests/TestConstraintScheduler.cpp": {
+    "mtime": 1789889155.1636558,
+    "seen": 1790634309.0460682,
+    "ast_hash": "2f93ac413e5ea9947a8a6b4e9dfd6764",
+    "semantic_hash": "2f93ac413e5ea9947a8a6b4e9dfd6764"
+  },
+  "BrickSim/native/tests/TestConversions.cpp": {
+    "mtime": 1789889155.1637318,
+    "seen": 1790634309.0460684,
+    "ast_hash": "94e7060327f657afe06d7ebf5ee5c6d7",
+    "semantic_hash": "94e7060327f657afe06d7ebf5ee5c6d7"
+  },
+  "BrickSim/native/tests/TestDynamicGraph.cpp": {
+    "mtime": 1789889155.1637936,
+    "seen": 1790634309.0460687,
+    "ast_hash": "58dc3f02e91dc1b8221e5f18fe6659f9",
+    "semantic_hash": "58dc3f02e91dc1b8221e5f18fe6659f9"
+  },
+  "BrickSim/native/tests/TestLegoGraph.cpp": {
+    "mtime": 1789889155.1638455,
+    "seen": 1790634309.0460691,
+    "ast_hash": "5e5ef0464f031d67bf0b2c21229754ad",
+    "semantic_hash": "5e5ef0464f031d67bf0b2c21229754ad"
+  },
+  "BrickSim/native/tests/TestLegoGraphHooks.cpp": {
+    "mtime": 1789889155.1638727,
+    "seen": 1790634309.0460699,
+    "ast_hash": "1c98b1d5be1c714694e23725bc9efd67",
+    "semantic_hash": "1c98b1d5be1c714694e23725bc9efd67"
+  },
+  "BrickSim/native/tests/TestLegoGraphMultiSegEdge.cpp": {
+    "mtime": 1789889155.1638727,
+    "seen": 1790634309.0460703,
+    "ast_hash": "3cb4c3f19b937e832c02d10e3f5a1441",
+    "semantic_hash": "3cb4c3f19b937e832c02d10e3f5a1441"
+  },
+  "BrickSim/native/tests/TestLegoGraphSelfConnect.cpp": {
+    "mtime": 1789889155.1638727,
+    "seen": 1790634309.0460708,
+    "ast_hash": "2a8f8f068d21a5b338cea514ec17c2f0",
+    "semantic_hash": "2a8f8f068d21a5b338cea514ec17c2f0"
+  },
+  "BrickSim/native/tests/TestMultiKeyMap.cpp": {
+    "mtime": 1789889155.163915,
+    "seen": 1790634309.046071,
+    "ast_hash": "58d3c54b0c92522bbe927e1fc14e958f",
+    "semantic_hash": "58d3c54b0c92522bbe927e1fc14e958f"
+  },
+  "BrickSim/native/tests/TestMultiKeySet.cpp": {
+    "mtime": 1789889155.1639328,
+    "seen": 1790634309.0460715,
+    "ast_hash": "e8eec2f129ca92881fd99e1978a9d20d",
+    "semantic_hash": "e8eec2f129ca92881fd99e1978a9d20d"
+  },
+  "BrickSim/native/tests/TestPack2dMaxrect.cpp": {
+    "mtime": 1789889155.1639488,
+    "seen": 1790634309.0460718,
+    "ast_hash": "ab78ca8d1819c31daf68f7f99e65925c",
+    "semantic_hash": "ab78ca8d1819c31daf68f7f99e65925c"
+  },
+  "BrickSim/native/tests/TestPhysicsGraph.cpp": {
+    "mtime": 1789889155.163995,
+    "seen": 1790634309.0460722,
+    "ast_hash": "0c6606d5ce35a66cf8cfdb5335736c7d",
+    "semantic_hash": "0c6606d5ce35a66cf8cfdb5335736c7d"
+  },
+  "BrickSim/native/tests/TestPhysicsGraphAssemblyClosure.cpp": {
+    "mtime": 1789889155.1640375,
+    "seen": 1790634309.0460727,
+    "ast_hash": "f2b05e87cf64b73502cecf8bb7ebfef8",
+    "semantic_hash": "f2b05e87cf64b73502cecf8bb7ebfef8"
+  },
+  "BrickSim/native/tests/TestPolyStore.cpp": {
+    "mtime": 1789889155.164073,
+    "seen": 1790634309.0460734,
+    "ast_hash": "ae0de2d32166784cec274aed1fdf05a6",
+    "semantic_hash": "ae0de2d32166784cec274aed1fdf05a6"
+  },
+  "BrickSim/native/tests/TestRandomRegularGraphSchedulingPolicy.cpp": {
+    "mtime": 1789889155.1640923,
+    "seen": 1790634309.0460737,
+    "ast_hash": "f6ff9c5ae901901745044756bdf4cf32",
+    "semantic_hash": "f6ff9c5ae901901745044756bdf4cf32"
+  },
+  "BrickSim/native/tests/TestTopologyIO.cpp": {
+    "mtime": 1789889155.1641462,
+    "seen": 1790634309.0460742,
+    "ast_hash": "52983acf579d9b88daf84fb947ed8f60",
+    "semantic_hash": "52983acf579d9b88daf84fb947ed8f60"
+  },
+  "BrickSim/native/tests/TestUsdLegoGraph.cpp": {
+    "mtime": 1789889155.1642373,
+    "seen": 1790634309.0460744,
+    "ast_hash": "b0094af06d947edc09adcac5df3bd382",
+    "semantic_hash": "b0094af06d947edc09adcac5df3bd382"
+  },
+  "BrickSim/native/tools/solve_breakage.cpp": {
+    "mtime": 1789889155.1642373,
+    "seen": 1790634309.0460749,
+    "ast_hash": "9f2c20f024a1dbae3fc8b91e3a2cc566",
+    "semantic_hash": "9f2c20f024a1dbae3fc8b91e3a2cc566"
+  },
+  "BrickSim/native/tools/static_solve.cpp": {
+    "mtime": 1789893067.5536082,
+    "seen": 1790634309.0460753,
+    "ast_hash": "f293389efae92c3134a0f9ef4dfdd990",
+    "semantic_hash": "f293389efae92c3134a0f9ef4dfdd990"
+  },
+  "BrickSim/pyproject.toml": {
+    "mtime": 1789889155.1643171,
+    "seen": 1790634309.0460756,
+    "ast_hash": "75b0f3400d5ab2189593f219f946c2c0",
+    "semantic_hash": "75b0f3400d5ab2189593f219f946c2c0"
+  },
+  "BrickSim/python/bricksim/__init__.py": {
+    "mtime": 1789889155.1643739,
+    "seen": 1790634309.046076,
+    "ast_hash": "1076bd93d6433f463b5271476571504a",
+    "semantic_hash": "1076bd93d6433f463b5271476571504a"
+  },
+  "BrickSim/python/bricksim/__main__.py": {
+    "mtime": 1789889155.1644096,
+    "seen": 1790634309.0460763,
+    "ast_hash": "e5a732544bb3466cac8dfb631fbf57b9",
+    "semantic_hash": "e5a732544bb3466cac8dfb631fbf57b9"
+  },
+  "BrickSim/python/bricksim/_entry.py": {
+    "mtime": 1789889155.1644096,
+    "seen": 1790634309.0460775,
+    "ast_hash": "a71ec4feedac45049a05fd56459d458a",
+    "semantic_hash": "a71ec4feedac45049a05fd56459d458a"
+  },
+  "BrickSim/python/bricksim/assets/robots/fr3/__init__.py": {
+    "mtime": 1789889155.164493,
+    "seen": 1790634309.0460777,
+    "ast_hash": "c4b86017d234deb0bfa59f705bcf1693",
+    "semantic_hash": "c4b86017d234deb0bfa59f705bcf1693"
+  },
+  "BrickSim/python/bricksim/assets/sensors/realsense_d435/__init__.py": {
+    "mtime": 1789889155.1646247,
+    "seen": 1790634309.0460782,
+    "ast_hash": "aef477c1808fa21d3b46c5fcc5af74bb",
+    "semantic_hash": "aef477c1808fa21d3b46c5fcc5af74bb"
+  },
+  "BrickSim/python/bricksim/assets/stages/__init__.py": {
+    "mtime": 1789889155.1697419,
+    "seen": 1790634309.0460787,
+    "ast_hash": "957e833e51c74bbcacbf8264a56b835d",
+    "semantic_hash": "957e833e51c74bbcacbf8264a56b835d"
+  },
+  "BrickSim/python/bricksim/cli/assemble_brick_expert.py": {
+    "mtime": 1789889155.1706283,
+    "seen": 1790634309.046079,
+    "ast_hash": "fecfc86b864e67ba6ea817a6a9f5bcdd",
+    "semantic_hash": "fecfc86b864e67ba6ea817a6a9f5bcdd"
+  },
+  "BrickSim/python/bricksim/cli/convert_topology.py": {
+    "mtime": 1789889155.1706967,
+    "seen": 1790634309.0460794,
+    "ast_hash": "57771b7f4f0b6b1f995cb57cfdb3d17c",
+    "semantic_hash": "57771b7f4f0b6b1f995cb57cfdb3d17c"
+  },
+  "BrickSim/python/bricksim/cli/type_configs.py": {
+    "mtime": 1789889155.1707454,
+    "seen": 1790634309.0460796,
+    "ast_hash": "68429bd6dc376aa07c80dffdfa20688c",
+    "semantic_hash": "68429bd6dc376aa07c80dffdfa20688c"
+  },
+  "BrickSim/python/bricksim/colors.json": {
+    "mtime": 1789889155.1707454,
+    "seen": 1790634309.0460804,
+    "ast_hash": "43db8b02e3d35e6132782809790720ae",
+    "semantic_hash": "43db8b02e3d35e6132782809790720ae"
+  },
+  "BrickSim/python/bricksim/colors.py": {
+    "mtime": 1789889155.1707742,
+    "seen": 1790634309.0460806,
+    "ast_hash": "a93d78ae5695e41ce49eb6468974a54d",
+    "semantic_hash": "a93d78ae5695e41ce49eb6468974a54d"
+  },
+  "BrickSim/python/bricksim/envs/__init__.py": {
+    "mtime": 1789889155.170795,
+    "seen": 1790634309.0460808,
+    "ast_hash": "a8c28a8de668a7128ffab041cc18b36a",
+    "semantic_hash": "a8c28a8de668a7128ffab041cc18b36a"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/__init__.py": {
+    "mtime": 1789889155.1708212,
+    "seen": 1790634309.0460813,
+    "ast_hash": "f88f35e89dd1fedfedc23ff65d1b1844",
+    "semantic_hash": "f88f35e89dd1fedfedc23ff65d1b1844"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/env.py": {
+    "mtime": 1789889155.1708417,
+    "seen": 1790634309.0460815,
+    "ast_hash": "c47f5d02b8648215bba545673468ce61",
+    "semantic_hash": "c47f5d02b8648215bba545673468ce61"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/expert.py": {
+    "mtime": 1789889155.170924,
+    "seen": 1790634309.046082,
+    "ast_hash": "45534677a63fefe457327a0df6c192b0",
+    "semantic_hash": "45534677a63fefe457327a0df6c192b0"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/mdp/commands.py": {
+    "mtime": 1789889155.170924,
+    "seen": 1790634309.0460823,
+    "ast_hash": "fd8fbff16f766c64c1212b0972dc5dcf",
+    "semantic_hash": "fd8fbff16f766c64c1212b0972dc5dcf"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/mdp/common.py": {
+    "mtime": 1789889155.1709616,
+    "seen": 1790634309.0460827,
+    "ast_hash": "8db08b71b8c506433bf1805277a3a59e",
+    "semantic_hash": "8db08b71b8c506433bf1805277a3a59e"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/mdp/observations.py": {
+    "mtime": 1789889155.1709888,
+    "seen": 1790634309.046083,
+    "ast_hash": "b12609b88c718389d2ffe095a272c198",
+    "semantic_hash": "b12609b88c718389d2ffe095a272c198"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/mdp/rewards.py": {
+    "mtime": 1789889155.1710117,
+    "seen": 1790634309.0460837,
+    "ast_hash": "8eef589665499de8908718da823ba95a",
+    "semantic_hash": "8eef589665499de8908718da823ba95a"
+  },
+  "BrickSim/python/bricksim/envs/assemble_brick/mdp/terminations.py": {
+    "mtime": 1789889155.1710117,
+    "seen": 1790634309.046084,
+    "ast_hash": "98509eaedc53c446b093837429993b19",
+    "semantic_hash": "98509eaedc53c446b093837429993b19"
+  },
+  "BrickSim/python/bricksim/envs/wrappers.py": {
+    "mtime": 1789889155.1710117,
+    "seen": 1790634309.0460844,
+    "ast_hash": "fe0ba6a020f7a8135769b9b1711e7c02",
+    "semantic_hash": "fe0ba6a020f7a8135769b9b1711e7c02"
+  },
+  "BrickSim/python/bricksim/extension.py": {
+    "mtime": 1789889155.1710117,
+    "seen": 1790634309.0460846,
+    "ast_hash": "89be742fff549e754960901bf20f8f9d",
+    "semantic_hash": "89be742fff549e754960901bf20f8f9d"
+  },
+  "BrickSim/python/bricksim/kit_runner.py": {
+    "mtime": 1789889155.171066,
+    "seen": 1790634309.0460851,
+    "ast_hash": "7ea98e4f7880b3014a398107dfbb947e",
+    "semantic_hash": "7ea98e4f7880b3014a398107dfbb947e"
+  },
+  "BrickSim/python/bricksim/mdp/brick_part.py": {
+    "mtime": 1789889155.171066,
+    "seen": 1790634309.0460856,
+    "ast_hash": "b8f02ac33041714de26481a77ab4f318",
+    "semantic_hash": "b8f02ac33041714de26481a77ab4f318"
+  },
+  "BrickSim/python/bricksim/mdp/cache_token.py": {
+    "mtime": 1789889155.171113,
+    "seen": 1790634309.0460858,
+    "ast_hash": "f49d65755319095cf05ee9c20b951eaf",
+    "semantic_hash": "f49d65755319095cf05ee9c20b951eaf"
+  },
+  "BrickSim/python/bricksim/mdp/connection_events.py": {
+    "mtime": 1789889155.1711564,
+    "seen": 1790634309.0460863,
+    "ast_hash": "04793b753b44e1814b66cdf338aad45d",
+    "semantic_hash": "04793b753b44e1814b66cdf338aad45d"
+  },
+  "BrickSim/python/bricksim/mdp/connection_state.py": {
+    "mtime": 1789889155.1711822,
+    "seen": 1790634309.046087,
+    "ast_hash": "4106165b6fc861abfde468f68b1eba65",
+    "semantic_hash": "4106165b6fc861abfde468f68b1eba65"
+  },
+  "BrickSim/python/bricksim/mdp/connection_thresholds.py": {
+    "mtime": 1789889155.1712034,
+    "seen": 1790634309.0460875,
+    "ast_hash": "09bb5ea24f1b4f89b60e37de4cfea1cb",
+    "semantic_hash": "09bb5ea24f1b4f89b60e37de4cfea1cb"
+  },
+  "BrickSim/python/bricksim/mdp/events.py": {
+    "mtime": 1789889155.1712208,
+    "seen": 1790634309.046088,
+    "ast_hash": "cce1091e89c97fc7aeec9e02221e7c3a",
+    "semantic_hash": "cce1091e89c97fc7aeec9e02221e7c3a"
+  },
+  "BrickSim/python/bricksim/mdp/hysteresis_binary_joint_action.py": {
+    "mtime": 1789889155.1712208,
+    "seen": 1790634309.0460882,
+    "ast_hash": "af1b8d21a9115059231540a5dcbd9939",
+    "semantic_hash": "af1b8d21a9115059231540a5dcbd9939"
+  },
+  "BrickSim/python/bricksim/mdp/isaaclab_shims.py": {
+    "mtime": 1789889155.1712208,
+    "seen": 1790634309.0460887,
+    "ast_hash": "c55d9b270373131ce01f4f08291d5551",
+    "semantic_hash": "c55d9b270373131ce01f4f08291d5551"
+  },
+  "BrickSim/python/bricksim/mdp/utils.py": {
+    "mtime": 1789889155.1712208,
+    "seen": 1790634309.046089,
+    "ast_hash": "4bf12ecf86455c1e95182250fb0b9215",
+    "semantic_hash": "4bf12ecf86455c1e95182250fb0b9215"
+  },
+  "BrickSim/python/bricksim/stable_lego.py": {
+    "mtime": 1789889155.1712961,
+    "seen": 1790634309.0460894,
+    "ast_hash": "a20fd6e51641423fed495d540c134510",
+    "semantic_hash": "a20fd6e51641423fed495d540c134510"
+  },
+  "BrickSim/python/bricksim/structures.py": {
+    "mtime": 1789889155.171325,
+    "seen": 1790634309.04609,
+    "ast_hash": "dd28b3a0012f65351e2ab5ee8d5521c7",
+    "semantic_hash": "dd28b3a0012f65351e2ab5ee8d5521c7"
+  },
+  "BrickSim/python/bricksim/topology/lego_library.json": {
+    "mtime": 1789889155.171325,
+    "seen": 1790634309.0460906,
+    "ast_hash": "7bd18547b36ed79f44e17d13b795937f",
+    "semantic_hash": "7bd18547b36ed79f44e17d13b795937f"
+  },
+  "BrickSim/python/bricksim/topology/legolization.py": {
+    "mtime": 1789889155.1713471,
+    "seen": 1790634309.0460908,
+    "ast_hash": "d918f6847be94f0be862a84582c10e40",
+    "semantic_hash": "d918f6847be94f0be862a84582c10e40"
+  },
+  "BrickSim/python/bricksim/topology/ordering.py": {
+    "mtime": 1789889155.1713727,
+    "seen": 1790634309.0460913,
+    "ast_hash": "4192952ad600edba60c67536d820660f",
+    "semantic_hash": "4192952ad600edba60c67536d820660f"
+  },
+  "BrickSim/python/bricksim/topology/schema.py": {
+    "mtime": 1789889155.1713727,
+    "seen": 1790634309.0460918,
+    "ast_hash": "077b780cc3ded5e0e52d0886c7038a83",
+    "semantic_hash": "077b780cc3ded5e0e52d0886c7038a83"
+  },
+  "BrickSim/python/bricksim/topology/stabletext2brick.py": {
+    "mtime": 1789889155.1713727,
+    "seen": 1790634309.046092,
+    "ast_hash": "f29170cf9e3241bf9c7ed23a827063c5",
+    "semantic_hash": "f29170cf9e3241bf9c7ed23a827063c5"
+  },
+  "BrickSim/python/bricksim/topology/voxel_grid.py": {
+    "mtime": 1789889155.1714306,
+    "seen": 1790634309.0460925,
+    "ast_hash": "cd9a8621489be2d61a52a2496064d6b3",
+    "semantic_hash": "cd9a8621489be2d61a52a2496064d6b3"
+  },
+  "BrickSim/python/bricksim/ui/connection_overlay.py": {
+    "mtime": 1789889155.1714306,
+    "seen": 1790634309.0460927,
+    "ast_hash": "d5c2dada436aa0a047e0181fdcf2b1c9",
+    "semantic_hash": "d5c2dada436aa0a047e0181fdcf2b1c9"
+  },
+  "BrickSim/python/bricksim/ui/file_picker.py": {
+    "mtime": 1789889155.1714761,
+    "seen": 1790634309.0460932,
+    "ast_hash": "023126239348e53f8dc9f58412dff1f5",
+    "semantic_hash": "023126239348e53f8dc9f58412dff1f5"
+  },
+  "BrickSim/python/bricksim/ui/frame_time_hud.py": {
+    "mtime": 1789889155.1714997,
+    "seen": 1790634309.0460935,
+    "ast_hash": "bf7a77fdf8ab055a85d830f0adada7ef",
+    "semantic_hash": "bf7a77fdf8ab055a85d830f0adada7ef"
+  },
+  "BrickSim/python/bricksim/ui/main_ui.py": {
+    "mtime": 1789889155.1715374,
+    "seen": 1790634309.0460942,
+    "ast_hash": "7b1d9ffb7f3571e07b8b2cf93c8406fc",
+    "semantic_hash": "7b1d9ffb7f3571e07b8b2cf93c8406fc"
+  },
+  "BrickSim/python/bricksim/ui/selection_sync.py": {
+    "mtime": 1789889155.1715553,
+    "seen": 1790634309.0460944,
+    "ast_hash": "0ac8f9053517765162244671e36c6c1b",
+    "semantic_hash": "0ac8f9053517765162244671e36c6c1b"
+  },
+  "BrickSim/python/bricksim/ui/step_one_frame_patch.py": {
+    "mtime": 1789889155.1715791,
+    "seen": 1790634309.0460954,
+    "ast_hash": "b190e2894a20b1b505737b6550f59b86",
+    "semantic_hash": "b190e2894a20b1b505737b6550f59b86"
+  },
+  "BrickSim/python/bricksim/ui/structures_browsers.py": {
+    "mtime": 1789889155.171606,
+    "seen": 1790634309.0460956,
+    "ast_hash": "9a0cbd89288733cc34d56107287e6f25",
+    "semantic_hash": "9a0cbd89288733cc34d56107287e6f25"
+  },
+  "BrickSim/python/bricksim/ui/toolbar_patch.py": {
+    "mtime": 1789889155.1716375,
+    "seen": 1790634309.046096,
+    "ast_hash": "94ef35ae5a8663d595c5d3be35c60bde",
+    "semantic_hash": "94ef35ae5a8663d595c5d3be35c60bde"
+  },
+  "BrickSim/python/bricksim/units.py": {
+    "mtime": 1789889155.1716375,
+    "seen": 1790634309.0460963,
+    "ast_hash": "9d0b86d73eaf4f6449e54f4cc11f43ee",
+    "semantic_hash": "9d0b86d73eaf4f6449e54f4cc11f43ee"
+  },
+  "BrickSim/python/bricksim/utils/breakage_debug.py": {
+    "mtime": 1789889155.1716375,
+    "seen": 1790634309.0460968,
+    "ast_hash": "91fd67a943d87a72e223ff6c2ad6505b",
+    "semantic_hash": "91fd67a943d87a72e223ff6c2ad6505b"
+  },
+  "BrickSim/python/bricksim/utils/brick_usd.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.046097,
+    "ast_hash": "90ff40d06225fcbf33d312a5b697b53e",
+    "semantic_hash": "90ff40d06225fcbf33d312a5b697b53e"
+  },
+  "BrickSim/python/bricksim/utils/c4_rotation.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460978,
+    "ast_hash": "1c7952751730b33ce299eef7c5129ea2",
+    "semantic_hash": "1c7952751730b33ce299eef7c5129ea2"
+  },
+  "BrickSim/python/bricksim/utils/connection_geometry.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.046098,
+    "ast_hash": "6c8b60a69e03220e575667d8f1746dc1",
+    "semantic_hash": "6c8b60a69e03220e575667d8f1746dc1"
+  },
+  "BrickSim/python/bricksim/utils/connection_usd.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460985,
+    "ast_hash": "3499e7c63a7ae1a642d504df9046a9b2",
+    "semantic_hash": "3499e7c63a7ae1a642d504df9046a9b2"
+  },
+  "BrickSim/python/bricksim/utils/debug_draw.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460987,
+    "ast_hash": "cae506f8558bf64fdcb48b648be29422",
+    "semantic_hash": "cae506f8558bf64fdcb48b648be29422"
+  },
+  "BrickSim/python/bricksim/utils/env_paths.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460992,
+    "ast_hash": "cbb980753cc464d562a5da7e00799708",
+    "semantic_hash": "cbb980753cc464d562a5da7e00799708"
+  },
+  "BrickSim/python/bricksim/utils/matrix_loader.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460994,
+    "ast_hash": "ff39fad61e514a9abc79881a2fefeee7",
+    "semantic_hash": "ff39fad61e514a9abc79881a2fefeee7"
+  },
+  "BrickSim/python/bricksim/utils/physics_step.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0460997,
+    "ast_hash": "15e3554e09f45ead58998a71b7ba5931",
+    "semantic_hash": "15e3554e09f45ead58998a71b7ba5931"
+  },
+  "BrickSim/python/bricksim/utils/typing.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0461001,
+    "ast_hash": "5875ea008b94a40b0c989c5e77c184a9",
+    "semantic_hash": "5875ea008b94a40b0c989c5e77c184a9"
+  },
+  "BrickSim/python/isaacsim_rtx_compat.py": {
+    "mtime": 1789989239.269131,
+    "seen": 1790634309.0461004,
+    "ast_hash": "43a6305928a436c82885f0287a5b6347",
+    "semantic_hash": "43a6305928a436c82885f0287a5b6347"
+  },
+  "BrickSim/python/pyproject.toml": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.046101,
+    "ast_hash": "cbf048d46c6e14bd2900aedeb1d43d42",
+    "semantic_hash": "cbf048d46c6e14bd2900aedeb1d43d42"
+  },
+  "BrickSim/python/setup.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0461013,
+    "ast_hash": "4138c3e9b975738415e17a7e3d14fa34",
+    "semantic_hash": "4138c3e9b975738415e17a7e3d14fa34"
+  },
+  "BrickSim/python/tests/conftest.py": {
+    "mtime": 1789889155.1716692,
+    "seen": 1790634309.0461016,
+    "ast_hash": "b0d8a74853d5878c66a529cf674a30a0",
+    "semantic_hash": "b0d8a74853d5878c66a529cf674a30a0"
+  },
+  "BrickSim/python/tests/mdp/test_brick_part_xform.py": {
+    "mtime": 1789889155.1718035,
+    "seen": 1790634309.046102,
+    "ast_hash": "b167af706b3bc97a7d4eed04dd31da16",
+    "semantic_hash": "b167af706b3bc97a7d4eed04dd31da16"
+  },
+  "BrickSim/python/tests/mdp/test_utils.py": {
+    "mtime": 1789889155.171813,
+    "seen": 1790634309.0461023,
+    "ast_hash": "69a782b55ce8f4de127fde6955267df6",
+    "semantic_hash": "69a782b55ce8f4de127fde6955267df6"
+  },
+  "BrickSim/python/tests/utils/test_c4_rotation.py": {
+    "mtime": 1789889155.171813,
+    "seen": 1790634309.0461028,
+    "ast_hash": "b6d1432dfbb7d429b7e5be229acf5fbd",
+    "semantic_hash": "b6d1432dfbb7d429b7e5be229acf5fbd"
+  },
+  "BrickSim/python/tests/utils/test_connection_geometry.py": {
+    "mtime": 1789889155.171831,
+    "seen": 1790634309.0461032,
+    "ast_hash": "66e06ad76e67a5fafb1b6c5445fcbbf7",
+    "semantic_hash": "66e06ad76e67a5fafb1b6c5445fcbbf7"
+  },
+  "BrickSim/scripts/build.sh": {
+    "mtime": 1789889155.3431838,
+    "seen": 1790634309.0461035,
+    "ast_hash": "b375006c720afb9b6eb967d049a54e78",
+    "semantic_hash": "b375006c720afb9b6eb967d049a54e78"
+  },
+  "BrickSim/scripts/clangd-wrapper.sh": {
+    "mtime": 1789889155.3432355,
+    "seen": 1790634309.0461037,
+    "ast_hash": "189d98c12d2467e816ba4d03a1f14f9b",
+    "semantic_hash": "189d98c12d2467e816ba4d03a1f14f9b"
+  },
+  "BrickSim/scripts/download_prebuilt_native.sh": {
+    "mtime": 1789889155.343257,
+    "seen": 1790634309.0461047,
+    "ast_hash": "11f3413e2e647d08f783b745e384897a",
+    "semantic_hash": "11f3413e2e647d08f783b745e384897a"
+  },
+  "BrickSim/scripts/find_bricksim_pid.py": {
+    "mtime": 1789889155.3432724,
+    "seen": 1790634309.0461051,
+    "ast_hash": "367e03179d35fe43727641182ae807da",
+    "semantic_hash": "367e03179d35fe43727641182ae807da"
+  },
+  "BrickSim/scripts/generate_color_json.py": {
+    "mtime": 1789889155.3432846,
+    "seen": 1790634309.0461054,
+    "ast_hash": "ce77ed547d71901abdb474a54d7dd9ce",
+    "semantic_hash": "ce77ed547d71901abdb474a54d7dd9ce"
+  },
+  "Codes/.vscode/c_cpp_properties.json": {
+    "mtime": 1789353061.396071,
+    "seen": 1790634309.0461059,
+    "ast_hash": "a03107282eb37583791f04a12db2c1b8",
+    "semantic_hash": "a03107282eb37583791f04a12db2c1b8"
+  },
+  "Codes/.vscode/settings.json": {
+    "mtime": 1789353061.2840695,
+    "seen": 1790634309.046106,
+    "ast_hash": "787bc26a28fbb97832face4d0aba5a8a",
+    "semantic_hash": "787bc26a28fbb97832face4d0aba5a8a"
+  },
+  "Codes/IK_practice.py": {
+    "mtime": 1790050087.4113092,
+    "seen": 1790634309.0461066,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "Codes/class3.py": {
+    "mtime": 1789447466.0261354,
+    "seen": 1790634309.0461068,
+    "ast_hash": "53644820564f7c9a55c5bcdbfcdbe476",
+    "semantic_hash": "53644820564f7c9a55c5bcdbfcdbe476"
+  },
+  "Codes/dual_franka.py": {
+    "mtime": 1789453457.5263329,
+    "seen": 1790634309.0461073,
+    "ast_hash": "cb87509a7ef9b542fd9072f62ae04086",
+    "semantic_hash": "cb87509a7ef9b542fd9072f62ae04086"
+  },
+  "Codes/hello_world.py": {
+    "mtime": 1789354142.168733,
+    "seen": 1790634309.0461075,
+    "ast_hash": "12d29642371b8d1d9e9a8765bb6faeea",
+    "semantic_hash": "12d29642371b8d1d9e9a8765bb6faeea"
+  },
+  "Codes/robot_game.py": {
+    "mtime": 1789351631.4818013,
+    "seen": 1790634309.0461082,
+    "ast_hash": "c20bdae206ca85e0220572ac8a87e70a",
+    "semantic_hash": "c20bdae206ca85e0220572ac8a87e70a"
+  },
+  "Codes/urdf_viewer.py": {
+    "mtime": 1789452787.261493,
+    "seen": 1790634309.0461085,
+    "ast_hash": "ce608e850f3a8ab4475a1450b7df3aca",
+    "semantic_hash": "ce608e850f3a8ab4475a1450b7df3aca"
+  },
+  "brickassembly/blueprint.py": {
+    "mtime": 1790218489.8251455,
+    "seen": 1790634309.046109,
+    "ast_hash": "ee775407572b3070ee93df65feee6ee4",
+    "semantic_hash": "ee775407572b3070ee93df65feee6ee4"
+  },
+  "brickassembly/bracing.py": {
+    "mtime": 1790559447.7258046,
+    "seen": 1790634309.0461094,
+    "ast_hash": "133158301ca667f5afbc5aa03bf7762e",
+    "semantic_hash": "133158301ca667f5afbc5aa03bf7762e"
+  },
+  "brickassembly/cell/__init__.py": {
+    "mtime": 1790579256.2274747,
+    "seen": 1790634309.0461097,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/cell/contacts.py": {
+    "mtime": 1790579306.4307275,
+    "seen": 1790634309.0461102,
+    "ast_hash": "4fab2a6c2072e546248ab019b193a10b",
+    "semantic_hash": "4fab2a6c2072e546248ab019b193a10b"
+  },
+  "brickassembly/dual_arm_sim.py": {
+    "mtime": 1790222897.8833625,
+    "seen": 1790634309.0461104,
+    "ast_hash": "90e4681476049d03fd0ffcd364135ddf",
+    "semantic_hash": "90e4681476049d03fd0ffcd364135ddf"
+  },
+  "brickassembly/envcheck.py": {
+    "mtime": 1789989297.0082083,
+    "seen": 1790634309.0461109,
+    "ast_hash": "6f4b438876f841463204e5493045a3e2",
+    "semantic_hash": "6f4b438876f841463204e5493045a3e2"
+  },
+  "brickassembly/experiments/__init__.py": {
+    "mtime": 1790559447.7258317,
+    "seen": 1790634309.0461116,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/experiments/analyze.py": {
+    "mtime": 1790559447.7258642,
+    "seen": 1790634309.0461118,
+    "ast_hash": "25b3f28c590e0f9fc69eb55a2079526b",
+    "semantic_hash": "25b3f28c590e0f9fc69eb55a2079526b"
+  },
+  "brickassembly/experiments/runner.py": {
+    "mtime": 1790559776.9404745,
+    "seen": 1790634309.0461123,
+    "ast_hash": "212e68afbf65e2a969bc3ce08d8c09b1",
+    "semantic_hash": "212e68afbf65e2a969bc3ce08d8c09b1"
+  },
+  "brickassembly/experiments/tables.py": {
+    "mtime": 1790562670.623409,
+    "seen": 1790634309.0461125,
+    "ast_hash": "707c152f9725bd44bb71b9e015d1bd7f",
+    "semantic_hash": "707c152f9725bd44bb71b9e015d1bd7f"
+  },
+  "brickassembly/joint_calibration.json": {
+    "mtime": 1789952757.5794835,
+    "seen": 1790634309.046113,
+    "ast_hash": "f2c513e8287472b6844fedd4f0032359",
+    "semantic_hash": "f2c513e8287472b6844fedd4f0032359"
+  },
+  "brickassembly/motion/__init__.py": {
+    "mtime": 1790559447.7259164,
+    "seen": 1790634309.0461133,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/motion/skills.py": {
+    "mtime": 1790559447.7264595,
+    "seen": 1790634309.0461137,
+    "ast_hash": "3960867b24bb2185e1ecf8e6ab2329db",
+    "semantic_hash": "3960867b24bb2185e1ecf8e6ab2329db"
+  },
+  "brickassembly/motion/vendor.py": {
+    "mtime": 1790578691.921662,
+    "seen": 1790634309.046114,
+    "ast_hash": "ef138dba4c9c305f16f615460f8dbb15",
+    "semantic_hash": "ef138dba4c9c305f16f615460f8dbb15"
+  },
+  "brickassembly/orchestration/rl_inserter.py": {
+    "mtime": 1790559447.7265615,
+    "seen": 1790634309.0461144,
+    "ast_hash": "544b91722f24c0c10a58dc0c70a3fd09",
+    "semantic_hash": "544b91722f24c0c10a58dc0c70a3fd09"
+  },
+  "brickassembly/orchestration/run_plan.py": {
+    "mtime": 1789989933.1676886,
+    "seen": 1790634309.046115,
+    "ast_hash": "9009d320d53dedaf87ab561e33364388",
+    "semantic_hash": "9009d320d53dedaf87ab561e33364388"
+  },
+  "brickassembly/orchestration/twin_executor.py": {
+    "mtime": 1790563861.9788964,
+    "seen": 1790634309.0461154,
+    "ast_hash": "994c848a43371665b8f5d564d30aa4d6",
+    "semantic_hash": "994c848a43371665b8f5d564d30aa4d6"
+  },
+  "brickassembly/planner.py": {
+    "mtime": 1790559447.7267501,
+    "seen": 1790634309.0461156,
+    "ast_hash": "4cc8aca0b498055702a4802926313632",
+    "semantic_hash": "4cc8aca0b498055702a4802926313632"
+  },
+  "brickassembly/plans/S1.topology.json": {
+    "mtime": 1789989950.8910248,
+    "seen": 1790634309.046116,
+    "ast_hash": "e9cc88f45d6556461f0a077808d5d358",
+    "semantic_hash": "e9cc88f45d6556461f0a077808d5d358"
+  },
+  "brickassembly/plans/S1_weakest_joint.json": {
+    "mtime": 1790559447.7268395,
+    "seen": 1790634309.0461164,
+    "ast_hash": "1e971665e6559beb13e469593d2d4cba",
+    "semantic_hash": "1e971665e6559beb13e469593d2d4cba"
+  },
+  "brickassembly/plans/S2.topology.json": {
+    "mtime": 1789970784.257877,
+    "seen": 1790634309.0461166,
+    "ast_hash": "2bbe8837221fcfdfc5c4303c25dba6d8",
+    "semantic_hash": "2bbe8837221fcfdfc5c4303c25dba6d8"
+  },
+  "brickassembly/plans/S2A_weakest_joint.json": {
+    "mtime": 1790559447.7268739,
+    "seen": 1790634309.046117,
+    "ast_hash": "7e5353bfc3eb6afba93f4751bc463ab5",
+    "semantic_hash": "7e5353bfc3eb6afba93f4751bc463ab5"
+  },
+  "brickassembly/plans/S2_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461173,
+    "ast_hash": "d4b9b7b1c24e2ea4dedaad961c9b5381",
+    "semantic_hash": "d4b9b7b1c24e2ea4dedaad961c9b5381"
+  },
+  "brickassembly/plans/S3.topology.json": {
+    "mtime": 1789970872.4741733,
+    "seen": 1790634309.0461178,
+    "ast_hash": "6e3f5e9e5e074daeb82917f378831f13",
+    "semantic_hash": "6e3f5e9e5e074daeb82917f378831f13"
+  },
+  "brickassembly/plans/S3C_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461183,
+    "ast_hash": "c3fe82c58b28d41cdb999c1a0234453f",
+    "semantic_hash": "c3fe82c58b28d41cdb999c1a0234453f"
+  },
+  "brickassembly/plans/S3L_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461187,
+    "ast_hash": "cb60b7a1b232a9fa5dec07ecc712e0a5",
+    "semantic_hash": "cb60b7a1b232a9fa5dec07ecc712e0a5"
+  },
+  "brickassembly/plans/S3_nearest.json": {
+    "mtime": 1789886799.752598,
+    "seen": 1790634309.046119,
+    "ast_hash": "06744ad654d4ac46c882e16260741e0c",
+    "semantic_hash": "06744ad654d4ac46c882e16260741e0c"
+  },
+  "brickassembly/plans/S3_step4.topology.json": {
+    "mtime": 1789891378.891605,
+    "seen": 1790634309.0461195,
+    "ast_hash": "2e35213a1eb458f1fd815d136902fae5",
+    "semantic_hash": "2e35213a1eb458f1fd815d136902fae5"
+  },
+  "brickassembly/plans/S3_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461197,
+    "ast_hash": "bc9128bf28b8eb2977967b4edfb4eeca",
+    "semantic_hash": "bc9128bf28b8eb2977967b4edfb4eeca"
+  },
+  "brickassembly/plans/S4_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461202,
+    "ast_hash": "3981ed5c0a10c60089d144add8dcfa84",
+    "semantic_hash": "3981ed5c0a10c60089d144add8dcfa84"
+  },
+  "brickassembly/plans/S5_weakest_joint.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461204,
+    "ast_hash": "d2cf08e1f0a4cdac049532152db598c3",
+    "semantic_hash": "d2cf08e1f0a4cdac049532152db598c3"
+  },
+  "brickassembly/plans/demo_structure1.topology.json": {
+    "mtime": 1789969844.6467302,
+    "seen": 1790634309.0461206,
+    "ast_hash": "71a204d5025196793e98f0e197aa608e",
+    "semantic_hash": "71a204d5025196793e98f0e197aa608e"
+  },
+  "brickassembly/plans/sim_arch_none.json": {
+    "mtime": 1790219907.6961234,
+    "seen": 1790634309.0461211,
+    "ast_hash": "843c9cdb38617c6f54e21a51c7eab855",
+    "semantic_hash": "843c9cdb38617c6f54e21a51c7eab855"
+  },
+  "brickassembly/plans/sim_arch_weakest_joint.json": {
+    "mtime": 1790326360.52652,
+    "seen": 1790634309.0461214,
+    "ast_hash": "fad8793695c8c6ea371e57d0edc7b89f",
+    "semantic_hash": "fad8793695c8c6ea371e57d0edc7b89f"
+  },
+  "brickassembly/plans/sim_cube_weakest_joint.json": {
+    "mtime": 1790579343.6173773,
+    "seen": 1790634309.046122,
+    "ast_hash": "643184c0a6a6818d3df3f0ba3d34e9d9",
+    "semantic_hash": "643184c0a6a6818d3df3f0ba3d34e9d9"
+  },
+  "brickassembly/plans/sim_hollow_box_weakest_joint.json": {
+    "mtime": 1790326561.4150329,
+    "seen": 1790634309.0461223,
+    "ast_hash": "9e43b92c8ea73d2f599d45736b9fc5ec",
+    "semantic_hash": "9e43b92c8ea73d2f599d45736b9fc5ec"
+  },
+  "brickassembly/plans/twin/S1_nearest.json": {
+    "mtime": 1790559447.7268927,
+    "seen": 1790634309.0461228,
+    "ast_hash": "639e633f857914f4850e6d7d24a8e991",
+    "semantic_hash": "639e633f857914f4850e6d7d24a8e991"
+  },
+  "brickassembly/plans/twin/S1_none.json": {
+    "mtime": 1790559447.7269855,
+    "seen": 1790634309.046123,
+    "ast_hash": "01e902258fc5f6ef1d5b5689bd18156a",
+    "semantic_hash": "01e902258fc5f6ef1d5b5689bd18156a"
+  },
+  "brickassembly/plans/twin/S1_weakest_joint.json": {
+    "mtime": 1790559447.7269855,
+    "seen": 1790634309.0461235,
+    "ast_hash": "efc8634c8a3a4dd1408d9542faf74973",
+    "semantic_hash": "efc8634c8a3a4dd1408d9542faf74973"
+  },
+  "brickassembly/plans/twin/S2_nearest.json": {
+    "mtime": 1790559447.7269855,
+    "seen": 1790634309.0461237,
+    "ast_hash": "141e66ca061b5b26387da20f3b9297f6",
+    "semantic_hash": "141e66ca061b5b26387da20f3b9297f6"
+  },
+  "brickassembly/plans/twin/S2_none.json": {
+    "mtime": 1790559447.7269855,
+    "seen": 1790634309.0461242,
+    "ast_hash": "96f8b02fae6b851f9fa073fdecf0f37f",
+    "semantic_hash": "96f8b02fae6b851f9fa073fdecf0f37f"
+  },
+  "brickassembly/plans/twin/S2_weakest_joint.json": {
+    "mtime": 1790559447.7269855,
+    "seen": 1790634309.0461245,
+    "ast_hash": "23722b645702afb8997d84d2c062e6bb",
+    "semantic_hash": "23722b645702afb8997d84d2c062e6bb"
+  },
+  "brickassembly/plans/twin/S3_nearest.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461266,
+    "ast_hash": "76f36d6c0bd175e07439e9d53f921b39",
+    "semantic_hash": "76f36d6c0bd175e07439e9d53f921b39"
+  },
+  "brickassembly/plans/twin/S3_none.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.046127,
+    "ast_hash": "80378f1a29bdd44ead5e1011330d32e4",
+    "semantic_hash": "80378f1a29bdd44ead5e1011330d32e4"
+  },
+  "brickassembly/plans/twin/S3_weakest_joint.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461273,
+    "ast_hash": "b290e247a2e16004e5b90a47102e039d",
+    "semantic_hash": "b290e247a2e16004e5b90a47102e039d"
+  },
+  "brickassembly/plans/twin/S4_nearest.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461278,
+    "ast_hash": "668cfc86a054047e0d3b793279335366",
+    "semantic_hash": "668cfc86a054047e0d3b793279335366"
+  },
+  "brickassembly/plans/twin/S4_none.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.046128,
+    "ast_hash": "5d7848609891c6985f5dcf2954de56aa",
+    "semantic_hash": "5d7848609891c6985f5dcf2954de56aa"
+  },
+  "brickassembly/plans/twin/S4_weakest_joint.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461287,
+    "ast_hash": "d73aaf10476775f54e2cf73a351c45dd",
+    "semantic_hash": "d73aaf10476775f54e2cf73a351c45dd"
+  },
+  "brickassembly/plans/twin/S5_nearest.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.046129,
+    "ast_hash": "fd0f277b10c0eb05a92f7d1157b6d2ed",
+    "semantic_hash": "fd0f277b10c0eb05a92f7d1157b6d2ed"
+  },
+  "brickassembly/plans/twin/S5_none.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461295,
+    "ast_hash": "6bd3dfaaa8ea56296af44f99c6042e61",
+    "semantic_hash": "6bd3dfaaa8ea56296af44f99c6042e61"
+  },
+  "brickassembly/plans/twin/S5_weakest_joint.json": {
+    "mtime": 1790559447.7270896,
+    "seen": 1790634309.0461304,
+    "ast_hash": "c7453440a4968b844598104be876a0a4",
+    "semantic_hash": "c7453440a4968b844598104be876a0a4"
+  },
+  "brickassembly/results/analysis.json": {
+    "mtime": 1790562493.3797429,
+    "seen": 1790634309.046131,
+    "ast_hash": "33fc74da4dfb5dc7ff6a3a16f12067c0",
+    "semantic_hash": "33fc74da4dfb5dc7ff6a3a16f12067c0"
+  },
+  "brickassembly/results/s1_arm.poses.meta.json": {
+    "mtime": 1789989954.484969,
+    "seen": 1790634309.0461311,
+    "ast_hash": "fca4880a5243c19ecd24c3127afdf64f",
+    "semantic_hash": "fca4880a5243c19ecd24c3127afdf64f"
+  },
+  "brickassembly/results/s1_run.poses.meta.json": {
+    "mtime": 1789989643.994428,
+    "seen": 1790634309.0461316,
+    "ast_hash": "68e7c387e31af9ae91b90b8956e9b2ed",
+    "semantic_hash": "68e7c387e31af9ae91b90b8956e9b2ed"
+  },
+  "brickassembly/run_assembly.py": {
+    "mtime": 1790219579.738133,
+    "seen": 1790634309.0461318,
+    "ast_hash": "5cd56934ee36d6b17a815a9f2bfaf7dc",
+    "semantic_hash": "5cd56934ee36d6b17a815a9f2bfaf7dc"
+  },
+  "brickassembly/scripts/00_env_check.curobo.json": {
+    "mtime": 1789888166.2592642,
+    "seen": 1790634309.0461326,
+    "ast_hash": "7e2312cac98027ae0bbdb192aa964915",
+    "semantic_hash": "7e2312cac98027ae0bbdb192aa964915"
+  },
+  "brickassembly/scripts/00_env_check.isaac.json": {
+    "mtime": 1789888130.607914,
+    "seen": 1790634309.0461328,
+    "ast_hash": "00e2218f4983437d5f66fb8c49b5203d",
+    "semantic_hash": "00e2218f4983437d5f66fb8c49b5203d"
+  },
+  "brickassembly/scripts/00_env_check.py": {
+    "mtime": 1789888095.3128345,
+    "seen": 1790634309.0461333,
+    "ast_hash": "8aebf30e8f7662ff0a3a28055b0efd17",
+    "semantic_hash": "8aebf30e8f7662ff0a3a28055b0efd17"
+  },
+  "brickassembly/scripts/00b_impedance_check.json": {
+    "mtime": 1789888878.9853594,
+    "seen": 1790634309.0461335,
+    "ast_hash": "a9445a46bb9c3419c47546e35f5b6c70",
+    "semantic_hash": "a9445a46bb9c3419c47546e35f5b6c70"
+  },
+  "brickassembly/scripts/00b_impedance_check.py": {
+    "mtime": 1789888830.6657329,
+    "seen": 1790634309.046134,
+    "ast_hash": "139782c760f86b44cd52520e32c334ab",
+    "semantic_hash": "139782c760f86b44cd52520e32c334ab"
+  },
+  "brickassembly/scripts/01_bricksim_probe.py": {
+    "mtime": 1789890350.1924574,
+    "seen": 1790634309.0461342,
+    "ast_hash": "32c0daf63aafac694c94f094350e2a31",
+    "semantic_hash": "32c0daf63aafac694c94f094350e2a31"
+  },
+  "brickassembly/scripts/01_bricksim_sweep.sh": {
+    "mtime": 1789890358.816617,
+    "seen": 1790634309.0461347,
+    "ast_hash": "bd8437cfb75c608bafe86e348f3a4342",
+    "semantic_hash": "bd8437cfb75c608bafe86e348f3a4342"
+  },
+  "brickassembly/scripts/02_dynamic_calibration.json": {
+    "mtime": 1789951665.6802847,
+    "seen": 1790634309.046135,
+    "ast_hash": "a04cb953b5327d362ff7fe14d174de17",
+    "semantic_hash": "a04cb953b5327d362ff7fe14d174de17"
+  },
+  "brickassembly/scripts/02_dynamic_calibration.py": {
+    "mtime": 1789988099.7137966,
+    "seen": 1790634309.0461357,
+    "ast_hash": "61217e558ec4a9b332c750aaef2a8450",
+    "semantic_hash": "61217e558ec4a9b332c750aaef2a8450"
+  },
+  "brickassembly/scripts/02_dynamic_sweep.sh": {
+    "mtime": 1789952325.259892,
+    "seen": 1790634309.046136,
+    "ast_hash": "c9de5bd0bea87a018fa3927de443132e",
+    "semantic_hash": "c9de5bd0bea87a018fa3927de443132e"
+  },
+  "brickassembly/scripts/run.sh": {
+    "mtime": 1790559950.9719517,
+    "seen": 1790634309.0461361,
+    "ast_hash": "665ecc4389511ba1e438c7d757fabb74",
+    "semantic_hash": "665ecc4389511ba1e438c7d757fabb74"
+  },
+  "brickassembly/scripts/status.py": {
+    "mtime": 1790559447.7454827,
+    "seen": 1790634309.0461366,
+    "ast_hash": "0ce1adf3a2fca4ab6bda2d172e71ea2b",
+    "semantic_hash": "0ce1adf3a2fca4ab6bda2d172e71ea2b"
+  },
+  "brickassembly/scripts/worklog.py": {
+    "mtime": 1789970609.0118017,
+    "seen": 1790634309.0461369,
+    "ast_hash": "e03cad8d441b755b0f7ee333ce8cfe5a",
+    "semantic_hash": "e03cad8d441b755b0f7ee333ce8cfe5a"
+  },
+  "brickassembly/sim/__init__.py": {
+    "mtime": 1790559447.7454827,
+    "seen": 1790634309.0461373,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/sim/joint_model/__init__.py": {
+    "mtime": 1790559447.7454827,
+    "seen": 1790634309.0461376,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/sim/joint_model/bricksim_adapter.py": {
+    "mtime": 1789952770.6637993,
+    "seen": 1790634309.046138,
+    "ast_hash": "d275693447a9056a30c2e23212bec969",
+    "semantic_hash": "d275693447a9056a30c2e23212bec969"
+  },
+  "brickassembly/sim/joint_model/calibration.py": {
+    "mtime": 1789952706.6867905,
+    "seen": 1790634309.0461383,
+    "ast_hash": "70c8c14ad11259217572f15fc4536835",
+    "semantic_hash": "70c8c14ad11259217572f15fc4536835"
+  },
+  "brickassembly/sim/joint_model/capacity.py": {
+    "mtime": 1790559447.7455504,
+    "seen": 1790634309.0461388,
+    "ast_hash": "ee2d10248ac14486d40884e2598a00f0",
+    "semantic_hash": "ee2d10248ac14486d40884e2598a00f0"
+  },
+  "brickassembly/sim/joint_model/clutch.py": {
+    "mtime": 1790559447.7456424,
+    "seen": 1790634309.0461392,
+    "ast_hash": "bce4f4a7aa6aa7c32623188040429090",
+    "semantic_hash": "bce4f4a7aa6aa7c32623188040429090"
+  },
+  "brickassembly/sim/mj/__init__.py": {
+    "mtime": 1790559447.7456424,
+    "seen": 1790634309.0461397,
+    "ast_hash": "6650caeaaf95be806f7e6c1c3279afd4",
+    "semantic_hash": "6650caeaaf95be806f7e6c1c3279afd4"
+  },
+  "brickassembly/sim/mj/assets.py": {
+    "mtime": 1790559447.7457118,
+    "seen": 1790634309.04614,
+    "ast_hash": "ad4145f065c9bb2dc87bf86b546c2bd5",
+    "semantic_hash": "ad4145f065c9bb2dc87bf86b546c2bd5"
+  },
+  "brickassembly/sim/mj/bricks.py": {
+    "mtime": 1790559447.7457118,
+    "seen": 1790634309.0461402,
+    "ast_hash": "aecc64863d938ff715f04d3e23b91c7b",
+    "semantic_hash": "aecc64863d938ff715f04d3e23b91c7b"
+  },
+  "brickassembly/sim/mj/checks.py": {
+    "mtime": 1790559447.7457871,
+    "seen": 1790634309.0461407,
+    "ast_hash": "7a7a7d710c5c2d935310f7ca86a01c3b",
+    "semantic_hash": "7a7a7d710c5c2d935310f7ca86a01c3b"
+  },
+  "brickassembly/sim/mj/control.py": {
+    "mtime": 1790559447.7458405,
+    "seen": 1790634309.046141,
+    "ast_hash": "4799dbfc7dd88e9ffd9cf64478ed1604",
+    "semantic_hash": "4799dbfc7dd88e9ffd9cf64478ed1604"
+  },
+  "brickassembly/sim/mj/runtime.py": {
+    "mtime": 1790563861.9787722,
+    "seen": 1790634309.0461414,
+    "ast_hash": "042e1eae6609f3251daeee1813d97056",
+    "semantic_hash": "042e1eae6609f3251daeee1813d97056"
+  },
+  "brickassembly/sim/mj/scene.py": {
+    "mtime": 1790559447.7459354,
+    "seen": 1790634309.0461416,
+    "ast_hash": "e8e9da3c5b570bdadee45d7857b7a038",
+    "semantic_hash": "e8e9da3c5b570bdadee45d7857b7a038"
+  },
+  "brickassembly/sim/newton_compat.py": {
+    "mtime": 1789890756.452856,
+    "seen": 1790634309.046142,
+    "ast_hash": "8ca871ab482af0433b8ea6c0e4c118e8",
+    "semantic_hash": "8ca871ab482af0433b8ea6c0e4c118e8"
+  },
+  "brickassembly/stability.py": {
+    "mtime": 1790559447.7460039,
+    "seen": 1790634309.0461426,
+    "ast_hash": "8e5e1794a419790cc26d1f697ef4b908",
+    "semantic_hash": "8e5e1794a419790cc26d1f697ef4b908"
+  },
+  "brickassembly/tasks/__init__.py": {
+    "mtime": 1790559447.7460039,
+    "seen": 1790634309.046143,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "brickassembly/tasks/insertion_env.py": {
+    "mtime": 1790559447.7460272,
+    "seen": 1790634309.0461433,
+    "ast_hash": "607ebc2fdc5e12d621e3e5ae3fa1028b",
+    "semantic_hash": "607ebc2fdc5e12d621e3e5ae3fa1028b"
+  },
+  "brickassembly/tasks/ppo.py": {
+    "mtime": 1790559772.0269382,
+    "seen": 1790634309.0461435,
+    "ast_hash": "07c442d659a6f812bd1c3206e63a5d6b",
+    "semantic_hash": "07c442d659a6f812bd1c3206e63a5d6b"
+  },
+  "brickassembly/tests/test_clutch.json": {
+    "mtime": 1790559636.253405,
+    "seen": 1790634309.046144,
+    "ast_hash": "8eb0fce84509dfd41156ee08c919337a",
+    "semantic_hash": "8eb0fce84509dfd41156ee08c919337a"
+  },
+  "brickassembly/tests/test_clutch.py": {
+    "mtime": 1790559447.7462313,
+    "seen": 1790634309.0461442,
+    "ast_hash": "2e847d775992a010366162c41cd1faf6",
+    "semantic_hash": "2e847d775992a010366162c41cd1faf6"
+  },
+  "brickassembly/tests/test_control.json": {
+    "mtime": 1790559645.5291622,
+    "seen": 1790634309.0461447,
+    "ast_hash": "5b5e16c3928a2521d7c58b55df08d008",
+    "semantic_hash": "5b5e16c3928a2521d7c58b55df08d008"
+  },
+  "brickassembly/tests/test_control.py": {
+    "mtime": 1790559447.7462711,
+    "seen": 1790634309.046145,
+    "ast_hash": "0e40da3dd638ad6d587cfdae804e316f",
+    "semantic_hash": "0e40da3dd638ad6d587cfdae804e316f"
+  },
+  "brickassembly/tests/test_env.json": {
+    "mtime": 1790559674.2916543,
+    "seen": 1790634309.0461454,
+    "ast_hash": "61d9d2060565eb83267642abf7d85037",
+    "semantic_hash": "61d9d2060565eb83267642abf7d85037"
+  },
+  "brickassembly/tests/test_env.py": {
+    "mtime": 1790559950.9719913,
+    "seen": 1790634309.0461457,
+    "ast_hash": "e237a45f80c0ee5a4917c1559d206902",
+    "semantic_hash": "e237a45f80c0ee5a4917c1559d206902"
+  },
+  "brickassembly/tests/test_gate.json": {
+    "mtime": 1789953956.9437685,
+    "seen": 1790634309.0461464,
+    "ast_hash": "ee0497c1a642b7b08fe14e63e6cb157b",
+    "semantic_hash": "ee0497c1a642b7b08fe14e63e6cb157b"
+  },
+  "brickassembly/tests/test_gate.py": {
+    "mtime": 1789988099.713759,
+    "seen": 1790634309.0461466,
+    "ast_hash": "d7cea95dcc9eff188500a318f34650db",
+    "semantic_hash": "d7cea95dcc9eff188500a318f34650db"
+  },
+  "brickassembly/tests/test_joint.json": {
+    "mtime": 1789952870.575417,
+    "seen": 1790634309.046147,
+    "ast_hash": "6400aff0f53edc6582e296a470acb796",
+    "semantic_hash": "6400aff0f53edc6582e296a470acb796"
+  },
+  "brickassembly/tests/test_joint.py": {
+    "mtime": 1789988099.7137027,
+    "seen": 1790634309.0461473,
+    "ast_hash": "21c4067be2a8b92fa8ef014750f31572",
+    "semantic_hash": "21c4067be2a8b92fa8ef014750f31572"
+  },
+  "brickassembly/tests/test_planner.json": {
+    "mtime": 1790559729.211164,
+    "seen": 1790634309.0461478,
+    "ast_hash": "f43fcd32445b4bbacaa1cd78b503bdc0",
+    "semantic_hash": "f43fcd32445b4bbacaa1cd78b503bdc0"
+  },
+  "brickassembly/tests/test_planner.py": {
+    "mtime": 1790559447.746361,
+    "seen": 1790634309.046148,
+    "ast_hash": "847a06073d68ea20bd6aef9920fe0016",
+    "semantic_hash": "847a06073d68ea20bd6aef9920fe0016"
+  },
+  "brickassembly/viz/open_usd.py": {
+    "mtime": 1789991140.144193,
+    "seen": 1790634309.0461483,
+    "ast_hash": "2c23f9be3cf119b866975418f2095e97",
+    "semantic_hash": "2c23f9be3cf119b866975418f2095e97"
+  },
+  "brickassembly/viz/play_viser.py": {
+    "mtime": 1790219476.302374,
+    "seen": 1790634309.0461488,
+    "ast_hash": "c1c5ddd79a101c66d09e44f62d3296fa",
+    "semantic_hash": "c1c5ddd79a101c66d09e44f62d3296fa"
+  },
+  "brickassembly/viz/to_usd.py": {
+    "mtime": 1790219491.7486334,
+    "seen": 1790634309.046149,
+    "ast_hash": "31ac72db04edd31a8d4987f411b6ed74",
+    "semantic_hash": "31ac72db04edd31a8d4987f411b6ed74"
+  },
+  ".claude/agents/doc-writer.md": {
+    "mtime": 1790633680.9139035,
+    "seen": 1790634309.0461497,
+    "ast_hash": "ef19328f400b190042b8bbc29c461e55",
+    "semantic_hash": "ef19328f400b190042b8bbc29c461e55"
+  },
+  ".claude/agents/implementer.md": {
+    "mtime": 1790633680.9131975,
+    "seen": 1790634309.0461502,
+    "ast_hash": "57bc7b7eb447b60b5e6ef000b8a29306",
+    "semantic_hash": "57bc7b7eb447b60b5e6ef000b8a29306"
+  },
+  ".claude/agents/orchestrator.md": {
+    "mtime": 1790633689.3215778,
+    "seen": 1790634309.0461504,
+    "ast_hash": "66054c5eb0503ce2a23037c845b48c44",
+    "semantic_hash": "66054c5eb0503ce2a23037c845b48c44"
+  },
+  ".claude/agents/planner.md": {
+    "mtime": 1790563006.1690443,
+    "seen": 1790634309.046151,
+    "ast_hash": "e402b2bb8612c7e73d7232eba56ee048",
+    "semantic_hash": "e402b2bb8612c7e73d7232eba56ee048"
+  },
+  ".claude/agents/reviewer.md": {
+    "mtime": 1790633680.9106848,
+    "seen": 1790634309.0461514,
+    "ast_hash": "b55505783714ed499edac2ef0eeebd32",
+    "semantic_hash": "b55505783714ed499edac2ef0eeebd32"
+  },
+  ".claude/agents/scout.md": {
+    "mtime": 1790561716.7372775,
+    "seen": 1790634309.0461519,
+    "ast_hash": "667223cb3af4e2d5139c0f92dab5e4ec",
+    "semantic_hash": "667223cb3af4e2d5139c0f92dab5e4ec"
+  },
+  "BrickSim/.agents/PLANS.md": {
+    "mtime": 1789889155.158927,
+    "seen": 1790634309.046152,
+    "ast_hash": "78b2d0b9cf060cf93344f104487d29cc",
+    "semantic_hash": "78b2d0b9cf060cf93344f104487d29cc"
+  },
+  "BrickSim/.github/actions/cache-bricksim-artifacts/action.yml": {
+    "mtime": 1789889155.159007,
+    "seen": 1790634309.0461524,
+    "ast_hash": "09c371cfe95ed5844aa489b29edb03a5",
+    "semantic_hash": "09c371cfe95ed5844aa489b29edb03a5"
+  },
+  "BrickSim/.github/actions/free-disk-space/action.yml": {
+    "mtime": 1789889155.159007,
+    "seen": 1790634309.046153,
+    "ast_hash": "f3829394c9bf13e78823a3c22ccc4e24",
+    "semantic_hash": "f3829394c9bf13e78823a3c22ccc4e24"
+  },
+  "BrickSim/.github/workflows/build-wheel.yml": {
+    "mtime": 1789889155.159007,
+    "seen": 1790634309.0461533,
+    "ast_hash": "c8fb1925728674ece55e7cc76f793b0e",
+    "semantic_hash": "c8fb1925728674ece55e7cc76f793b0e"
+  },
+  "BrickSim/.github/workflows/ci.yml": {
+    "mtime": 1789889155.1590962,
+    "seen": 1790634309.0461538,
+    "ast_hash": "935bb4fda2e9ffa7071b3a5ef6d5e3be",
+    "semantic_hash": "935bb4fda2e9ffa7071b3a5ef6d5e3be"
+  },
+  "BrickSim/AGENTS.md": {
+    "mtime": 1789889155.159235,
+    "seen": 1790634309.0461543,
+    "ast_hash": "a4791e5dee27692111fd3286408bef14",
+    "semantic_hash": "a4791e5dee27692111fd3286408bef14"
+  },
+  "BrickSim/README.md": {
+    "mtime": 1789889155.159284,
+    "seen": 1790634309.0461547,
+    "ast_hash": "f0268eb6abea25c01826a16ebf8fcab1",
+    "semantic_hash": "f0268eb6abea25c01826a16ebf8fcab1"
+  },
+  "BrickSim/docs/CPP26_MODULES_CHEATSHEET.md": {
+    "mtime": 1789889155.1595538,
+    "seen": 1790634309.046155,
+    "ast_hash": "da85730ecdfff70950913c7588ce5a7e",
+    "semantic_hash": "da85730ecdfff70950913c7588ce5a7e"
+  },
+  "BrickSim/native/CMakeLists.txt": {
+    "mtime": 1789889155.1614404,
+    "seen": 1790634309.0461552,
+    "ast_hash": "420c4cd8e8ede8b065b337dc3a30596c",
+    "semantic_hash": "420c4cd8e8ede8b065b337dc3a30596c"
+  },
+  "BrickSim/python/bricksim/assets/robots/fr3/camera_mount/README.md": {
+    "mtime": 1789889155.164515,
+    "seen": 1790634309.0461557,
+    "ast_hash": "eb6d4c76d7ac52af09935706fe6f2e5c",
+    "semantic_hash": "eb6d4c76d7ac52af09935706fe6f2e5c"
+  },
+  "BrickSim/python/bricksim/assets/sensors/realsense_d435/README.md": {
+    "mtime": 1789889155.1646123,
+    "seen": 1790634309.046156,
+    "ast_hash": "8a7ff3c73e2cf1578bc795d6240f3320",
+    "semantic_hash": "8a7ff3c73e2cf1578bc795d6240f3320"
+  },
+  "CLAUDE.md": {
+    "mtime": 1790633689.3217716,
+    "seen": 1790634309.0461566,
+    "ast_hash": "8851f63493a0f6623cc1b6ade22abbda",
+    "semantic_hash": "8851f63493a0f6623cc1b6ade22abbda"
+  },
+  "Codes/collision_table2.yml": {
+    "mtime": 1790050187.4795706,
+    "seen": 1790634309.046157,
+    "ast_hash": "914b63178a6f94190b95691f847e65fc",
+    "semantic_hash": "914b63178a6f94190b95691f847e65fc"
+  },
+  "Docs/ISDN5240_RoboFab_Preliminary_Proposal_Template.md": {
+    "mtime": 1789465827.6623628,
+    "seen": 1790634309.0461574,
+    "ast_hash": "86fde2337eed71acf093428082a14026",
+    "semantic_hash": "86fde2337eed71acf093428082a14026"
+  },
+  "Docs/ISDN_Project-Robotic_LEGO_Assembly-main/README.md": {
+    "mtime": 1789030434.0,
+    "seen": 1790634309.0461576,
+    "ast_hash": "89d70f6a03ef1b979038ce8835a5add5",
+    "semantic_hash": "89d70f6a03ef1b979038ce8835a5add5"
+  },
+  "Docs/lego_dual_arm_plan_v2.md": {
+    "mtime": 1789465551.5471685,
+    "seen": 1790634309.046158,
+    "ast_hash": "3ca57a14d10428305ebd4306d8d17927",
+    "semantic_hash": "3ca57a14d10428305ebd4306d8d17927"
+  },
+  "Docs/literature_validation.md": {
+    "mtime": 1789466007.649488,
+    "seen": 1790634309.0461583,
+    "ast_hash": "8f78ba46d09d22cf6639c1c3da5c79ac",
+    "semantic_hash": "8f78ba46d09d22cf6639c1c3da5c79ac"
+  },
+  "Docs/master_report.md": {
+    "mtime": 1790559447.725512,
+    "seen": 1790634309.0461588,
+    "ast_hash": "572edcbc4454385853f095182356234e",
+    "semantic_hash": "572edcbc4454385853f095182356234e"
+  },
+  "Docs/plan_v4.md": {
+    "mtime": 1790578915.344225,
+    "seen": 1790634309.046159,
+    "ast_hash": "3819bb6aa49e93ea425e1d4efd799bd4",
+    "semantic_hash": "3819bb6aa49e93ea425e1d4efd799bd4"
+  },
+  "Docs/results_report.md": {
+    "mtime": 1790562750.4861407,
+    "seen": 1790634309.0461595,
+    "ast_hash": "1206e662223ce8dd12367b3c2ec2662a",
+    "semantic_hash": "1206e662223ce8dd12367b3c2ec2662a"
+  },
+  "README.md": {
+    "mtime": 1789354514.9653378,
+    "seen": 1790634309.0461602,
+    "ast_hash": "a3b2130ca04b740cf4a08877970ed815",
+    "semantic_hash": "a3b2130ca04b740cf4a08877970ed815"
+  },
+  "brickassembly/PROGRESS.md": {
+    "mtime": 1790559447.7256672,
+    "seen": 1790634309.0461605,
+    "ast_hash": "7062b37593f7b546e87014229a20e575",
+    "semantic_hash": "7062b37593f7b546e87014229a20e575"
+  },
+  "brickassembly/README.md": {
+    "mtime": 1790578831.6636112,
+    "seen": 1790634309.046161,
+    "ast_hash": "ba404707bda2f9b8d4bb6669ceba830e",
+    "semantic_hash": "ba404707bda2f9b8d4bb6669ceba830e"
+  },
+  "brickassembly/VIEWING.md": {
+    "mtime": 1790222889.0986204,
+    "seen": 1790634309.0461612,
+    "ast_hash": "4e9baea9bba0274e4f04e717a046b397",
+    "semantic_hash": "4e9baea9bba0274e4f04e717a046b397"
+  },
+  "brickassembly/WORKLOG.md": {
+    "mtime": 1790578831.6995468,
+    "seen": 1790634309.0461617,
+    "ast_hash": "3c98a7e97a29657c2c44ec019ac3feda",
+    "semantic_hash": "3c98a7e97a29657c2c44ec019ac3feda"
+  },
+  "brickassembly/requirements-twin.txt": {
+    "mtime": 1790559950.9719152,
+    "seen": 1790634309.046162,
+    "ast_hash": "bc7f34121a931cca3a62ba57360bf959",
+    "semantic_hash": "bc7f34121a931cca3a62ba57360bf959"
+  },
+  "brickassembly/tasks.yaml": {
+    "mtime": 1789888107.7260392,
+    "seen": 1790634309.0461624,
+    "ast_hash": "61c63bdc89fd498c665f9d6cb4febf31",
+    "semantic_hash": "61c63bdc89fd498c665f9d6cb4febf31"
+  },
+  "BrickSim/docs/assets/bricksim_teaser.png": {
+    "mtime": 1789889155.1612322,
+    "seen": 1790634309.0461626,
+    "ast_hash": "b089eb0e113c26fad1580553e48d3820",
+    "semantic_hash": "b089eb0e113c26fad1580553e48d3820"
+  },
+  "BrickSim/python/bricksim/ui/step_forward.svg": {
+    "mtime": 1789889155.1715553,
+    "seen": 1790634309.046163,
+    "ast_hash": "76b0590a45ce32fa7b68be3efef36e94",
+    "semantic_hash": "76b0590a45ce32fa7b68be3efef36e94"
+  },
+  "brickassembly/blueprints/arch_front.png": {
+    "mtime": 1790218476.2397532,
+    "seen": 1790634309.0461636,
+    "ast_hash": "a3738f620b839446d4ae40d03529051c",
+    "semantic_hash": "a3738f620b839446d4ae40d03529051c"
+  },
+  "brickassembly/blueprints/cube_front.png": {
+    "mtime": 1790218476.2383769,
+    "seen": 1790634309.0461638,
+    "ast_hash": "555d8cc6910e017d6557682e3cace689",
+    "semantic_hash": "555d8cc6910e017d6557682e3cace689"
+  },
+  "brickassembly/blueprints/cube_side.png": {
+    "mtime": 1790218476.239113,
+    "seen": 1790634309.0461643,
+    "ast_hash": "555d8cc6910e017d6557682e3cace689",
+    "semantic_hash": "555d8cc6910e017d6557682e3cace689"
+  },
+  "brickassembly/blueprints/hollow_box_front.png": {
+    "mtime": 1790218476.2392876,
+    "seen": 1790634309.0461645,
+    "ast_hash": "5db8d4a24d7d67e7b2e4a7c2635c44da",
+    "semantic_hash": "5db8d4a24d7d67e7b2e4a7c2635c44da"
+  },
+  "brickassembly/blueprints/hollow_box_top.png": {
+    "mtime": 1790218476.2394903,
+    "seen": 1790634309.046165,
+    "ast_hash": "00e86f1232f6d6acc598cae8a0060813",
+    "semantic_hash": "00e86f1232f6d6acc598cae8a0060813"
+  },
+  "brickassembly/results/figures/a6_success.png": {
+    "mtime": 1790562493.3220258,
+    "seen": 1790634309.0461652,
+    "ast_hash": "fdf5c69afce5cd7c451e2780100f7969",
+    "semantic_hash": "fdf5c69afce5cd7c451e2780100f7969"
+  },
+  "brickassembly/results/figures/wp5_training.png": {
+    "mtime": 1790562493.3770266,
+    "seen": 1790634309.0461657,
+    "ast_hash": "f976e62374856bf495e2e6d6acac7606",
+    "semantic_hash": "f976e62374856bf495e2e6d6acac7606"
+  }
+}

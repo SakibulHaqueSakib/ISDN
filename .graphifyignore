@@ -1,0 +1,6 @@
+# third-party packages vendored in-tree
+brickassembly/.vendor/
+# robot mesh textures, PDF render of Docs/master_report.md
+BrickSim/resources/
+Docs/master_report.pdf
+graphify-out/
