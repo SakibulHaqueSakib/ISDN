@@ -1,5 +1,10 @@
 # brickassembly
 
+**v4 (current):** runs in standalone Newton 1.2.1 in the Isaac interpreter
+(Newton's own collision pipeline), vision only, with collision-free dual-arm
+motion. Plan of record: [`Docs/plan_v4.md`](../Docs/plan_v4.md) (ledger
+`v4_plan_of_record`). The v3.1 MuJoCo twin section below is frozen as the record.
+
 Execution of `Docs/master_report.md` (v3.1). `ledger.jsonl` is the record of every
 gate, decision, deviation and failure — read it before `git log`.
 

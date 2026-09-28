@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-144 entries. Later entries supersede earlier ones; retractions are marked.
+150 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -35,6 +35,30 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `local_gpu_twin`
     - outcome: the v3.1 twin re-resolved on the GPU workstation (env.lock [mujoco]): same pins, torch 2.14.0+cu130. The PPO update runs on CUDA (tasks/ppo.py --device, checkpoints saved as CPU tensors); physics stays CPU MuJoCo 3.3.7, one process per core: runner --workers defaults to physical cores (16), PPO to 8 workers x 1 env (the batch of 8 R1-R4 used), eval_all runs its (policy, stage) jobs in parallel. Re…
     - finding: MuJoCo Warp 3.8.0.3 (Issac env) loads and steps the insertion model on the GPU, but a batched twin is a port, not a flag: noslip (runtime.Sim's press/brace phases) is not implemented, and tendon_limited and geom_conaffinity -- which the clutch model switches per env (static-friction lock, mated walls) -- are shared across worlds; curriculum stages 1-3 also change the model per episode
+
+- **decided** `v4_plan_of_record`
+    - outcome: plan of record v4 adopted: vision-driven, collision-free dual-arm assembly in standalone Newton (Docs/plan_v4.md). User's answers: U1 standalone Newton 1.2.1 in the Isaac 6.0 interpreter with ViewerGL; U2 measure, then decide 1x vs 2x at D1 from P1/P2 measurements; U4 decide after M1; every other U at its recommended default
+
+- **deviated** `v4_platform_newton`
+    - decision: U0 (CLAUDE.md rule amended), U1
+    - rationale: user: collision-free arms (the twin's Panda links do not collide with each other), preferred Newton visuals, and arms driven by vision
+
+- **decided** `v4_vision_only_definition`
+    - outcome: U6: brick, plate and placement poses come from cameras only
+
+- **decided** `v4_joint_scope`
+    - outcome: U4: joint breaking (WP5 -> M2, E5) is decided after M1; until then the M1 clutch is a non-breaking weld pool. Alternatives then: yes (1-day contact spike + 3 days) or no (a perception-and-motion phase only)
+    - correction: r2's rationale ('seated bricks carry 71-100 N under a speed-limited or ramped load', so the spike 'is expected to pass') was corrected on adoption: the ramp runs start an unseated brick (logic review round 3, verified against r_1x_fixed_ramp.txt)
+    - rationale: bricks carry 71-100 N when seated first (then stepped), or pressed by a speed-limited stand-in; at 1x an unseated brick under a 0.5 s force ramp passes through at 71 N (ends -9.2 mm; -11.6 mm at 100 N), while at 2x the same ramp holds 100 N (-0.50 mm). WP5's 1-day spike is expected to pass at 2x and is uncertain at 1x
+
+- **result** `newton_brick_press_tunnelling`
+    - result: the plan-v4 r1 probe's 'a >= 2 N press pushes a brick through another' is a tunnelling artefact of a step body force on a free brick, not the Newton brick contacts' strength. Work-reviewer's reproduction (press.py, 29 result files; prototype brick model and solver settings, 60 fps x 16 substeps), stated as the corrected finding
+    - finding: a step body force on a free 1.7 g brick starting 2 mm above seated tunnels from ~2-5 N at 1x (fixed lower brick: 2 N ends -2.4 mm, 3 N -8.9 mm, 5 N -18.3 mm, i.e. through); seated bricks (0.5 N, then a step to F) carry 71-100 N with 0.9-2.7 mm sink at 1x (fixed lower 0.91 / 1.17 mm; free lower or plate proxies 2.24 / 2.5-2.7 mm) and 0.45-0.6 mm at 2x; a 0.5 s force ramp on an unseated brick seats …
+    - implication: every v4 press is arm-held and speed-limited, never a raw body force on a free brick; P1 measures F_seat, F_pt, sink under load and c_held with the arm's own press profile and the M1 clutch active; the scale decision (U2) has no planning-time lean
+
+- **result** `curobo_08_runtime_compiled`
+    - result: cuRobo 0.8 (checkout curobo/ @ 78fd485) compiles its CUDA kernels at runtime through cuda.core: curobo/setup.py builds pybind extensions only if CUROBO_USE_PYBIND == '1' (default '0', marked deprecated), and pyproject.toml depends on cuda-core[cu12]/[cu13]
+    - implication: two_interpreters' option 'install cuRobo into the Issac env (torch 2.10/cu128 build must exist)' no longer applies: no torch-matched build is needed. Under the Isaac interpreter import fails only on missing modules (setuptools_scm, yourdfpy, numpy-quaternion, cuda.core), which the .vendor overlay supplies (U5). Still unverified until P3: warp 1.13 against code developed on 1.17, and cuda-core cu12…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 

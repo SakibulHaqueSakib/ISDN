@@ -26,7 +26,8 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 ## Project rules (all agents)
 
 - Interpreters: `bash brickassembly/scripts/run.sh <script>` picks the right one. The MuJoCo twin uses `mjenv/` (CPU MuJoCo 3.3.7 physics, CUDA torch for the PPO update); Isaac/Newton scripts use `~/Codes/CAIRSS/Issac`; cuRobo/viser uses `isdnenv/`.
-- Physics stays on CPU MuJoCo: MuJoCo Warp drops the twin's stud-wall contacts (ledger `mjwarp_insertion_probe`). Parallelism is `--workers` (one process per physical core).
+- v4 (plan of record `Docs/plan_v4.md`) runs in standalone Newton 1.2.1 in the Isaac interpreter, with Newton's own collision pipeline (not MuJoCo Warp's contacts, which drop stud-wall contacts: ledger `mjwarp_insertion_probe`). The CPU MuJoCo twin is frozen as the v3.1 record. Headless batches use `--workers`.
+- Vision only: the v4 executor gets brick, plate and placement poses from cameras alone; simulator ground truth is for scoring and training, never for acting (the firewall test enforces it).
 - `brickassembly/ledger.jsonl` is the record of every gate, decision, deviation, result and failure: append an entry for each, then regenerate `WORKLOG.md` with `python3 brickassembly/scripts/worklog.py`. Never hand-edit `WORKLOG.md`.
 - Results in reports must be computed from the result files (`python -m experiments.analyze`, `experiments.tables`), never typed from memory.
 - Running tests rewrites the tracked `brickassembly/tests/*.json`; restore them unless the change is meant to update them.
