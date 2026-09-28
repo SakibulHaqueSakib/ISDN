@@ -194,3 +194,39 @@ class Sim:
 
 
 C_EVERY = CTRL_EVERY
+_viewers = []
+
+
+def watch(sim, speed=1.0, fps=60):
+    """Show `sim` in MuJoCo's viewer, paced to `speed` x real time (0.25 =
+    slow motion). View only: a hook that reads the state and sleeps, so the
+    physics and every result are unchanged. Returns the viewer handle."""
+    import time
+    import mujoco.viewer
+    v = mujoco.viewer.launch_passive(sim.m, sim.d, show_left_ui=False, show_right_ui=False)
+    with v.lock():
+        v.opt.geomgroup[3] = 1            # the Pandas are collision meshes only (scene._load_panda)
+        v.opt.tendongroup[:] = 0          # the clutch tendons would draw lines to the feeder
+        v.cam.lookat[:] = (0.0, 0.0, 0.06)   # the build, centred on the origin, side-on to its span
+        v.cam.distance, v.cam.azimuth, v.cam.elevation = 0.5, 225.0, -15.0
+    t0, w0, last = sim.t, time.perf_counter(), [sim.t]
+
+    def frame(s):
+        if s.t - last[0] < speed / fps or not v.is_running():
+            return
+        last[0] = s.t
+        ahead = w0 + (s.t - t0) / speed - time.perf_counter()
+        if ahead > 0:
+            time.sleep(ahead)
+        v.sync()
+
+    sim.hooks.append(frame)
+    _viewers.append(v)
+    return v
+
+
+def wait_viewers():
+    """Block until every window watch() opened has been closed."""
+    import time
+    while any(v.is_running() for v in _viewers):
+        time.sleep(0.2)

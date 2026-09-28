@@ -56,6 +56,7 @@ PRESS_MARGIN = 1.3                      # press force = 1.3 x n_studs x f_insert
                                         # (bracing.FF_PRESS_MARGIN sizes the brace for it)
 BUDGET_MARGIN = 1.6                     # force budget = 1.6 x n_studs x f_insert
 RETRIES = 3
+VIEW = None                             # --view: playback speed of a live viewer (runtime.watch)
 
 
 @dataclass
@@ -110,6 +111,8 @@ class Ctx:
             self.cm.mate_now(b)
         self._jitter_feeder(set(pre))
         self.sim = RT.Sim(self.cell, clutch=self.cm, ft_noise=dr.ft_noise, rng=self.rng)
+        if VIEW:
+            RT.watch(self.sim, VIEW)
         self.sim.run(0.2)
         self.placed = list(pre)
         self.top_z = max(x["target_pose"][2] for x in seq) + P.BRICK_H
@@ -173,6 +176,8 @@ class Leaf(py_trees.behaviour.Behaviour):
     def update(self):
         if self.ctx.fatal:
             return Status.FAILURE
+        if VIEW:
+            print("%6.2f s  %s" % (self.ctx.sim.t, self.name), flush=True)
         try:
             ok = self.run(self.ctx, self.ctx.step_dict(self.n))
         except FloatingPointError as e:
@@ -604,7 +609,10 @@ if __name__ == "__main__":
     ap.add_argument("--passive-brace", action="store_true",
                     help="hold the brace pose stiffly without the LP feed-forward")
     ap.add_argument("--out", default=str(ROOT / "results" / "twin_episodes.jsonl"))
+    ap.add_argument("--view", type=float, nargs="?", const=1.0, default=None, metavar="SPEED",
+                    help="watch it live in MuJoCo's viewer at SPEED x real time (default 1; 0.25 = slow motion)")
     a = ap.parse_args()
+    VIEW = a.view
     dr = NO_DR if a.no_dr else DR()
     if a.step is not None:
         r = step_trial(a.structure, a.step, a.strategy, a.seed, dr=dr, out=a.out,
@@ -620,3 +628,6 @@ if __name__ == "__main__":
             e.get("peak_force_N", 0.0), e["failure_mode"],
             "  brace %s N (pred %s)" % (e["brace_peak_reaction_N"], e["brace_expected_wrench"][:3])
             if e.get("brace_peak_reaction_N") is not None else ""))
+    if VIEW:
+        print("done - close the viewer window to exit", flush=True)
+        RT.wait_viewers()
