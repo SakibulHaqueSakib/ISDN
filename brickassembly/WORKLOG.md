@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-159 entries. Later entries supersede earlier ones; retractions are marked.
+163 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -488,6 +488,10 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **GATE** `G6` — 
 - **GATE** `G7` — 
 - **GATE** `G7` — 
+- **deviated** `v4_triangle_pair_buffer` — Newton silently drops triangle pairs past the buffer (newton/_src/geometry/narrow_phase.py:923-924 breaks past it); the only sign is the printed warning 'Triangle pair buffer overflowed N > M'. The P0 batch log printed it 1274 times, all on the 6 cube runs (212-213 per run); N ran from 1,000,326 (first warning) to a peak of 1,163,533 (cube lever_press r0; per-run peaks 1,160,359-1,163,533); arch, …
+- **result** `v4_p0_baseline_stiff_fingers` — 
+- **problem** `v4_p0_stiff_s3_lever_press_diverged` — 
+- **result** `v4_p0_baseline_stiff_fingers_r2` — 
 
 ## Gate history (latest wins)
 
