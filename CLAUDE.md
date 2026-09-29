@@ -9,7 +9,8 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 | agent | model, effort | use for |
 |---|---|---|
 | `orchestrator` | opus, high | main session: runs the plan task by task, verifies every output, commits |
-| `planner` | opus, xhigh | the plan of record at the start (experiments, gates, what to report); revisions when it is faulty |
+| `planner` | opus, xhigh | the plan of record at the start (experiments, gates, what to report): long-horizon planning only |
+| `plan-reviser` | opus, high | revisions when the plan is faulty |
 | `reviewer` | opus, medium | reviewing the plan (and revisions), diffs before commit, and outputs the orchestrator doubts |
 | `implementer` | sonnet, high | executing code steps of an approved plan |
 | `doc-writer` | sonnet, high | docs, report prose, ledger entries, WORKLOG |
@@ -17,7 +18,7 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 
 - **Once, at the start of a project or phase:** planner writes the plan of record -> reviewer reviews it -> user decides what it raises -> doc-writer records it (`Docs/master_report.md`, ledger).
 - **Every task after that** (the orchestrator breaks the plan down itself; no planner): scout -> implementer / doc-writer -> orchestrator verifies (doubts -> reviewer) -> reviewer (diff, when it changes code, results or conclusions) -> commit.
-- **Plan found faulty:** orchestrator gives the planner the evidence -> revision -> reviewer -> user if it changes a conclusion or protocol -> doc-writer records the amendment and a ledger `deviation`.
+- **Plan found faulty:** orchestrator gives the plan-reviser the evidence -> revision -> reviewer -> user if it changes a conclusion or protocol -> doc-writer records the amendment and a ledger `deviation`.
 - Keep it proportional: a question is scout-only; a small fix goes straight to its owner and is still verified.
 - `CHANGES REQUESTED` goes back to the owner; after two rounds, escalate to the user.
 - Long jobs (experiment batches, training) run in the background from the main session; a scout digests their logs.

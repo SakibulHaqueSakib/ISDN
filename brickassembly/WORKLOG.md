@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-150 entries. Later entries supersede earlier ones; retractions are marked.
+159 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -59,6 +59,40 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `curobo_08_runtime_compiled`
     - result: cuRobo 0.8 (checkout curobo/ @ 78fd485) compiles its CUDA kernels at runtime through cuda.core: curobo/setup.py builds pybind extensions only if CUROBO_USE_PYBIND == '1' (default '0', marked deprecated), and pyproject.toml depends on cuda-core[cu12]/[cu13]
     - implication: two_interpreters' option 'install cuRobo into the Issac env (torch 2.10/cu128 build must exist)' no longer applies: no torch-matched build is needed. Under the Isaac interpreter import fails only on missing modules (setuptools_scm, yourdfpy, numpy-quaternion, cuda.core), which the .vendor overlay supplies (U5). Still unverified until P3: warp 1.13 against code developed on 1.17, and cuda-core cu12…
+
+- **probe** `v4_p1_smoke_finger_contact`
+    - finding: the first P1 runs under plan v4 r3's protocol (scripts/10_newton_scale_probe.py smoke rows) showed four protocol faults and six probe departures; the reviewer reproduced each with independent runs. (1) Finger contacts: the FR3 finger shapes kept Newton's default ShapeConfig (ke 2500, kd 100 -> solref 20 ms, damping ratio 1) and have geom_priority 1, so MuJoCo uses the finger's solref alone at ever…
+    - implication: the r3-protocol P1 rows that involve the fingers, (b), (d), (e), (f), are void; the (a), (c) and (g) rows involve no fingers and stay valid, so newton_brick_press_tunnelling and section 0 fact 6 stand. Plan v4 r4 (v4_plan_r4) changes finger contacts, the clutch gate, the P1 protocol and the contact monitor
+
+- **result** `v4_p0_baseline`
+    - result: P0, the prototype at HEAD (dual_arm_sim.py --viewer null --test, 1x, fixed feeder slots and plate, 3 repeats each of cube, arch, hollow_box, S3 under grasp_lp and lever_press, 24 runs): completed bricks per run cube 8/8 in all 6 runs; arch 10/11 in all 6; hollow_box 9/12, 10/12, 9/12 (grasp_lp) and 10/12 x3 (lever_press); S3 13/16 x3 (grasp_lp) and 14/16 x3 (lever_press; 2 of the 3 diverged, see v…
+    - implication: the r3 contingency applies: WP1 fixes the brace executor and M0 uses lever_press until then. The brace-driven motion, the brace-independent failures and the S3 lever_press divergence are WP1 inputs, with an effort caveat on WP1's 1.75 days (plan section 5); M0(a) and P3 step 8 move their reference to P0' (v4_plan_r4, after the finger change)
+
+- **problem** `v4_p0_s3_lever_press_diverged`
+    - finding: in P0, 2 of 3 S3 lever_press runs stopped on RuntimeError: r0 'simulation diverged at t=145.58 s (step 14, B release, A park)' (8735 frames, 14 of 16 bricks placed) and r2 'simulation diverged at t=145.53 s (step 14, B insert, A park)' (8732 frames, 14/16); r1 did not diverge and ended on an AssertionError, 14 / 16 snapped (157.07 s, 9424 frames). Both diverged runs failed at S3 step 14, at t of a…
+    - implication: the lever_press fallback brace is not clean on S3 either; WP1 must find the cause (plan section 3 P0 outcome, section 5 WP1 caveat)
+
+- **decided** `v4_plan_r4`
+    - outcome: plan of record v4 amended to r4 (Docs/plan_v4.md, revision block 'Revision r4'): finger contacts stiffened (section 2.1), clutch tested at rest in windows with dz in [-0.5s, +0.3s] mm (2.2), P1 protocol and gate rewritten (section 3 P1), contact monitor windows and 0.5 s merging (2.4), P0 recorded and P0' added (section 3 P0), R14 and U14 added. Effort: P1 +0.5 agent-day, P0' about 45 min GPU, tot…
+
+- **deviated** `v4_finger_contact_stiffness`
+    - decision: D3, D4
+    - rationale: with the default, realised grip saturated at 1.2-2.0 N per finger whatever FINGER_KE, pads sank 0.9-1.6 mm and carry creep was 1.60 mm; with the r4 values at 1x grip is 6.9/13.2/24.9 N for 7.1/14.3/28.6 N nominal, pad penetration 0.09-0.24 mm, press slip 0.07-0.19 mm, carry creep 0.095 mm (v4_p1_smoke_finger_contact). Side effect: k_os 2.5-4.4 at 20 mm/s and F_cap 5 N, so v_press 2 mm/s is a pre-r…
+
+- **deviated** `v4_clutch_gate_at_rest`
+    - decision: D1, D2, D5 (band sanity gate)
+    - rationale: +1.0s sat 0.1-0.37 mm below the 1x stud-top rest and admitted the 2x one, and transit passes scored; seated rest is about 0 to +0.18 mm, stud-top rest +1.1 to +1.37 mm (1x) and +1.84 to +2.69 mm (2x), so +0.3s clears both by >= 0.2s and >= 0.6s mm. Creep is bounded (<= 0.03 mm within a window). The raw jitter figure is linear creep (0.037-0.048 mm raw, <= 0.0022 mm detrended at 1x): under r3's P1(…
+
+- **deviated** `v4_p1_protocol_r4`
+    - decision: D2, D4, D5, D7, D8
+    - rationale: the first probe runs showed the finger, clutch-gate and scoring faults in v4_p1_smoke_finger_contact; the smoke departures are blessed and one wording corrected. Effort P1 2 -> 2.5 agent-days, about 3.5 h GPU
+
+- **deviated** `v4_contact_monitor_r4`
+    - decision: D6
+    - rationale: P0: the picked brick rests on the table during descend, grasp and lift (the implementer reported 172 spurious unintended events on one cube run without the window; that run was not saved); contiguous-only merging fragmented flickering contacts: 26-37 neighbour_rub events per cube run against 18 on every cube run with the merge, and arch grasp_lp's 453-507 displaced records against 35-40 events; th…
+
+- **decided** `v4_agent_routing`
+    - outcome: plan revisions go to a new plan-reviser agent (opus, high effort); the planner agent (opus, xhigh) is used only for start-of-phase long-horizon plans of record. Recorded because r4 was the first revision routed this way; the plan text says plan-reviser wherever a revision goes to the planner
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 

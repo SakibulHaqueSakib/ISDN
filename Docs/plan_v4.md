@@ -1,6 +1,25 @@
-# Plan of record v4 (r3) — vision-driven, collision-free dual-arm assembly in Newton
+# Plan of record v4 (r4) — vision-driven, collision-free dual-arm assembly in Newton
 
-**Status:** Adopted 2026-09-28. User decisions: U1 standalone Newton; U2 measure, then decide at D1 between 1× and 2×; U4 decide after M1; U0, U3 and U5–U13 as recommended. **Replaces** the v3.1 *execution platform*; the v3.1 plan and results stay frozen as the record of the CPU twin. **Milestones shown live to the user:** M0 (Newton cell with cameras and a contact HUD, ≈ day 4), **M0.5 (collision-free two-arm build, including S3's braces, ground-truth-driven, ≈ day 6–7)**, M1 (the same, vision only, ≈ day 10 optimistic / 12–15 realistic).
+**Status:** Adopted 2026-09-28. User decisions: U1 standalone Newton; U2 measure, then decide at D1 between 1× and 2×; U4 decide after M1; U0, U3 and U5–U13 as recommended. **Replaces** the v3.1 *execution platform*; the v3.1 plan and results stay frozen as the record of the CPU twin. **Milestones shown live to the user:** M0 (Newton cell with cameras and a contact HUD, ≈ day 4), **M0.5 (collision-free two-arm build, including S3's braces, ground-truth-driven, ≈ day 6–7)**, M1 (the same, vision only, ≈ day 10 optimistic / 12–15 realistic). **Amended 2026-09-29 (r4, from P0 and P1's first probe runs; user answers in ledger `v4_plan_r4`). M1 moves to ≈ day 10.5 optimistic / 12.5–15.5 realistic.**
+
+---
+
+## Revision r4 (P0 findings and P1 probe findings)
+
+The first P1 runs showed four protocol faults and six probe departures; P0 showed that the monitor's merging fragmented contacts and that the `grasp_lp` contingency fired. The reviewer reproduced each P1 finding with independent runs (`results/v4/p1_review/`; smoke rows `results/v4/p1_smoke/`), recorded as ledger probe `v4_p1_smoke_finger_contact`. **The r3-protocol P1 rows that involve the fingers — (b), (d), (e), (f) — are void.** The (a), (c) and (g) rows involve no fingers and remain valid evidence. §0 fact 6 and `newton_brick_press_tunnelling` still stand, for the same reason.
+
+**Precedence (applies to every r4 item):** an r4 gate item that fails at one scale counts as a P1 gate failure at that scale only, and routes through the existing branch (fails at 1× only → s = 2). A plan-reviser revision is needed only if an r4 item fails at both scales.
+
+| # | change | evidence | what changes |
+|---|---|---|---|
+| 1 | Finger contacts stiffened | The FR3 finger shapes kept Newton's default ShapeConfig (ke 2500, kd 100 → solref 20 ms, damping ratio 1). The fingers have `geom_priority` 1, so MuJoCo uses the finger's solref alone at every finger contact. The stiffness is per unit acceleration, so N/mm scales with brick mass: ≈ 1.1–1.3 kN/m at 1×. At 1×: realised grip saturated at 1.2–2.0 N per finger for 2.9/14/100 N nominal (`FINGER_KE` had no effect); pads sank 0.9–1.6 mm; press slip 1.1–1.8 mm; press force saturated at ≈ 4–5 N, so F_cap ≥ 10 N never triggered. Carry slip was 1.60 mm at both scales whatever the grip; it is friction creep proportional to the finger time constant (20/6.7/3.3/2.2 ms → 1.60/0.47/0.19/0.095 mm). The wall-thickness explanation was refuted. | §2.1: finger shapes (both arms) use ke_f 2.5e5, kd_f 900 at 16 substeps (450 at 8), keeping 2/kd_f ≥ 2·dt; priority and solimp unchanged. ke 1e6 diverged at kd 500 and 1000 (the only values tried). Measured at 1×: grip 6.9/13.2/24.9 N for 7.1/14.3/28.6 N nominal; pad penetration 0.09–0.24 mm (2×: 0.03–0.06); press slip 0.07–0.19 mm (2×: 0.08–0.23). Side effect: the grip no longer absorbs touchdown by sliding. k_os rose from ≈ 1.5 to 2.5–4.4 at 20 mm/s and F_cap 5 N (up to 3.8 at 1×; peaks 12.4–21.9 N), which squeezes D1(ii); v_press 2 mm/s is added as a pre-registered rescue (user item D4). The pad bound caps the 1× grip near 30 N per finger (extrapolated). New P1 gate items: realised grip, pad penetration, carry slip. D1(iv) uses the chosen grip. P0 is re-run as P0′. New R14. |
+| 2 | Clutch tested at rest, unloaded, in windows; dz ∈ [−0.5s, +0.3s] mm | r3's +1.0s edge sat only 0.1–0.37 mm below the 1× stud-top rest (+1.1 to +1.37 mm), which creeps down ≈ 19 µm/s and so closes that margin in 5–20 s. It admitted the 2× stud-top rest after a 2 mm drop (+1.84; +2.69 after a 4 mm drop). The probe scored any frame, so a 20 mm/s descent passed in transit: every (d) row "fired" at +0.71 to +0.96 mm at 1× and +1.92 to +1.99 mm at 2×. Seated and released, bricks rest at ≈ 0 to +0.05 mm within 1 s at 1× (still creeping up: +0.06 to +0.10 after 3–6 s) and +0.05 to +0.18 mm at 2×. Intermediate end states exist at 1×: 10 (b) trials ended in (+0.4, +1.0) mm (`big.jsonl`), and three (d) load trials ended at +0.24/+0.33/+0.35 mm, tilted 1.2–1.7° (`all.jsonl`). P0 (prototype gate \|dz\| < 1.5 mm): 6 of 247 successful snaps welded at +0.47 to +0.95 mm, above r4's band. | §2.2: a 1 s weld window opens when neither B finger touches the brick (d < 0), again for the step's unwelded bricks when A's fingers leave them at Unbrace, and after a V7 re-press. The gate is tested only at rest (speed relative to the partner), on the pose relative to the partner, and the first pass fires. +0.3s is ≥ 0.2s mm above the 1 s seated rest and ≥ 0.6s mm below the stud-top rest (1× and 2×); because intermediate 1× states exist near it, a new P1 band-sanity gate bounds how many bricks rest near the edge. −0.5s matches D1(iii) and V7's `below_seated`. P1 scores success, F_seat and c_held this way; transit passes are logged but never scored, and the probe gains a release phase. c_held is contiguous, with the literal maximum also reported. V7's seated band = the clutch band; V7's label comes from ground-truth dz at rest, not clutch state. M0(b) may see fewer snaps than P0 (tighter band). |
+| 3 | P1(c) measures rest stability instead of raw jitter (post-hoc change to a pre-registered gate: user item D2) | Raw 2 s peak-to-peak was 0.037–0.048 mm at 1× (gate 0.02s), on free bricks with no fingers, so the finger change does not void it. Under r3's gate **1× fails P1 → s = 2**. It was linear creep (−19 to +25 µm/s). Detrended it is ≤ 0.0022 mm (1×) and ≤ 0.0043 mm (2×). A seated brick rises ≈ 0.1 mm in 5 s. | (c) is measured on arm-seated bricks after release (no body force; judged on seated bricks; r3 did not specify the resting state, and 2× stud-top rows also exceed 0.02s raw). Gate: detrended jitter < 0.02s mm and drift ≤ 0.1s mm/s. Under this gate 1× passes (c). The 1 s window bounds creep to ≤ 0.03 mm, and a brick left on the stud tops is not re-tested outside a window, so creep cannot weld it. |
+| 4 | FK "seated" is gated where it is used | At offsets ≥ 1 mm the soft-gripped hand slid 3 mm down the brick, and FK reported seated with the brick at +1.3 mm. | The spiral trigger is FK-seated's only decision consumer; the FK stop is a motion limit, and V7 stays the authority. Gate: FK false positives ≤ 5 % over (b) at the chosen grip, else the next grip multiple. Row 1 removes the mechanism (press slip ≤ 0.19 mm at 1×, well below the 0.6s mm between the stud-top rest and the FK threshold). |
+| 5 | Probe departures blessed; one wording corrected | GRASP_DZ was scaled; the rig was raised; collision ran every substep while the real-time gate used once per frame; c_held was contiguous; the proxy clearance is 0.70s mm in code. Smoke real-time factor on a shared GPU: 0.35 / 0.55 / 0.90 at 16 / 8 / 4 substeps. | GRASP_DZ = 8.9 + 4.1s mm (13.0 at 1×, unchanged). The rig puts the lower brick at z = 0.05 m; the cell's k_os is re-read in M0(b) and M1. P1 physics collides once per frame (the cell's mode), with one cross-check that collides every substep, covering (d) and (e). (f) runs first on an idle GPU and fixes n_sub (16, else 8; 4 is excluded because kd_f ≤ 240), otherwise U14. §0 fact 6 and (h): the proxy stud–wall clearance is 0.70s mm; (h)'s 0.6s mm tube clearance is unchanged. |
+| 6 | Contact monitor: P0's two windows adopted; events merge across 0.5 s gaps | P0 needed two windows. The picked brick rests on the table during descend, grasp and lift (the implementer reported 172 spurious "unintended" events on one cube run without this window; that run was not saved). Support and neighbour contact continues through Release. Contiguous-only merging fragments flickering contacts: 26–37 `neighbour_rub` events per cube run; with a 30-frame merge, 18 on every cube run. On the arch `grasp_lp` runs the merge takes 453–507 displaced records to 35–40 events on 8 bricks (unintended 23–25, penetration 10, arm_arm 5–7); on S3 `grasp_lp` r0, displaced 146, unintended 76, penetration 56, arm_arm 8. **What remains is real brace-driven motion, not a counting artefact:** A's `grasp_lp` brace drags bricks a cumulative 1.0 m on arch r0 (largest single move 29.7 mm) and 5.9 m on S3 r0 (largest 319 mm), mostly while A holds and B transports, or during retract. | §2.4 adopts both windows and 30-frame (0.5 s) same-pair merging, keeping single-frame sensitivity. M0(a) and P3 step 8 use P0′. The brace-driven motion is a WP1 input (§3 P0). |
+| 7 | P0 recorded; contingency fired | P0 (24 runs) had no gate. `grasp_lp` braces break the prototype (row 6), so r3's contingency fires: WP1 fixes the brace executor and M0 uses `lever_press` until then. Brace-independent failures (both brace models): arch b_010 6/6, hollow_box b_009 and b_010 6/6 (rest ≈ +5 mm, 12–16° tilt), S3 b_010 6/6. S3 `lever_press` diverged in 2/3 runs (t ≈ 145.5 s, step 14). HEAD reaches arch 10/11 and S3 13–14/16 with either brace model, against M0(b)'s 11/11 and ≥ 15/16. | §3 P0: `result v4_p0_baseline` recorded now, plus `failure v4_p0_s3_lever_press_diverged`; the failures are WP1 inputs, with an effort caveat on WP1. |
+| 8 | Effort | — | P1 +0.5 agent-day; P0′ ≈ 45 min GPU; P3 step 8 runs on P0′. Total 21.75–22.75 agent-days without WP5. WP1's 1.75 days carry a caveat (§5). |
 
 ---
 
@@ -64,7 +83,7 @@ Rows 1–10 are the logic reviewer's round-2 findings. Row B is the work-reviewe
 5. **Contact readback.** Contacts are generated up to 10 mm apart (`gap = SDF_MARGIN`). Signed distance is `solver.mjw_data.contact.dist`, with `contact.geom` mapped to shapes by `solver.mjc_geom_to_newton_shape`. `SolverMuJoCo.update_contacts(c, state)` **overwrites** `c`'s count, shapes, points, normals and force from MuJoCo, so the monitor passes its own buffer (`pipeline.contacts()` allocated a second time).
 6. **Brick contacts under a press.** This is r1's planning probe, corrected by the work-reviewer's independent reproduction: `press.py`, 29 result files, prototype brick model and solver settings, 60 fps × 16 substeps. dz = upper bottom − lower top, in mm.
    - **Model.** Brick shapes are the example's collision-enabled SDF mesh (studs r 2.4 mm; interior tubes r 3.255 mm on 2-wide bricks) plus invisible proxies (stud cylinders r 2.2 mm; wall and top-slab boxes).
-     - Nominal clearances: tube–stud 0.002 mm (mesh); stud–wall 0.4 mm (mesh) or 0.6 mm (proxy). The combined contact margin is 0.08 mm.
+     - Nominal clearances: tube–stud 0.002 mm (mesh); stud–wall 0.4 mm (mesh) or 0.70 mm (proxy: stud proxy r 2.2 mm against a wall proxy inset 0.1 mm; r3 said 0.6). The combined contact margin is 0.08 mm.
      - Newton maps the brick ke/kd to a MuJoCo solref (time constant 12.9 ms, damping ratio 0.53). That is a stiffness per unit acceleration, so **contact force per mm scales with body mass (∝ s³)**.
    - **At rest:** an unpressed brick rests on the stud tops (dz +1.1 to +1.7) even at 0 offset. The contact is mesh–mesh at the tube–stud rims, because the 0.002 mm clearance is below the 0.08 mm margin.
    - **r1's "≥ 2 N pushes a brick through another" is a loading artefact.**
@@ -80,7 +99,7 @@ Rows 1–10 are the logic reviewer's round-2 findings. Row B is the work-reviewe
      - Stand-in for an arm: the brick on a single z-prismatic joint to the world (0.5 kg armature, ke 2e4 N/m, kd 200, force-capped), so it has **no sideways, tilt or yaw freedom**; 1×, fixed lower brick, 0 offset.
      - At 20 mm/s the brick stays on the stud tops up to 50 N (+1.61), then reaches +0.59 at 71 N and +0.05 at 100 N.
      - At 100 mm/s it is at +1.0 at 10 N, +0.13 at 71 N and +0.01 at 100 N.
-     - So this locked stand-in reaches the M1 weld gate (dz ≤ +1.0s) only at tens of newtons at 1×, while the free brick under a ramp seats at ≤ 0.5 N at the same 0 offset. An arm-held brick, with some sideways and tilt compliance through the grip, is neither; P1 measures it.
+     - So this locked stand-in comes within r3's weld gate (dz ≤ +1.0s, under load) only at tens of newtons at 1×; r4's gate (≤ +0.3s, unloaded, §2.2) is stricter, while the free brick under a ramp seats at ≤ 0.5 N at the same 0 offset. An arm-held brick, with some sideways and tilt compliance through the grip, is neither; P1 measures it.
    - **The lateral-offset (capture) runs were impact-driven.**
      - Free brick, 0.2–1 N step, offsets ≤ 1.0 mm in x, y and diagonal: 19/21 seat (dz −0.04 to −0.11; lateral residual 0–0.33 mm). The other 2 jam, tilted 2.7°, at a 0.5 mm x offset. At 1 N the brick dips 1.2–2.5 mm into the lower brick on the way in, then recovers.
      - These bricks seat because they hit the rims at ≈ 0.3 m/s. An arm press does not, so **this ≈ 1 mm is not an arm-held capture**. (At 0 offset, the slow ramp above seats without an impact.)
@@ -163,7 +182,17 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
 - "Isaac" is still met: the run uses the Isaac interpreter, and an optional WP7 hero render replays a `--viewer usd` recording in Isaac Sim 6.0 RTX.
 - **Escalation:** if P2 finds the images uninformative (depth *and* RGB), the user is offered Isaac Lab with an RTX TiledCamera.
 
-**Physics** stays as the prototype's: `SolverMuJoCo(solver="newton", integrator="implicitfast", iterations=15, cone="elliptic", impratio=50, use_mujoco_contacts=False)` with Newton's CollisionPipeline (SDF plus proxies, `sap`, `reduce_contacts=True`), 60 fps × 16 substeps. Brick contacts keep the example's ke, kd and margin at both scales. Newton maps ke/kd to a mass-independent solref, so force per mm already scales with brick mass (∝ s³) and there is no separate stiffness variant. The collision mesh is the prototype's, unless P1's branch adopts the designed-clearance variant P1(h).
+**Physics** stays as the prototype's except at the fingers (r4): `SolverMuJoCo(solver="newton", integrator="implicitfast", iterations=15, cone="elliptic", impratio=50, use_mujoco_contacts=False)` with Newton's CollisionPipeline (SDF plus proxies, `sap`, `reduce_contacts=True`), 60 fps × n_sub substeps, collision once per frame. n_sub = 16 unless P1(f) picks 8 for real time (U14).
+- Brick contacts keep the example's ke, kd and margin at both scales.
+  - Newton maps ke/kd to a MuJoCo solref: time constant 2/kd, damping ratio (kd/2)·√(1/ke). That is a stiffness per unit acceleration, so force per mm scales with brick mass (∝ s³). There is no separate brick stiffness variant.
+- Finger contacts (r4): the FR3 finger collision shapes (bodies 12/13 in `dual_arm_sim.build_arm`, both arms) use ke_f = 2.5e5, with kd_f = 900 at 16 substeps or 450 at 8.
+  - The fingers keep their existing `geom_priority` 1 and solimp (0.7, 0.95, 1e-4, 0.5, 2.0) (`dual_arm_sim.py:131–135`). With the higher priority, MuJoCo uses the finger's solref and solimp alone at every finger contact, so the brick's ke/kd do not enter.
+  - That gives time constants of 2.2 / 4.4 ms (≥ 2·dt) and damping ratios of 0.9 / 0.45. ke 1e6 diverged at kd 500 and 1000 (the only values tried).
+  - r3 left them at Newton's default ShapeConfig (ke 2500, kd 100 → 20 ms, damping ratio 1): ≈ 1.1–1.3 kN/m against a 1× brick.
+  - With that default, the grip saturated at 1.2–2.0 N per finger, the pads sank 0.9–1.6 mm, and the brick crept 1.6 mm in the hand during a 0.5 m/s carry.
+  - With the r4 values at 1×: grip 6.9/13.2/24.9 N for 7.1/14.3/28.6 N nominal; pad penetration 0.09–0.24 mm; press slip 0.07–0.19 mm; carry creep 0.095 mm. At 2×: penetration 0.03–0.06 mm, press slip 0.08–0.23 mm.
+  - The pads remain mass-scaled: about 8× softer on a 1× brick than on a 2× one.
+- The collision mesh is the prototype's, unless P1's branch adopts the designed-clearance variant P1(h).
 
 ### 2.2 Cell and brick model
 
@@ -183,14 +212,26 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
 - Every brick dimension scales by s: pitch 8s mm, height 9.6s mm, stud 4.8s mm.
 - s = 2 is exactly the DUPLO grid. At s = 2 the 17.5 mm finger pads stop overhanging a 2x2 face, which removes v3.1's flanked-2x2 inaccessibility (so S5 becomes feasible).
 - s ≤ 2 by the gripper stroke (§0 fact 9).
-- Implementation: one `SCALE` drives `planner.PITCH`, `BRICK_H`, `STUD_H` and `stability.MASS_PER_STUD` (s³). `FINGER_W` stays 17.5 mm. Mesh vertices are × s; `_build_mesh_with_sdf(..., scale=s)` for the narrow band and margin; proxies as in `example_brick_stacking.add_board_floor`. The tube collision radius is one parameter; P1(h)'s designed-clearance variant changes only that.
+- Implementation: one `SCALE` drives `planner.PITCH`, `BRICK_H`, `STUD_H` and `stability.MASS_PER_STUD` (s³). `FINGER_W` stays 17.5 mm.
+  - `GRASP_DZ` = `TIP_BELOW_TCP` + 4.1s mm (8.9 + 4.1s: 13.0 mm at 1×, the prototype's value; 17.1 mm at 2×). The fingertips therefore end 2.4s mm above the lower course's stud tops (r4). A fixed 13 mm would leave ≈ 2 mm of wall between the pads at 2×.
+  - Mesh vertices are × s; `_build_mesh_with_sdf(..., scale=s)` for the narrow band and margin; proxies as in `example_brick_stacking.add_board_floor`.
+  - The tube collision radius is one parameter; P1(h)'s designed-clearance variant changes only that.
 
 **Clutch, M1 — a weld pool over body pairs, non-breaking.**
-- **Pool:** one disabled weld per unordered brick pair plus one per brick to the plate. N bricks including spares give N(N−1)/2 + N welds (S3 with 4 spares: 210; S5 with 4: 465).
-- **Check:** each frame the scene (physics side, ground truth allowed) tests every unwelded pair whose footprints overlap and whose vertical gap is within the gate.
-- **Gate** (relative to the **nearest lattice pose**, i.e. offset rounded to the pitch and yaw to 90°): |Δxy| < 1.2s mm, dz ∈ [−0.3s, +1.0s] mm, tilt < 4°, yaw < 5°.
-- **On pass:** the weld's `relpose` is set to that lattice pose and it is enabled. The snap is independent of the plan, so any tray brick of the right type can be used for any step.
-- Stated plainly: **in M1 a brace cannot change an outcome**, because welds never release.
+- Pool: one disabled weld per unordered brick pair plus one per brick to the plate. N bricks including spares give N(N−1)/2 + N welds (S3 with 4 spares: 210; S5 with 4: 465).
+- When it is tested (r4): only inside a weld window, on an unloaded brick at rest. It is never tested in transit or under the press. This is on the physics side, where ground truth is allowed; the executor never sees weld state.
+  - Windows last 1 s each and open, for a brick that is still unwelded:
+    - when neither B finger touches it (no finger contact row with d < 0; rows at d ≥ 0 inside the 10 mm SDF margin do not count), i.e. after Release;
+    - at Unbrace, for every unwelded brick of the step (the placed brick and A's `gripped_bricks`), when neither A finger touches it (d < 0). A still holds during B's release window, and P0 shows a `grasp_lp` brace moves bricks by millimetres to hundreds of millimetres, so a brick braced in motion gets a second chance once A lets go;
+    - after a V7 re-press, as after Release.
+  - "At rest" and the pose are taken relative to the partner (the lower brick, or the plate): on every frame where the brick's speed relative to the partner has been < 1s mm/s for ≥ 6 consecutive frames (0.1 s), the scene tests it against each unwelded partner whose footprint overlaps.
+  - The first passing frame fires the weld. If no window passes, the brick stays unwelded. Each evaluation (window, fired, dz, |Δxy|, tilt) goes into the episode row.
+  - A brick that V7 calls seated but that ends the step unwelded is logged as `seated_unwelded` (ground truth, scoring only). It does not count as placed: M0(b) and M1 count welded bricks.
+- Gate (in the partner's frame, relative to the nearest lattice pose, i.e. offset rounded to the pitch and yaw to 90°): |Δxy| < 1.2s mm, dz ∈ [−0.5s, +0.3s] mm, tilt < 4°, yaw < 5°.
+  - Why this band: seated and released after a small force, bricks rest at ≈ 0 to +0.05 mm within 1 s at 1× (creeping up to +0.06–+0.10 over 3–6 s) and +0.05 to +0.18 mm at 2×. On the stud tops they rest at +1.1 to +1.37 mm (1×) and +1.84 to +2.69 mm (2×, depending on the drop). +0.3s is ≥ 0.2s mm above the seated rest and ≥ 0.6s mm below the stud-top rest, at both scales. At 1× some presses end in between (r3 smoke: +0.24 to +0.35 mm tilted 1.2–1.7°, and several in +0.4 to +1.0 mm), so P1 gates how many bricks rest near the edge (band sanity). −0.5s is D1(iii)'s sink bound and V7's `below_seated` edge. r3's +1.0s edge sat 0.1–0.37 mm below the creeping 1× stud-top rest and admitted the 2× one.
+  - Creep: seated bricks drift ≤ 25 µm/s (≤ 0.03 mm within a window). A brick left on the stud tops creeps down at ≈ 19 µm/s (1×) to 32 µm/s (2×); it reaches the band only after ≈ 40 s, far outside any window, so creep cannot weld it.
+- On pass: the weld's `relpose` is set to that lattice pose and it is enabled. The snap is independent of the plan, so any tray brick of the right type can be used for any step.
+- Stated plainly: in M1 a brace cannot change an outcome once a brick is welded, because welds never release. Before its weld, a brace can move a brick (P0).
 
 **Joint model, M2 (WP5, only if U4 = yes).** From the draft: a detent weld holds the brick at the stud tops until the axial reaction exceeds n·f_insert, and the clutch weld's wrench → `capacity.Patch.utilization()`, with a break when u ≥ 1 for 2 frames. **Not blocked:** §0 fact 6 shows bricks carry 71–100 N when seated first (then stepped), or pressed by a speed-limited stand-in. At 1× an unseated brick under a 0.5 s force ramp passes through at 71 N (ends −9.2 mm; −11.6 mm at 100 N); at 2× the same ramp holds 100 N (−0.50 mm). WP5 still **starts with a 1-day contact spike** (§3 WP5), which is expected to pass at 2× and is uncertain at 1×. It measures sink and pass-through under ≈ 92 N applied with the arm's Jᵀ·F press. E5 runs only if the spike passes.
 
@@ -198,18 +239,24 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
 
 - **Free-space motion:** planned trajectories (§2.4), **time-scaled** so that peak joint velocity and acceleration are ≤ the P3-chosen fraction of limits (start 50 %), resampled to frame rate. Written to `control.joint_target_pos` **and `joint_target_vel`** (velocity feed-forward cuts PD lag). Prototype gains (ke 400, kd 40) with gravity compensation.
 - **Contact segments** (last 30 mm of grasp, insert and brace): straight Cartesian segments through the batched `newton.ik.IKSolver`. They are **collision-checked per link before execution**, at 2 mm steps:
-  - **arm links and finger spheres** vs the world model minus only the brick being grasped (B) or the braced `gripped_bricks` (A), using cuRobo's `RobotCollisionChecker`. Finger spheres are fitted to ≤ 0.5 mm over-approximation and padded 0–1 mm, because by `GRASP_DZ` design the fingertips end 2.4 mm above the lower course's stud tops.
+  - **arm links and finger spheres** vs the world model minus only the brick being grasped (B) or the braced `gripped_bricks` (A), using cuRobo's `RobotCollisionChecker`. Finger spheres are fitted to ≤ 0.5 mm over-approximation and padded 0–1 mm, because by `GRASP_DZ` design (§2.2) the fingertips end 2.4s mm above the lower course's stud tops.
   - **the held brick**, a numpy OBB test against the world's cuboids, vs the world minus its supports and same-course neighbours.
   - A failure triggers a replan with the next grasp yaw or approach. P3 measures the false-positive rate on the cube's insert segments.
 - **Align:** an FK integral servo moves the TCP by V5's correction (§2.5) and settles until the FK error is < 0.03 mm. It uses no ground truth.
-- **Every press is arm-held and speed-limited** (§0 fact 6). The TCP descends at v_press ∈ {5, 20} mm/s (P1 picks), and the press force is capped. No executor path, and no experiment except P1(g), applies a body force to a brick.
-- **Grip:** the per-finger normal force must satisfy N ≥ F_press/μ, so the axial hold 2μN ≥ 2·F_press.
+- Every press is arm-held and speed-limited (§0 fact 6). The TCP descends at v_press ∈ {5, 20} mm/s (P1 picks; 2 mm/s only as P1(d)'s pre-registered rescue for D1(ii), r4), and the press force is capped. No executor path, and no experiment except P1(g), applies a body force to a brick.
+- Grip: the per-finger normal force must satisfy N ≥ F_press/μ, so the axial hold 2μN ≥ 2·F_press.
   - It is set through `FINGER_KE` at the prototype's 1.5 mm squeeze. Today's 1000 N/m gives 1.5 N per finger, i.e. ≈ 2.1 N of hold at μ 0.7, which is too little for any press above ≈ 1 N.
-  - N is capped at the 100 N finger effort limit. D1(iv) also compares N with the real FR3 hand's 70 N continuous rating.
-- **Insert (guarded press), baseline:**
-  - Descend at v_press from 3s mm above the stud tops. Stop when the simulated wrist wrench |F_z| ≥ F_press, or when FK z ≤ seated − 0.2s mm. Hold 0.3 s.
-  - **F_press = 2·F_seat(s)**, from P1(d). It must satisfy D1(ii): k_os·F_press ≤ 0.5·F_pt.
-  - FK "seated" (FK height ≤ seated + 0.5s mm) is **advisory**, because a brick that slides up in the fingers fools it. P1 reports its false-positive rate, and **V7 is the authority**.
+  - This works only with stiff finger contacts (r4, §2.1). With r3's defaults, the realised grip saturated at 1.2–2.0 N per finger whatever `FINGER_KE` was.
+  - The realised N falls short of nominal by the pad penetration over the 1.5 mm squeeze. P1(e) checks realised N ≥ 0.8× nominal and pad penetration ≤ 0.3s mm. At 1× that bound caps N near 30 N per finger (extrapolated).
+  - P1 picks the grip multiple m ∈ {1, 2, 4}, with N = m·F_press/μ: the smallest m that meets the slip gate.
+  - N is capped at the 100 N finger effort limit. D1(iv) compares the chosen N with the real FR3 hand's 70 N continuous rating.
+- Insert (guarded press), baseline:
+  - Descend at v_press from 3s mm above the stud tops. Stop when the simulated wrist wrench |F_z| ≥ F_press, or when FK z ≤ seated − 0.2s mm. Hold 0.3 s, then Release. The M1 clutch tests the released brick at rest (§2.2, r4).
+  - F_press = 2·F_seat(s), from P1(d). It must satisfy D1(ii): k_os·F_press ≤ 0.5·F_pt.
+    - With stiff finger contacts, the grip no longer absorbs the touchdown by sliding. The review measured k_os 2.5–4.4 at 20 mm/s and F_cap 5 N (up to 3.8 at 1×), so v_press is the lever.
+  - FK "seated" (FK height ≤ seated + 0.5s mm) is advisory, because a brick that slides up in the fingers fools it. V7 is the authority.
+    - Its only decision consumer is the spiral trigger below. The FK stop above is a motion limit.
+    - With r3's soft grip, the hand slid ≈ 3 mm down bricks left at +1.3 mm. P1 gates the false-positive rate at the chosen grip at ≤ 5 %.
   - **If not seated:** a spiral search — lift 1 mm, then an Archimedean spiral r ≤ 1.5c in 0.25c steps, at most 12 guarded probes (a port of v3.1 M7's search). It is **enabled only if 1.5·c_held(s) ≥ the chain p95(s)**; otherwise its window is too small to find.
 - **Sensing (proprioception, allowed):** joint q and qd, gripper width, FK, and a simulated wrist wrench from Newton contact forces on the fingers (labelled a sensor model).
 
@@ -246,15 +293,21 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
 **Contact monitor** (`cell/contacts.py`; used for gates, the HUD and evaluation, never by the executor):
 - **Each frame:** read rows `i < nacon` of `mjw_data.contact` (`dist`, `geom` → shape → body → class). Classes: arm A link, arm B link, finger, held brick, placed brick, tray brick, plate, table/ground. The held brick is ground-truth-defined (touching both B fingers); scoring only.
 - **Only pairs with an arm link or the held brick are candidate events.** Resting brick–brick, brick–plate and brick–table contacts are ignored, except for penetration (below).
-- **Permitted, with their phase windows:**
-  - B fingers ↔ the brick being grasped, **from the start of the descend segment** to Release;
-  - A fingers ↔ **every brick in the step's `gripped_bricks`** (`grasp_lp` pads grip several bricks by design), from A's brace contact segment to Unbrace;
-  - held brick ↔ its supports and ↔ same-course neighbours, **only in the final Insert segment and the search**. Neighbour contacts are logged as `neighbour_rub` (max penetration, duration) and not counted as unintended.
+- Permitted, with their phase windows:
+  - B fingers ↔ the brick being grasped, from the start of the descend segment to Release;
+  - the brick being grasped ↔ the table or ground it rests on at its pick-up spot, from the start of the descend segment to the end of Lift (r4);
+  - A fingers ↔ every brick in the step's `gripped_bricks` (`grasp_lp` pads grip several bricks by design), from A's brace contact segment to Unbrace;
+  - held brick ↔ its supports and ↔ same-course neighbours, from the start of the final Insert segment through Release, including the search and a V7 re-press (r4: the brick still sits on its supports while the fingers open). Neighbour contacts are logged as `neighbour_rub` (max penetration, duration) and not counted as unintended.
+  - Permitted contact is not permitted motion: a braced brick that moves is still counted in the displaced class.
 - **Arm–arm event:** any d < 0 between A and B links, in any single frame.
 - **Unintended event:** any non-permitted arm or held-brick pair with d < 0 in any single frame.
 - **Penetration event:** any brick–brick pair with d < −1·s mm (catches pushed-through bricks). D1(iii) keeps the legitimate sink under the press ≤ 0.5s mm, so the threshold stays meaningful.
 - **Displaced brick:** any non-held brick moved > 1·s mm from its last rest pose.
-- Contiguous frames of one pair merge into one event, logged with phase, max penetration, peak force (from the monitor's own Contacts buffer via `update_contacts`) and duration.
+- Merging (r4): the d < 0 frames of one pair merge into one event while the gaps between them are ≤ 30 frames (0.5 s). For displaced bricks the unit is the brick rather than a pair.
+  - Each event is logged with phase, max penetration, peak force (from the monitor's own Contacts buffer via `update_contacts`), first and last frame, contact-frame count and fragment count. Displaced events also log the brick's path length and largest single move.
+  - A single frame still opens an event, so single-frame sensitivity is kept.
+  - Why: r3 merged only contiguous frames, so a contact flickering at d ≈ 0 split into many events. On P0 the merge takes 26–37 `neighbour_rub` events per cube run to 18 on every run, and the arch `grasp_lp` runs' 453–507 displaced records to 35–40 events on 8 bricks.
+  - The merged counts that remain on braced runs are real: A's `grasp_lp` brace drags bricks a cumulative 1.0 m on arch r0 (largest single move 29.7 mm) and 5.9 m on S3 r0 (largest 319 mm), mostly while A holds and B transports, or during retract. Merging changes the count, not that finding.
 
 ### 2.5 Perception — vision only (U6, U7)
 
@@ -296,7 +349,11 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
   - **Missing expected studs** (unmasked only) → obstruction → abort the step.
   - **Too occluded** → a second look with the hand yawed 180° (a brick footprint is 180°-symmetric).
 - **V7 verification (wrist, from the look pose after retract):**
-  - top-face height over the footprint — seated ⇒ z_target + 9.6s mm; on the stud tops ⇒ 1.7s mm more; **more than 0.5s mm below seated ⇒ `below_seated`** (pass-through, or a crushed lower course), and the step fails as a penetration outcome (σ ≈ 20 µm, so all three are unambiguous);
+  - top-face height over the footprint:
+    - seated ⇒ z_target + 9.6s mm, where the seated band is the clutch band, dz ∈ [−0.5s, +0.3s] mm (r4);
+    - above +0.3s ⇒ not seated (on the stud tops ≈ 1.7s mm more, or hung between);
+    - more than 0.5s mm below seated ⇒ `below_seated` (pass-through, or a crushed lower course), and the step fails as a penetration outcome.
+    - σ ≈ 20 µm. Stud-top vs seated is unambiguous. At 1× a brick that ends just above +0.3s (r3 smoke: +0.33 and +0.35 mm, 1.5–2.5σ above the edge) is not; P1's band-sanity gate bounds how often that happens.
   - the new brick's lattice → its pose error.
   - The as-built model is updated from this measurement.
 - **Final as-built (top):** coarse check against the blueprint.
@@ -335,7 +392,7 @@ Standalone Newton 1.2.1 (`~/Codes/CAIRSS/Issac/bin/python`), extending `dual_arm
 - **(i) alignment:** predicted chain p95(s) ≤ 0.5·c_held(s). The prediction uses this table with P2's measured pixel terms and look height and P1's measured slip. **c_held is taken at F_press(s) = 2·F_seat(s)** (P1(b)).
 - **(ii) press window:** 0.5·F_pt(s) / (k_os·F_seat(s)) ≥ 2. k_os is P1's p95 ratio of peak to commanded wrist force.
 - **(iii) sink:** the sink below seated at the peak press k_os·F_press ≤ 0.5s mm (P1(d)). This keeps V7 and the penetration class meaningful. Under 71–100 N, §0 fact 6 measured 0.45–0.6 mm of sink at 2× against 0.9–2.7 mm at 1×; this criterion is where that counts for 2×.
-- **(iv) grip:** F_press/μ ≤ 70 N per finger (the FR3 hand's rated continuous force; the simulation caps at 100 N).
+- **(iv) grip:** the chosen per-finger grip N = m·F_press/μ (§2.3) ≤ 70 N (the FR3 hand's rated continuous force; the simulation caps at 100 N).
 
 The variants are the prototype mesh, and P1(h) only if P1's branch fired.
 - Choose the smallest qualifying s.
@@ -373,7 +430,7 @@ Build (Sequence)
 - plan time and count, path length;
 - **planned and executed** minimum clearance, executed max link deviation;
 - contact events by class (arm_arm / unintended / neighbour_rub / penetration / displaced), with a `braced` flag;
-- commanded and peak press force, grip force, search probes, V7 outcome (seated / on stud tops / below_seated), timing, success, `failure_stage`.
+- commanded and peak press force, grip force, search probes, V7 outcome (seated / on stud tops / below_seated), weld windows and their evaluations, `seated_unwelded`, timing, success, `failure_stage`.
 
 ### 2.7 Live viewer (ViewerGL; `--viewer viser` works without image panels, since `log_image` is ViewerGL-only)
 
@@ -416,47 +473,75 @@ Every gate and result gets a ledger entry, and `WORKLOG.md` is regenerated after
 - **Deliverable:** `dual_arm_sim.py --viewer null --test` on cube, arch, hollow_box and S3, with current `grasp_lp` plans and with `lever_press` plans, on the **prototype's exact config** (1×, fixed feeder slots, fixed plate).
   - The config is run **3×**, to give the run-to-run spread under GPU contact nondeterminism that M0(a) needs.
   - Output `results/v4/p0_baseline.jsonl`: completion, cycle per brick, events by class, displaced bricks, and **dz at snap**. The prototype's |dz| < 1.5 mm gate can weld a brick that is still resting on the stud tops.
-- **Gate:** none; ledger `result v4_p0_baseline`. If `grasp_lp` braces break the prototype, WP1 fixes the brace executor, and M0 uses `lever_press` until then.
+- Gate: none; ledger `result v4_p0_baseline` (r4: recorded from `results/v4/p0_baseline.jsonl`, 24 runs). If `grasp_lp` braces break the prototype, WP1 fixes the brace executor, and M0 uses `lever_press` until then.
+- Outcome (r4): the contingency fired. On arch and S3, `grasp_lp` produced 453–507 raw displaced records per run on arch and 2345–2684 on S3 (merged, §2.4: 35–40 on arch, 146–156 on S3), and arm_arm 24–39 raw (5–9 merged). WP1 inputs, each to be fixed or explained in WP1:
+  - brace-driven motion (§2.4): A's brace drags bricks while A holds and B transports, and during retract;
+  - brace-independent failures, with both brace models: arch b_010 fails 6/6 runs; hollow_box b_009 and b_010 6/6 (rest ≈ +5 mm, 12–16° tilt); S3 b_010 6/6;
+  - S3 `lever_press` diverged in 2/3 runs (t ≈ 145.5 s, step 14), so the fallback brace is not clean on S3 either;
+  - at HEAD arch reaches 10/11 and S3 13–14/16 with either brace model, against M0(b)'s 11/11 and ≥ 15/16.
+  - Snaps logged at +56/+79/−72 mm are `ok: false` (lost or dropped bricks), not welds. Of 247 successful snaps, 6 welded at +0.47 to +0.95 mm under the prototype's |dz| < 1.5 mm gate, above r4's band, so M0(b) may see fewer snaps than P0.
+- P0′ (r4): the implementer first changes the finger ShapeConfig in `dual_arm_sim.build_arm` (§2.1: ke_f, kd_f; priority and solimp unchanged), then re-runs P0's config 3× (≈ 45 min, prototype weld gate) with the r4 monitor → `results/v4/p0_stiff.jsonl`, insert segments in `results/v4/p0_stiff_inserts/`, ledger `result v4_p0_baseline_stiff_fingers`. M0(a) and P3 step 8 use P0′. P0 stays the record of the prototype at HEAD.
 
-### P1 — Newton contact physics, arm-held press and capture vs scale (2 days GPU; parallel with P2, P3)
-- **Deliverable:** `scripts/10_newton_scale_probe.py`, grown from the work-reviewer's `press.py` (same brick model, solver settings and output columns), for s ∈ {1, 2} on 2x4 and 2x2 bricks.
-- **Common setup for (b), (d), (e) and (h):**
-  - Contacts use the example's ke, kd and margin at both scales (mass scaling is automatic, §0 fact 6).
-  - **The press is arm-held.** B holds the brick in the FR3 grip at the prototype arm gains, with the grip set by the §2.3 rule. The TCP descends at v_press ∈ {5, 20} mm/s with a force cap F_cap.
-  - **The lower brick is either a first-course brick on the plate's proxy studs, or a brick welded to the plate** (M1's state).
-  - **Scoring uses the M1 clutch:** success means the weld gate fires (|Δxy| < 1.2s mm, dz ∈ [−0.3s, +1.0s] mm, tilt < 4°, yaw < 5°).
-- **(a) Contact generation:** stud proxy vs wall at 50 µm overlap (`mjwarp_insertion_probe`'s test on this pipeline).
-- **(b) Capture at F_press(s) = 2·F_seat(s)**, rounded up to a sweep level:
-  - offsets from 0 to 2s mm in 0.1s mm steps, with **random direction and random yaw error U(−1°, 1°), 20 trials per level**;
-  - **c_held(s)** = the largest offset at which the weld fires in ≥ 19/20;
-  - also logged: dz and |Δxy| at weld time, and the **FK-seated false-positive rate** (FK says seated but the gate did not fire).
-- **(c) Resting jitter** over 2 s.
-- **(d) Force sweep at 0 offset**, run before (b). F_cap ∈ {1, 2, 5, 10, 20, 50, 100} N, 20 trials each. Levels whose grip would need N > 100 N run at the cap and are flagged as grip-limited.
-  - **F_seat(s):** the smallest F_cap whose press takes the brick from the stud-top rest to the weld gate in ≥ 19/20.
-  - **F_pt(s):** the smallest F_cap at which, with the brick seated first and the cap held for 1 s, the brick sinks > 1s mm below seated, or a brick–brick contact reaches d < −1s mm, in any trial.
-  - **Sink under load** at every level.
-  - **k_os:** the p95 ratio of peak to commanded wrist force.
-- **(e) Slip:**
+### P1 — Newton contact physics, arm-held press and capture vs scale (2.5 days GPU; parallel with P2, P3)
+- Deliverable: `scripts/10_newton_scale_probe.py`, grown from the work-reviewer's `press.py` (same brick model, solver settings and output columns), for s ∈ {1, 2} on 2x4 and 2x2 bricks. The r3-protocol smoke rows for (b), (d), (e) and (f) are void; (a), (c) and (g) rows (no fingers) remain valid (r4).
+- Order (r4): (f) first, with no other GPU job running, to fix n_sub. Then (a), (d), (b), (c), (e) and (h) at n_sub; (g) any time.
+- Common setup for (b)–(e) and (h):
+  - Brick contacts use the example's ke, kd and margin at both scales (mass scaling is automatic, §0 fact 6). Finger contacts use §2.1's ke_f, and kd_f for n_sub.
+  - Collision runs once per frame, as in the prototype and the cell.
+    - Cross-check: (d) at 0 offset and 20 mm/s, and (e) at the chosen grip, are repeated with collision every substep.
+    - If F_seat differs by more than one sweep level, the sink by > 0.1s mm, k_os by > 25 %, or any (e) gate item (realised grip, pad penetration, carry or final-descent slip) changes verdict, the cell collides every substep and (f) is re-read for that mode.
+  - The press is arm-held.
+    - B holds the brick in the FR3 grip at the prototype arm gains, with the TCP at §2.2's `GRASP_DZ`, and the grip set by the §2.3 rule.
+    - The TCP descends at v_press ∈ {5, 20} mm/s with a force cap F_cap, holds 0.3 s, then opens the fingers.
+  - The lower brick is either a first-course brick on the plate's proxy studs, or a brick welded to the plate (M1's state).
+    - The rig puts its base at z = 0.05 m for a cell-like arm posture.
+    - k_os depends on posture, so M0(b) and M1 re-read k_os from the episode log (commanded vs peak press force), and D1(ii) is re-checked with the larger value.
+  - Scoring uses the M1 clutch as §2.2 defines it (r4): success means the weld fires within the 1 s post-release window, at rest relative to the lower brick (|Δxy| < 1.2s mm, dz ∈ [−0.5s, +0.3s] mm, tilt < 4°, yaw < 5°).
+    - A pass in transit or under the press is logged as `gate_transit` and never scores.
+    - The probe scores the weld but does not enable it, so the brick stays free for (c).
+- (a) Contact generation: stud proxy vs wall at 50 µm overlap (`mjwarp_insertion_probe`'s test on this pipeline).
+- (b) Capture at F_press(s) = 2·F_seat(s), rounded up to a sweep level:
+  - offsets from 0 to 2s mm in 0.1s mm steps, with random direction and random yaw error U(−1°, 1°), 20 trials per level;
+  - c_held(s) = the largest level L such that every level ≤ L succeeds in ≥ 19/20. This is a contiguous capture window, which is what the spiral and D1 need. The largest single level with ≥ 19/20 is also reported (`c_held_max`).
+  - also logged: dz, |Δxy| and tilt at weld evaluation, and the FK-seated false-positive rate: FK seated at the end of the hold, but no weld after release.
+- (c) Rest stability (r4; replaces "resting jitter"):
+  - Setup: 10 of (d)'s trials at F_seat per s, observed for 5 s after release.
+  - Measures, over the last 2 s: detrended jitter (peak-to-peak dz about a linear fit) and drift (the fit's slope). The raw peak-to-peak is also reported, for comparison with r3's gate.
+  - Stud-top creep, from any (d) trial left unseated, is reported but not gated, because §2.2 never tests such a brick outside a window.
+- (d) Force sweep at 0 offset, run before (b). F_cap ∈ {1, 2, 5, 10, 20, 50, 100} N, 20 trials each. Levels whose grip would need N > 100 N run at the cap and are flagged as grip-limited.
+  - F_seat(s): the smallest F_cap whose press, from the Insert's start height, succeeds (scored as above) in ≥ 19/20.
+  - F_pt(s): the smallest F_cap at which, with the brick seated first and the cap held for 1 s, the brick sinks > 1s mm below seated, or a brick–brick contact reaches d < −1s mm, in any trial.
+  - Sink under load at every level.
+  - k_os: the p95 ratio of peak to commanded wrist force. Pre-registered rescue (r4): if D1(ii) fails at 5 mm/s, (d) is repeated at v_press = 2 mm/s before (ii) is declared failed at that s; if it then passes, v_press = 2 mm/s at that s.
+- (e) Slip and grip:
   - carrying at 0.5 m/s must slip < 0.5 mm;
-  - slip during the 30 mm final descent plus press, relative to the gripper, **measured against grip force** (per-finger N = 1, 2 and 4 × F_press/μ);
-  - **finger-into-brick penetration** at each grip level (bound ≤ 0.3s mm);
-  - the grip each press needs is reported against the 100 N simulation cap and the real hand's 70 N.
-- **(f) Real-time factor** at 16 / 8 / 4 substeps with 2 arms and 30 bricks, **with the full weld pool allocated** (S3 plus 4 spares: 210; S5: 465).
-- **(g) Reproduction of §0 fact 6:** free brick, step body force. This is the only place v4 applies a body force to a brick, and it is labelled as such.
-- **(h) Contact-spike arm, pre-registered and run in the same batch:** (b) and (d) repeated with the collision mesh's **tube radius reduced to a designed tube–stud clearance of 0.6s mm**.
-  - The mesh and the slab proxies are kept, because proxies alone cannot hold 0.5 N (§0 fact 6). The walls stay at 0.4s mm (mesh).
-  - A margin below the 0.002 mm clearance is **not** a candidate. It would return capture to geometry plus SDF blur (c ≪ 0.5 mm), which the search cannot recover.
+  - slip during the 30 mm final descent plus press, relative to the gripper, against grip multiple m ∈ {1, 2, 4} (N = m·F_press/μ). The chosen grip is the smallest m that meets the slip gate;
+  - realised per-finger grip vs nominal, and finger-into-brick penetration, at each level;
+  - the grip each press needs, against the 100 N simulation cap and the real hand's 70 N.
+- (f) Real-time factor, run first:
+  - Configurations: 16 / 8 / 4 substeps, with collision once per frame and every substep; 2 arms and 30 bricks, with the full weld pool allocated (S3 plus 4 spares: 210; S5: 465).
+  - n_sub = 16 if it reaches 0.8× real time at 465, else 8 if 8 does.
+  - 4 is excluded: kd_f ≤ 240 gives an 8.3 ms finger time constant, and carry creep scales with it (≈ 0.6 mm predicted, over the gate).
+  - If neither 16 nor 8 reaches 0.8× → U14.
+- (g) Reproduction of §0 fact 6: free brick, step body force. This is the only place v4 applies a body force to a brick, and it is labelled as such.
+- (h) Contact-spike arm, pre-registered and run in the same batch: (b) and (d) repeated with the collision mesh's tube radius reduced to a designed tube–stud clearance of 0.6s mm.
+  - The mesh and the slab proxies are kept, because proxies alone cannot hold 0.5 N (§0 fact 6). The walls stay at 0.4s mm (mesh) and 0.70s mm (proxy).
+  - A margin below the 0.002 mm clearance is not a candidate. It would return capture to geometry plus SDF blur (c ≪ 0.5 mm), which the search cannot recover.
   - This arm is adopted only if the branch below fires.
-- **Gate P1 (per s, prototype mesh):**
+- Gate P1 (per s, prototype mesh, at n_sub):
   - (a) produces > 0 contacts;
-  - D1 criteria (ii) window, (iii) sink and (iv) grip hold;
-  - jitter < 0.02s mm;
+  - finger contacts (r4): realised grip ≥ 0.8× nominal and pad penetration ≤ 0.3s mm at the chosen grip; carry slip < 0.5 mm;
+  - D1 criteria (ii) window (after the 2 mm/s rescue, if used), (iii) sink and (iv) grip hold;
+  - rest stability (r4): detrended jitter < 0.02s mm and |drift| ≤ 0.1s mm/s, so a seated brick moves ≤ 0.1s mm within the weld window;
   - final-descent slip p95 ≤ 0.2·c_held at the chosen grip;
-  - ≥ 0.8× real time with the full weld pool.
-- **On failure (branch):**
-  - The gate fails at s = 1 only → s = 2.
-  - The gate fails at both scales, **or c_held(s) < 2 × predicted chain p95(s) at both scales** → adopt (h), if (h) passes the gate and D1(i) at some s. This is recorded as deviation `v4_brick_collision_clearance`, a stated modelling assumption; capture numbers then belong to the designed clearance.
+  - FK-seated false-positive rate (r4) ≤ 5 % over (b) at the chosen grip, because the spiral trigger relies on it;
+  - clutch band sanity (r4): ≤ 2 % of (b) and (d) trials rest at dz ∈ [+0.2s, +0.4s] mm in their weld window, i.e. few bricks rest near the +0.3s edge;
+  - ≥ 0.8× real time with the full weld pool at n_sub (else U14).
+- On failure (branch). Every item above, r4 items included, is judged per s:
+  - The gate fails at s = 1 only → s = 2. This includes an r4 item that fails at 1× only (for example pad penetration near the 30 N bound at m = 2–4, or band sanity).
+  - The gate fails at both scales, or c_held(s) < 2 × predicted chain p95(s) at both scales → adopt (h), if (h) passes the gate and D1(i) at some s. This is recorded as deviation `v4_brick_collision_clearance`, a stated modelling assumption; capture numbers then belong to the designed clearance.
   - If (h) also fails: s = 2 with the search, only if 1.5·c_held(2) ≥ chain p95(2). Otherwise escalate (U1: PhysX via Isaac Lab).
+  - r4 items, before the branch: FK false positives > 5 % → next grip multiple, and only if m = 4 still fails is it a gate failure at that s. If a finger-contact, rest-stability or clutch-band item fails at both scales on the prototype mesh → plan-reviser revision before D1, instead of the (h) branch (which may choose (h) for a band-sanity failure), because (h) does not change those mechanisms. No ad hoc retuning. Real time → U14.
 
 ### P2 — cameras: speed, information content, look pose, and a V5 prototype (1.75 days; parallel)
 - **Deliverable:** `scripts/11_camera_probe.py`:
@@ -488,7 +573,7 @@ Every gate and result gets a ledger entry, and `WORKLOG.md` is regenerated after
   5. **execute 20 plans in Newton at time scales {1.0, 0.5, 0.3}** with velocity feed-forward: max executed-vs-planned link deviation (p99), executed minimum clearance, and events from the monitor;
   6. GPU memory per process (two planners) → the worker count for WP6;
   7. **threaded soak:** ≥ 200 plans from the worker thread while the cell steps at 60 fps, renders `top` and `wrist_B` and runs ViewerGL. It counts CUDA errors and post-warm-up graph captures, and reports frame-time p99;
-  8. **contact-segment false positives:** the §2.3 per-link check runs on every insert segment of P0's cube runs. A false positive is a segment that is flagged although the monitor saw no event.
+  8. **contact-segment false positives:** the §2.3 per-link check runs on every insert segment of P0′'s cube runs (`results/v4/p0_stiff_inserts/`). A false positive is a segment that is flagged although the monitor saw no event.
 - **Gate P3:**
   - runs alongside Newton and warp 1.13 in one process;
   - median plan ≤ 100 ms warm; success ≥ 95 % on feasible queries;
@@ -519,7 +604,7 @@ Every gate and result gets a ledger entry, and `WORKLOG.md` is regenerated after
   - the Insert with P1's arm-held press and §2.3 grip rule at 1×;
   - `tests/test_cell.py`: pair-pool snap with an out-of-plan brick; contact classifier on scripted collisions (arm–arm, finger graze, one-frame swipe, neighbour rub, penetration, a brace gripping two bricks); firewall skeleton.
 - **Gate M0:**
-  - **(a)** on **P0's exact config** (1×, fixed layout, waypoint IK), the new monitor's per-class event counts fall **within P0's run-to-run spread over its 3 runs, or ±1 event per class, whichever is larger**;
+  - **(a)** on **P0's exact config** (1×, fixed layout, waypoint IK) with r4's finger contacts, the new monitor's per-class event counts (merged as §2.4 defines) fall **within P0′'s run-to-run spread over its 3 runs, or ±1 event per class, whichever is larger**;
   - **(b)** ground-truth-driven, waypoint IK, random plate and refilled tray, 3 seeds each: cube 8/8, arch 11/11, S3 ≥ 15/16 per seed. This uses the M1 clutch gate and P1's press at 1×; if P1 is late, the prototype's gate is used, and the run says so;
   - **(c)** camera panels live;
   - shown live to the user.
@@ -555,7 +640,7 @@ Every gate and result gets a ledger entry, and `WORKLOG.md` is regenerated after
 | V4 coarse / fine | coarse radial xy ≤ 20 mm, yaw ≤ 2° (predicted ≈ 10 mm / 0.5°); fine ≤ 2s mm at every footprint with **100 % correct lattice index** (predicted ≈ 0.8–1.1 mm) | survey window ±78 mm at 150 mm; index margin 0.25·pitch |
 | V5 relative alignment | radial xy ≤ 0.35·c, relative yaw ≤ 1°; tilt > 3° flagged with recall ≥ 95 %; obstruction recall ≥ 95 % with ≤ 2 % false aborts (braced scenes reported separately) | chain budget |
 | chained, end to end (V5 + FK servo + P1's slip model) | radial xy ≤ 0.5·c | D1 rule |
-| V7 verification | accuracy ≥ 98 % over seated / on stud tops / below_seated (labels from clutch state and ground-truth dz) | as-built integrity |
+| V7 verification | accuracy ≥ 98 % over seated / on stud tops / below_seated (labels from ground-truth dz and tilt at rest against the §2.2 band, not from clutch state; `seated_unwelded` cases are reported separately) | as-built integrity |
 
 - **On failure:**
   - V2 or V4-coarse pose → V1 re-estimates `top`'s tilt from the table plane. V2 detection → learned detector (U7).
@@ -607,7 +692,7 @@ All headless via `experiments/v4.py --workers N` (N from P3's memory measurement
 - Tables 1–6 and Figures 1–3;
 - videos of cube, arch and S3;
 - limitations, including:
-  - §0 fact 6: mass-scaled soft contacts, the stud-top rest, sink under load, and capture that depends on the press profile — and the designed clearance, if P1(h) was adopted;
+  - §0 fact 6: mass-scaled soft contacts, the stud-top rest, sink under load, and capture that depends on the press profile — and the designed clearance, if P1(h) was adopted; the r4 finger contacts (§2.1), still mass-scaled (softer on a 1× brick);
   - the tray is a kitting dispenser stocked from the plan (the environment's, refilled only at step start); every brick is still found by vision;
 - reproduction commands.
 
@@ -616,7 +701,7 @@ All headless via `experiments/v4.py --workers N` (N from P3's memory measurement
 - "collision-free" only as measured by the §2.4 monitor;
 - the scale justified by E1 and E2 at both scales;
 - classical CV on ray-traced renders with synthetic noise — **no sim-to-real claim, and no generalisation beyond the randomisation ranges**;
-- capture and press-force numbers belong to Newton's soft brick contacts (and to the designed clearance, if adopted) and to the stated press profile, not to real LEGO or DUPLO;
+- capture and press-force numbers belong to Newton's soft brick contacts (and to the designed clearance, if adopted), the r4 finger contacts, the §2.2 clutch band evaluated at rest after release and the stated press profile, not to real LEGO or DUPLO;
 - no RL claims; E5, if run, only says whether v3.1's direction replicates.
 
 ---
@@ -632,8 +717,8 @@ P3 ─┘  (WP2 also needs P3)                  └─ [U4 = yes] WP5 spike → 
 
 | WP | effort (agent-days) | compute | runs in parallel with |
 |---|---|---|---|
-| P0 | 0.5 | ~45 min GPU (3 repeats) | P1–P3 |
-| P1 | 2 | ~3 h GPU (2 scales × 2 lower cases × 2 speeds × 2 meshes; force sweep, offset sweep) | P0, P2, P3 |
+| P0 | 0.5 | ~45 min GPU (3 repeats) + ~45 min for P0′ (r4, after the finger change) | P1–P3 |
+| P1 | 2.5 | ~3.5 h GPU ((f) first on an idle GPU; release windows; collision-mode cross-check) | P0, P2, P3 |
 | P2 | 1.75 | ~1 h (look-pose sweep added) | P0, P1, P3 |
 | P3 | 1.75 | ~1.5 h (soak, false-positive check added) | P0–P2 |
 | WP1 (M0) | 1.75 | small | P1–P3 (after P0) |
@@ -645,13 +730,14 @@ P3 ─┘  (WP2 also needs P3)                  └─ [U4 = yes] WP5 spike → 
 | WP7 | 1.5 | — | — |
 
 **Calendar:**
-- day 1–2: P0–P3;
-- day ≈ 3–4: **M0**;
-- D1 answered by the user by day 3 (each day of waiting slips WP3 and M1);
-- day ≈ 6–7: **M0.5, live**;
-- WP3 days 3–7;
-- **M1 ≈ day 10 optimistic, 12–15 realistic** (slack for D1's wait, the FR3 config and integration);
-- whole phase: **the table sums to 21.25 agent-days (WP4 at 2) to 22.25 (WP4 at 3) without WP5**, and 25.25–26.25 with WP5 (1 + 3). r1's "≈ 22" did not match its own table (20–21).
+- day 1–2.5: P0–P3, with P1(f) first on an idle GPU, and P0′ (≈ 45 min) as soon as the finger change lands in `build_arm`;
+- day ≈ 3–4: M0 (M0(a) needs P0′; see the WP1 caveat);
+- D1 answered by the user by day 3.5 (each day of waiting slips WP3 and M1);
+- day ≈ 6–7: M0.5, live;
+- WP3 days 3.5–7.5;
+- M1 ≈ day 10.5 optimistic, 12.5–15.5 realistic.
+- WP1 caveat (r4): WP1's 1.75 days assumed the prototype met M0(b) apart from braces. P0 shows brace-independent failures (arch b_010, hollow_box b_009/b_010, S3 b_010) and an S3 `lever_press` divergence, so M0 may slip. The orchestrator reports the cause of these failures at WP1's midpoint; if they do not share one cause, the user is told the new WP1 estimate.
+- whole phase: **the table sums to 21.75 agent-days (WP4 at 2) to 22.75 (WP4 at 3) without WP5**, and 25.75–26.75 with WP5 (1 + 3), before the WP1 caveat. r1's "≈ 22" did not match its own table (20–21).
 
 One 32 GB GPU is shared; no headless batches during a live demo.
 
@@ -676,6 +762,7 @@ One 32 GB GPU is shared; no headless batches during a live demo.
 | R11 | s = 2 changes plans (lever arms, brace triggers) | certain if s = 2 / low | v3.1 frozen; cross-simulator labels only |
 | R12 | GPU memory limits parallel workers | medium / low | measured in P3; 3–4 workers; E4 runs overnight |
 | R13 | "Isaac" meant Isaac Sim RTX visuals | medium / medium | U1 asked up front; WP7 hero render |
+| R14 | the r4 finger contacts transmit touchdown impacts (k_os 2.5–4.4 at 20 mm/s, up to 3.8 at 1×), which squeezes D1(ii), and make finger grazes push neighbours harder; at 1× the pad bound caps the grip near 30 N | medium / medium | v_press 5 → 2 mm/s (pre-registered rescue); grip multiple from P1(e); the monitor's displaced class; s = 2 (8× stiffer pads) |
 
 ### 6.2 Decisions the user must make (recommended default in bold)
 
@@ -707,6 +794,7 @@ One 32 GB GPU is shared; no headless batches during a live demo.
 - **U11 Git:** **commit the uncommitted MuJoCo `--view` hook (`twin_executor.py`, `sim/mj/runtime.py`, view-only) on `local-gpu-twin`, then branch `v4-newton-vision` from it.** BrickSim submodule edits stay uncommitted per CLAUDE.md.
 - **U12 RL in v4 (new):** **out of scope. v3.1's RL results (A1/A3/A4/A10, WP5) stand as recorded, and no RL runs in Newton this phase.** Alternative: an RL insertion or bracing phase after M1, planned separately.
 - **U13 Bracing strategy in v4 runs (new):** **`nearest` by default**. A6 found pooled nearest beats weakest_joint on S3 (p = 0.04) and S5 (p = 3e-7). `weakest_joint` stays available as a flag. This changes the prototype's CLI default.
+- U14 Real time vs substeps (r4; matters only if P1(f) misses 0.8× at 16 substeps): n_sub = 16 if it reaches 0.8× real time with the full pool; else 8 if 8 does (kd_f 450, P1 measured at 8); else 16, with live runs playing below real time (smoke ≈ 0.35×) and `--record` videos for real-time playback. Headless batches are unaffected. Alternatives: 4 substeps (a full P1 re-run; carry creep predicted over the gate); or checking real time at the shown shape's pool (S3: 210) instead of S5's 465.
 
 ### 6.3 Ledger entries to record on adoption (doc-writer)
 
@@ -723,6 +811,8 @@ One 32 GB GPU is shared; no headless batches during a live demo.
     - a speed-limited stand-in press (no sideways, tilt or yaw freedom) never passed through and stayed on the stud tops up to ≈ 50 N at 1×;
     - the free-brick lateral-offset capture is impact-driven.
     - r1's "≥ 2 N passes through" conclusion is noted as superseded.
-- **After D1:** `decision v4_scale` (with the contact variant, F_press, v_press and grip), `decision v4_cameras` (with the look height), `decision v4_motion_route`; `deviation curobo_isaac_split_reversed` if applicable; `deviation v4_brick_collision_clearance` if P1(h) was adopted.
+- On r4 adoption: `result v4_p0_baseline` (P0, §3); `failure v4_p0_s3_lever_press_diverged`; `probe v4_p1_smoke_finger_contact` (r4 rows 1–5; evidence in `results/v4/p1_review/` and `results/v4/p1_smoke/`); `decision v4_plan_r4` (this revision plus the user's answers on items D1–D8); `deviation v4_finger_contact_stiffness`, `deviation v4_clutch_gate_at_rest`, `deviation v4_p1_protocol_r4`, `deviation v4_contact_monitor_r4`.
+- After P0′: `result v4_p0_baseline_stiff_fingers`.
+- **After D1:** `decision v4_scale` (with the contact variant, F_press, the grip multiple, n_sub, kd_f and v_press, including whether the 2 mm/s rescue was used), `decision v4_cameras` (with the look height), `decision v4_motion_route`; `deviation curobo_isaac_split_reversed` if applicable; `deviation v4_brick_collision_clearance` if P1(h) was adopted.
 - **If WP3 forces a D1 revisit:** `deviation v4_scale_revisited`.
 - **If WP5 runs:** `result v5_contact_spike`; `deviation v4_break_hold_33ms` (vs v3.1's 5 ms).
