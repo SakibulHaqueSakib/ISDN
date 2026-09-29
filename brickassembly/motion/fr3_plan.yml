@@ -9,7 +9,6 @@ robot_cfg:
     asset_root_path: /home/bakasakib/.cache/newton/newton-assets_franka_emika_panda_d2ca1ca1_8e8df07d
     base_link: base
     collision_link_names:
-    - fr3_link0
     - fr3_link1
     - fr3_link2
     - fr3_link3
