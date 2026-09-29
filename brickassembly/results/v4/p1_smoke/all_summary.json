@@ -1,0 +1,242 @@
+{
+ "s1/2x4/welded/v20/clear": {
+  "scale": 1.0,
+  "brick": "2x4",
+  "lower": "welded",
+  "vpress": 20.0,
+  "variant": "clear",
+  "seat_rate": {
+   "2.0": "2/2",
+   "10.0": "2/2"
+  },
+  "F_seat": 2.0,
+  "grip_limited_levels": [],
+  "sink_by_level": {
+   "2.0": {
+    "n_force_reached": "2/2",
+    "sink_max_mm": 0.2040310859680195,
+    "sink_end_max_mm": 0.12574783563614084,
+    "bb_min_hold_mm": -0.8242144249379635
+   },
+   "10.0": {
+    "n_force_reached": "0/2",
+    "sink_max_mm": -0.10325693488120839,
+    "sink_end_max_mm": -0.19800224304199027,
+    "bb_min_hold_mm": -0.751193321775645
+   }
+  },
+  "F_pt": null,
+  "k_os_p95": 1.4807638347148895,
+  "k_os_n": 2,
+  "grip_real_N_median": 1.3225161958308447,
+  "F_press": 5,
+  "b_F": 5.0,
+  "c_held_mm": 1.0,
+  "c_held_largest_mm": 1.0,
+  "capture_curve": {
+   "0.00": "2/2",
+   "1.00": "2/2"
+  },
+  "dz_fire_med_mm": 0.8039467871189098,
+  "lat_fire_p95_mm": 0.8740903170515826,
+  "score": "fired",
+  "fk_fp_given_fk_seated": 0.0,
+  "fk_fp_of_all": 0.0,
+  "slip_press_p95_mm": null,
+  "slip_carry_max_mm": null,
+  "finger_pen_max_mm": null,
+  "grip_needed_N": 7.142857142857143,
+  "a_stud_wall_contacts_min": 28,
+  "jitter_max_mm": 0.04613306373357773,
+  "rtf_16_465": 0.34575362231866646,
+  "rtf_all": {
+   "frame/16/210": 0.34,
+   "frame/8/210": 0.56,
+   "frame/4/210": 0.88,
+   "sub/16/210": 0.24,
+   "sub/8/210": 0.45,
+   "sub/4/210": 0.63,
+   "frame/16/465": 0.35,
+   "frame/8/465": 0.55,
+   "frame/4/465": 0.9,
+   "sub/16/465": 0.24,
+   "sub/8/465": 0.44,
+   "sub/4/465": 0.59
+  },
+  "sink_at_peak_press_mm": -0.19800224304199027,
+  "sink_level": 10.0,
+  "chain_p95_used_mm": 0.33,
+  "gates": {
+   "a_contacts>0": true,
+   "D1ii_press_window": null,
+   "D1iii_sink<=0.5s": true,
+   "D1iv_grip<=70N": true,
+   "jitter<0.02s": false,
+   "slip_p95<=0.2c": null,
+   "carry_slip<0.5": null,
+   "finger_pen<=0.3s": null,
+   "rtf>=0.8": false,
+   "D1i_chain_p95<=0.5c": true
+  },
+  "gate_P1": "FAIL"
+ },
+ "s1/2x4/welded/v20/proto": {
+  "scale": 1.0,
+  "brick": "2x4",
+  "lower": "welded",
+  "vpress": 20.0,
+  "variant": "proto",
+  "seat_rate": {
+   "2.0": "2/2",
+   "10.0": "2/2",
+   "100.0": "2/2"
+  },
+  "F_seat": 2.0,
+  "grip_limited_levels": [
+   100.0
+  ],
+  "sink_by_level": {
+   "2.0": {
+    "n_force_reached": "0/2",
+    "sink_max_mm": 0.19540703892708017,
+    "sink_end_max_mm": 0.12654877305031015,
+    "bb_min_hold_mm": -0.7698494591750205
+   },
+   "10.0": {
+    "n_force_reached": "0/2",
+    "sink_max_mm": -0.12577258944511222,
+    "sink_end_max_mm": -0.19302525520324515,
+    "bb_min_hold_mm": -0.573192082811147
+   },
+   "100.0": {
+    "n_force_reached": "0/2",
+    "sink_max_mm": -0.21635674834251212,
+    "sink_end_max_mm": -0.3338039755821209,
+    "bb_min_hold_mm": -0.661256373859942
+   }
+  },
+  "F_pt": null,
+  "k_os_p95": 1.5524696707725525,
+  "k_os_n": 2,
+  "grip_real_N_median": -1.6469197968641918,
+  "F_press": 5,
+  "b_F": 5.0,
+  "c_held_mm": 0.0,
+  "c_held_largest_mm": 0.0,
+  "capture_curve": {
+   "0.00": "2/2",
+   "1.00": "0/2",
+   "2.00": "0/2"
+  },
+  "dz_fire_med_mm": 0.757728973031042,
+  "lat_fire_p95_mm": 0.034543071648838415,
+  "score": "fired",
+  "fk_fp_given_fk_seated": 0.6666666666666666,
+  "fk_fp_of_all": 0.6666666666666666,
+  "slip_press_p95_mm": 1.1421662086574955,
+  "slip_carry_max_mm": 1.6021125699365781,
+  "finger_pen_max_mm": 1.3114823959767818,
+  "grip_needed_N": 7.142857142857143,
+  "a_stud_wall_contacts_min": 28,
+  "jitter_max_mm": 0.04613306373357773,
+  "rtf_16_465": 0.34575362231866646,
+  "rtf_all": {
+   "frame/16/210": 0.34,
+   "frame/8/210": 0.56,
+   "frame/4/210": 0.88,
+   "sub/16/210": 0.24,
+   "sub/8/210": 0.45,
+   "sub/4/210": 0.63,
+   "frame/16/465": 0.35,
+   "frame/8/465": 0.55,
+   "frame/4/465": 0.9,
+   "sub/16/465": 0.24,
+   "sub/8/465": 0.44,
+   "sub/4/465": 0.59
+  },
+  "sink_at_peak_press_mm": -0.19302525520324515,
+  "sink_level": 10.0,
+  "chain_p95_used_mm": 0.33,
+  "gates": {
+   "a_contacts>0": true,
+   "D1ii_press_window": null,
+   "D1iii_sink<=0.5s": true,
+   "D1iv_grip<=70N": true,
+   "jitter<0.02s": false,
+   "slip_p95<=0.2c": null,
+   "carry_slip<0.5": false,
+   "finger_pen<=0.3s": false,
+   "rtf>=0.8": false,
+   "D1i_chain_p95<=0.5c": false
+  },
+  "gate_P1": "FAIL"
+ },
+ "s2/2x4/proxy/v5/proto": {
+  "scale": 2.0,
+  "brick": "2x4",
+  "lower": "proxy",
+  "vpress": 5.0,
+  "variant": "proto",
+  "seat_rate": {
+   "2.0": "2/2",
+   "10.0": "2/2"
+  },
+  "F_seat": 2.0,
+  "grip_limited_levels": [],
+  "sink_by_level": {
+   "2.0": {
+    "n_force_reached": "2/2",
+    "sink_max_mm": 0.17586246285241844,
+    "sink_end_max_mm": 0.1547420359023395,
+    "bb_min_hold_mm": -0.18646578246261925
+   },
+   "10.0": {
+    "n_force_reached": "2/2",
+    "sink_max_mm": 0.2987770283587078,
+    "sink_end_max_mm": 0.2519781473604224,
+    "bb_min_hold_mm": -0.3127545060124248
+   }
+  },
+  "F_pt": null,
+  "k_os_p95": 1.426492804288864,
+  "k_os_n": 2,
+  "grip_real_N_median": 4.484098227251144,
+  "F_press": 5,
+  "b_F": 5.0,
+  "c_held_mm": 0.0,
+  "c_held_largest_mm": 0.0,
+  "capture_curve": {
+   "0.00": "2/2",
+   "2.00": "0/2"
+  },
+  "dz_fire_med_mm": 1.9401210096665986,
+  "lat_fire_p95_mm": 0.023480216122862937,
+  "score": "fired",
+  "fk_fp_given_fk_seated": 0.0,
+  "fk_fp_of_all": 0.0,
+  "slip_press_p95_mm": null,
+  "slip_carry_max_mm": null,
+  "finger_pen_max_mm": null,
+  "grip_needed_N": 7.142857142857143,
+  "a_stud_wall_contacts_min": 24,
+  "jitter_max_mm": 0.054486095905303955,
+  "rtf_16_465": null,
+  "rtf_all": {},
+  "sink_at_peak_press_mm": 0.2519781473604224,
+  "sink_level": 10.0,
+  "chain_p95_used_mm": 0.33,
+  "gates": {
+   "a_contacts>0": true,
+   "D1ii_press_window": null,
+   "D1iii_sink<=0.5s": true,
+   "D1iv_grip<=70N": true,
+   "jitter<0.02s": false,
+   "slip_p95<=0.2c": null,
+   "carry_slip<0.5": null,
+   "finger_pen<=0.3s": null,
+   "rtf>=0.8": null,
+   "D1i_chain_p95<=0.5c": false
+  },
+  "gate_P1": "FAIL"
+ }
+}

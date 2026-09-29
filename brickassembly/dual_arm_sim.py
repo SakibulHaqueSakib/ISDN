@@ -58,6 +58,18 @@ FINGER_KE = 1000.0            # N/m finger drive; squeeze = FINGER_KE * 1.5 mm p
 TIP_BELOW_TCP = 0.0089        # fingertips past the TCP (measured from the FR3 finger mesh)
 PRESS = 0.001                 # placer drives this far past seated
 BRACE_PRESS = 0.002           # stabilizer drives this far into what it braces
+
+# Finger contact stiffness (plan_v4 r4 sec 2.1): Newton maps ke/kd to a MuJoCo solref of
+# timeconst 2/kd, dampratio (kd/2)*sqrt(1/ke). Newton's default ShapeConfig (2500, 100) gave
+# 20 ms and let the pads sink 0.9-1.6 mm. kd is set per substep count so 2/kd >= 2*dt.
+FINGER_CONTACT_KE = 2.5e5
+FINGER_CONTACT_KD = {16: 900.0, 8: 450.0}      # timeconst 2.2 / 4.4 ms, damping ratio 0.9 / 0.45
+
+
+def finger_contact_kd(substeps, fps=60):
+    kd = FINGER_CONTACT_KD[substeps]
+    assert 2.0 / kd >= 2.0 / (fps * substeps), "finger contact timeconst below 2*dt"
+    return kd
 BRACE_TILT = math.radians(45)  # stabilizer leans away from the placer, so the
                                # two hands (63 mm thick) fit 30-40 mm apart
 # Clutch welds ~100x stiffer than MuJoCo's default (0.02 s): a 2.5 g brick
@@ -112,8 +124,11 @@ Q_DOWN = np.array([1.0, 0.0, 0.0, 0.0])  # gripper pointing down
 
 
 # --- scene -------------------------------------------------------------------
-def build_arm():
-    """One FR3 + hand, with the example's gains, gravity compensation and pads."""
+def build_arm(substeps=16, finger_ke=FINGER_CONTACT_KE, finger_kd=None):
+    """One FR3 + hand, with the example's gains, gravity compensation and pads.
+
+    The finger collision shapes (bodies 12/13) get finger_ke/finger_kd as contact
+    stiffness (default FINGER_CONTACT_KE and finger_contact_kd(substeps))."""
     b = newton.ModelBuilder()
     newton.solvers.SolverMuJoCo.register_custom_attributes(b)
     b.add_urdf(newton.utils.download_asset("franka_emika_panda") / "urdf/fr3_franka_hand.urdf",
@@ -133,6 +148,10 @@ def build_arm():
                                           for s, body in enumerate(b.shape_body) if body in (12, 13)}
     attrs["mujoco:geom_priority"].values = {s: 1 for s, body in enumerate(b.shape_body)
                                             if body in (12, 13)}
+    kd = finger_contact_kd(substeps) if finger_kd is None else finger_kd
+    for s, body in enumerate(b.shape_body):
+        if body in (12, 13):
+            b.shape_material_ke[s], b.shape_material_kd[s] = finger_ke, kd
     return b
 
 
@@ -232,7 +251,7 @@ class Example:
         self.z_travel = top + TRAVEL
 
         # --- arms ---------------------------------------------------------
-        arm = build_arm()
+        arm = build_arm(self.substeps)
         self.model_ik = arm.finalize()
         # Start parked. HOME_Q reaches 0.41 m out, so two arms 0.9 m apart
         # would begin with their hands interlocked.
@@ -314,7 +333,9 @@ class Example:
         contact_max = 32768
         self.model.rigid_contact_max = contact_max
         self.pipeline = newton.CollisionPipeline(self.model, reduce_contacts=True,
-                                                 rigid_contact_max=contact_max, broad_phase="sap")
+                                                 rigid_contact_max=contact_max, broad_phase="sap",
+                                                 # Newton's default 1M silently drops pairs past it (P0 hit ~1.02M)
+                                                 max_triangle_pairs=4_000_000)
         self.solver = newton.solvers.SolverMuJoCo(
             self.model, solver="newton", integrator="implicitfast", iterations=15,
             ls_iterations=100, nconmax=contact_max, njmax=contact_max * 2,
@@ -352,6 +373,11 @@ class Example:
         self.done = False
         self.log_path = HERE / "results" / "proto_episodes.jsonl"
         self.log_path.parent.mkdir(exist_ok=True)
+        # P0 instrumentation, all off by default (attached from __main__)
+        self.monitor = None                   # cell.contacts.ContactMonitor, read-only
+        self.inserts = None                   # --record-inserts: per-frame rows
+        self.frame, self.place_t, self.done_t = 0, {}, None
+        self.snap_gates = []                  # the gate values at every snap (dz_mm = the weld gate's dz)
 
         self.viewer.set_model(self.model)
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
@@ -386,7 +412,7 @@ class Example:
                 self.queue_place(steps[self.next_step])
                 self.next_step += 1
             elif self.A.idle():
-                self.done = True
+                self.done, self.done_t = True, self.sim_time
                 self.B.push("park", self.parks[self.B], 0.0, 0.01, 1.5)
                 ok = sum(e["success"] for e in self.episodes)
                 print("done: %d / %d placed -> %s" % (ok, len(steps), self.log_path))
@@ -406,6 +432,7 @@ class Example:
         up = lambda p: np.array([p[0], p[1], self.z_travel])
         n = s["step"]
         B = self.B
+        self.place_t[bid] = self.sim_time
         B.push("to feeder", up(slot), yaw, g_open, 1.5)
         B.push("descend", slot + [0, 0, GRASP_DZ], yaw, g_open, 1.0)
         B.push("grasp", slot + [0, 0, GRASP_DZ], yaw, g_shut, 0.5, contact=True)
@@ -505,6 +532,7 @@ class Example:
                "brace_target": brace["target_brick_id"] if brace else None,
                "failure_mode": None if ok else "gate"}
         self.episodes.append(row)
+        self.snap_gates.append(dict(self.last_gate, ok=ok, sim_time_s=round(self.sim_time, 3)))
         with self.log_path.open("a") as f:
             f.write(json.dumps(row) + "\n")
         print("  step %d %s %s  %s" % (s["step"], bid, "SNAP" if ok else "MISS", self.last_gate))
@@ -564,6 +592,14 @@ class Example:
         else:
             self.simulate()
         self.sim_time += self.frame_dt
+        self.frame += 1
+        if self.monitor:
+            self.monitor.step(self)
+        if self.inserts is not None and (self.B.phase == "insert" or self.A.phase in ("brace", "hold")):
+            self.inserts.append((self.frame, self.state_0.joint_q.numpy()[:18].copy(), self.A.phase,
+                                 self.B.phase, -1 if self.b_step is None else self.b_step))
+        if (self.done and self.B.idle() and self.A.idle() and getattr(self.args, "viewer", None) == "null"):
+            self.viewer.num_frames = self.viewer.frame_count + 1   # null viewer: stop when finished
 
     def render(self):
         self.viewer.begin_frame(self.sim_time)
@@ -621,6 +657,44 @@ class Example:
             err = np.linalg.norm(body_q[self.body[bid]][:3] - tgt) * 1000
             assert err < 3.0, "%s drifted %.1f mm after assembly" % (bid, err)
 
+    def p0_row(self, error=None):
+        """One P0 baseline row (plan_v4 P0): completion, cycle, contact events, dz at snap."""
+        a, steps = self.args, self.plan["sequence"]
+        model = getattr(a, "brace_model", "grasp_lp")
+        starts = [self.place_t[s["brick_id"]] for s in steps if s["brick_id"] in self.place_t]
+        ends = starts[1:] + [self.done_t if self.done_t is not None else self.sim_time]
+        mon = self.monitor.summary() if self.monitor else {}
+        events = self.monitor.events if self.monitor else []
+        return {"tag": getattr(a, "tag", None) or "%s_%s_r%d" % (self.name, model, a.repeat),
+                "structure": self.name, "brace_model": model, "strategy": a.strategy,
+                "repeat": a.repeat, "error": error, "done": self.done,
+                "placed": sum(e["success"] for e in self.episodes), "total": len(steps),
+                "sim_time_s": round(self.sim_time, 2), "frames": self.frame,
+                "cycle_s": [round(e - s, 2) for s, e in zip(starts, ends)],
+                "event_counts": {c: v["count"] for c, v in mon.items()},
+                "events": events,
+                "displaced": sorted({e["brick"] for e in events if e["class"] == "displaced"}),
+                "snaps": self.snap_gates,   # dz_mm: at the moment |dz| < 1.5 mm welds the brick
+                "brace_required": self.plan["validation"]["brace_required_count"]}
+
+    def finish(self, error=None):
+        """After the run (also after a failed one): write --p0-out and --record-inserts."""
+        if self.monitor:
+            self.monitor.finalize()
+        if getattr(self.args, "p0_out", None):
+            out = Path(self.args.p0_out)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            with out.open("a") as f:
+                f.write(json.dumps(self.p0_row(error)) + "\n")
+        if self.inserts is not None:
+            r = self.inserts
+            Path(self.args.record_inserts).parent.mkdir(parents=True, exist_ok=True)
+            np.savez(self.args.record_inserts,
+                     frame=np.array([x[0] for x in r], int),
+                     q=np.array([x[1] for x in r], np.float32).reshape(len(r), 18),
+                     a_phase=np.array([x[2] for x in r], str), b_phase=np.array([x[3] for x in r], str),
+                     b_step=np.array([x[4] for x in r], int))
+
 
 def feeder_slots(n):
     """Pick-up spots on the placer's -y side, 70 mm apart, 0.40-0.65 m from its
@@ -654,9 +728,12 @@ def make_plan(args):
     NJ = max(b[3] + P.footprint(b[1], b[5])[1] for b in bricks)
     # centre the build between the arms
     P.VOXEL_ORIGIN = (-NI * P.PITCH / 2, -NJ * P.PITCH / 2, Z0)
-    plan = P.build_plan(name, args.strategy)
+    model = getattr(args, "brace_model", "grasp_lp")
+    plan = P.build_plan(name, args.strategy, brace_model=model)
     plan["frame"] = "dual_arm_sim world: arm A base (-0.45,0,0), arm B base (+0.45,0,0), z up"
-    out = HERE / "plans" / ("sim_%s_%s.json" % (name, args.strategy))
+    # a lever_press plan gets its own file: the grasp_lp one keeps the old name
+    out = HERE / "plans" / ("sim_%s_%s%s.json" % (name, args.strategy,
+                                                  "" if model == "grasp_lp" else "_" + model))
     out.write_text(json.dumps(plan, indent=1))
     print(B.ascii(bricks))
     print("plan -> %s" % out.relative_to(HERE))
@@ -676,8 +753,29 @@ if __name__ == "__main__":
     parser.add_argument("--name", help="structure name for an image blueprint")
     parser.add_argument("--strategy", default="weakest_joint",
                         choices=["none", "nearest", "weakest_joint"])
+    parser.add_argument("--brace-model", default="grasp_lp", choices=["grasp_lp", "lever_press"],
+                        help="planner.build_plan brace model")
+    parser.add_argument("--monitor", action="store_true", help="attach the sec 2.4 contact monitor")
+    parser.add_argument("--p0-out", type=Path, help="append one P0 baseline row (JSONL); implies --monitor")
+    parser.add_argument("--repeat", type=int, default=0, help="repeat index, recorded in the P0 row")
+    parser.add_argument("--tag", help="run tag for the P0 row (default shape_model_rK)")
+    parser.add_argument("--record-inserts", type=Path, metavar="PATH.npz",
+                        help="save both arms' joint q every frame B inserts or A braces")
     parser.set_defaults(shape="arch")
     viewer, args = newton.examples.init(parser)
     if args.front or args.structure:
         args.shape = None
-    newton.examples.run(Example(viewer, args), args)
+    example = Example(viewer, args)
+    if args.monitor or args.p0_out:
+        from cell.contacts import ContactMonitor
+        example.monitor = ContactMonitor(example)
+    if args.record_inserts:
+        example.inserts = []
+    err = None
+    try:
+        newton.examples.run(example, args)
+    except BaseException as e:      # a failed run still leaves its row
+        err = "%s: %s" % (type(e).__name__, str(e)[:300])
+        raise
+    finally:
+        example.finish(err)
