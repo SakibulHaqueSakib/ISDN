@@ -1,0 +1,2369 @@
+{
+ "segments": 48,
+ "files": 6,
+ "pads_mm": [
+  0.0,
+  0.25,
+  0.5,
+  1.0
+ ],
+ "pad0": {
+  "flagged": 18,
+  "false_positives": 12,
+  "true_positives": 6,
+  "missed_events": 0
+ },
+ "pad0.25": {
+  "flagged": 24,
+  "false_positives": 18,
+  "true_positives": 6,
+  "missed_events": 0
+ },
+ "pad0.5": {
+  "flagged": 29,
+  "false_positives": 23,
+  "true_positives": 6,
+  "missed_events": 0
+ },
+ "pad1": {
+  "flagged": 42,
+  "false_positives": 36,
+  "true_positives": 6,
+  "missed_events": 0
+ },
+ "segments_with_monitor_events": 6,
+ "max_padding_without_false_positive_mm": null,
+ "min_clean_segment_clearance_mm": -0.10979638364452408,
+ "margin_mm": null,
+ "max_event_segment_clearance_mm": -0.02728142865227783,
+ "finger_box_diagnostic_mm": {
+  "clean_segments_min": 0.18052060690817823,
+  "clean_segments_p5": 0.18901407739184903,
+  "event_segments_max": 0.13997996160785772
+ },
+ "ok": false,
+ "rows": [
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.0259234296834,
+   "min_clearance_mm": {
+    "finger": 2.3497553548775616,
+    "arm": 42.62345299422741,
+    "arm_arm": 95.58938443660736,
+    "held_brick": 327.5777526853802
+   },
+   "finger_box_min_mm": 2.7983197860853926,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.29874617876763,
+   "min_clearance_mm": {
+    "finger": -0.003837933776044684,
+    "arm": 34.445902194656,
+    "arm_arm": 111.41107231378555,
+    "held_brick": 334.06835228041837
+   },
+   "finger_box_min_mm": 0.1967155188693243,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.381923614442893,
+   "min_clearance_mm": {
+    "finger": 0.682038419879973,
+    "arm": 41.49130001463498,
+    "arm_arm": 101.43797099590302,
+    "held_brick": 8.936031210422517
+   },
+   "finger_box_min_mm": 1.1261835386615895,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.019441341512767,
+   "min_clearance_mm": {
+    "finger": 0.02022624531048886,
+    "arm": 34.48314885967304,
+    "arm_arm": 100.66745430231094,
+    "held_brick": 8.840730834007264
+   },
+   "finger_box_min_mm": 0.31023361645934544,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.119482425940163,
+   "min_clearance_mm": {
+    "finger": 0.5615010546520379,
+    "arm": 42.26897323394646,
+    "arm_arm": 91.23407304286957,
+    "held_brick": 7.105070948600772
+   },
+   "finger_box_min_mm": 0.9969667517125543,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.18978648460605,
+   "min_clearance_mm": {
+    "finger": -0.06662459020593571,
+    "arm": 34.322155754949115,
+    "arm_arm": 107.60123282670975,
+    "held_brick": 7.035959362983706
+   },
+   "finger_box_min_mm": 0.07296892818339958,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.33999854121382,
+   "min_clearance_mm": {
+    "finger": 0.4647263849154133,
+    "arm": 41.273237561433305,
+    "arm_arm": 98.77429902553558,
+    "held_brick": 7.019037687778478
+   },
+   "finger_box_min_mm": 0.9092309212460417,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.244914075976173,
+   "min_clearance_mm": {
+    "finger": -0.05054682247476386,
+    "arm": 34.27613886303751,
+    "arm_arm": 97.60497510433197,
+    "held_brick": 6.9365970134735155
+   },
+   "finger_box_min_mm": 0.24543831634482072,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.02521066546751,
+   "min_clearance_mm": {
+    "finger": 2.3467243655584755,
+    "arm": 42.62044295966625,
+    "arm_arm": 95.5905169248581,
+    "held_brick": 327.5817335726157
+   },
+   "finger_box_min_mm": 2.7952885313317934,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.299936558850725,
+   "min_clearance_mm": {
+    "finger": -0.014361683245466883,
+    "arm": 34.48479215141979,
+    "arm_arm": 111.3908663392067,
+    "held_brick": 334.02790409512204
+   },
+   "finger_box_min_mm": 0.18052060690817823,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.377866202974104,
+   "min_clearance_mm": {
+    "finger": 0.6639316463842989,
+    "arm": 41.47370709136149,
+    "arm_arm": 101.42297297716141,
+    "held_brick": 8.917821991443635
+   },
+   "finger_box_min_mm": 1.108049316229577,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.025874929241503,
+   "min_clearance_mm": {
+    "finger": 0.019263345410429962,
+    "arm": 34.47856050074794,
+    "arm_arm": 100.66752135753632,
+    "held_brick": 8.836536157131196
+   },
+   "finger_box_min_mm": 0.3088497882158658,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.119615409290894,
+   "min_clearance_mm": {
+    "finger": 0.5340978192165521,
+    "arm": 42.24177531988983,
+    "arm_arm": 91.2388265132904,
+    "held_brick": 7.07768261432648
+   },
+   "finger_box_min_mm": 0.9695656298483188,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.187730142564057,
+   "min_clearance_mm": {
+    "finger": -0.02728142865227783,
+    "arm": 34.33391644471521,
+    "arm_arm": 107.66705125570297,
+    "held_brick": 7.037971019744876
+   },
+   "finger_box_min_mm": 0.13997996160785772,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.346398536980928,
+   "min_clearance_mm": {
+    "finger": 0.5243459308519978,
+    "arm": 41.33295228661479,
+    "arm_arm": 98.68291020393372,
+    "held_brick": 7.078873300552373
+   },
+   "finger_box_min_mm": 0.9687875401414182,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.22834932351158,
+   "min_clearance_mm": {
+    "finger": -0.10979638364452408,
+    "arm": 34.25577591601994,
+    "arm_arm": 97.60722517967224,
+    "held_brick": 6.929988348484044
+   },
+   "finger_box_min_mm": 0.18072564200115326,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.026768204580975,
+   "min_clearance_mm": {
+    "finger": 2.3329179740510884,
+    "arm": 42.60662958323955,
+    "arm_arm": 95.59435397386551,
+    "held_brick": 327.59408261588914
+   },
+   "finger_box_min_mm": 2.7814796218174593,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.29875540478136,
+   "min_clearance_mm": {
+    "finger": -0.00882377507485058,
+    "arm": 34.45531563565597,
+    "arm_arm": 111.40590161085129,
+    "held_brick": 334.058911378751
+   },
+   "finger_box_min_mm": 0.18876007655768343,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.380133309501204,
+   "min_clearance_mm": {
+    "finger": 0.6577979559078814,
+    "arm": 41.46711275307083,
+    "arm_arm": 101.46243870258331,
+    "held_brick": 8.911772119998933
+   },
+   "finger_box_min_mm": 1.1019438496693714,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.014888833802658,
+   "min_clearance_mm": {
+    "finger": 0.018668654448120863,
+    "arm": 34.46755555251034,
+    "arm_arm": 100.67108273506165,
+    "held_brick": 8.827140974998475
+   },
+   "finger_box_min_mm": 0.30821137564051615,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.116556999735113,
+   "min_clearance_mm": {
+    "finger": 0.561251460202041,
+    "arm": 42.26812713170876,
+    "arm_arm": 91.23500436544418,
+    "held_brick": 7.1048995852470425
+   },
+   "finger_box_min_mm": 0.9968741051569578,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.188037737772753,
+   "min_clearance_mm": {
+    "finger": -0.03913548880832046,
+    "arm": 34.32072106687661,
+    "arm_arm": 107.66274482011795,
+    "held_brick": 7.025975584983828
+   },
+   "finger_box_min_mm": 0.13018975305781505,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.34820598381001,
+   "min_clearance_mm": {
+    "finger": 0.49469262007624093,
+    "arm": 41.304188951368744,
+    "arm_arm": 98.74027967453003,
+    "held_brick": 7.049160385131841
+   },
+   "finger_box_min_mm": 0.9390381910720771,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r2.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.24181668306048,
+   "min_clearance_mm": {
+    "finger": -0.07088707181489583,
+    "arm": 34.257824168279726,
+    "arm_arm": 97.6097583770752,
+    "held_brick": 6.924586677551274
+   },
+   "finger_box_min_mm": 0.22406025616204459,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.02633117437443,
+   "min_clearance_mm": {
+    "finger": 2.34335251217708,
+    "arm": 42.61710509955883,
+    "arm_arm": 95.59395909309387,
+    "held_brick": 327.586746416061
+   },
+   "finger_box_min_mm": 2.7919250738854235,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.29869765663277,
+   "min_clearance_mm": {
+    "finger": -0.0030381688833216276,
+    "arm": 34.43487528840869,
+    "arm_arm": 111.41764372587204,
+    "held_brick": 334.0802611709645
+   },
+   "finger_box_min_mm": 0.19808394219038816,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.377622045543443,
+   "min_clearance_mm": {
+    "finger": 0.6720267022028567,
+    "arm": 41.481804723505896,
+    "arm_arm": 101.43043100833893,
+    "held_brick": 8.9258984208107
+   },
+   "finger_box_min_mm": 1.116133608352915,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.02306504591929,
+   "min_clearance_mm": {
+    "finger": 0.019664878633310172,
+    "arm": 34.46726636029125,
+    "arm_arm": 100.67010670900345,
+    "held_brick": 8.825330483913422
+   },
+   "finger_box_min_mm": 0.30948564076536783,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.119808615412396,
+   "min_clearance_mm": {
+    "finger": 0.530145286209884,
+    "arm": 42.23774726274032,
+    "arm_arm": 91.23948961496353,
+    "held_brick": 7.073748707771304
+   },
+   "finger_box_min_mm": 0.9656374189032377,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.181779492767394,
+   "min_clearance_mm": {
+    "finger": -0.05988702913820997,
+    "arm": 34.3821764791356,
+    "arm_arm": 107.6405718922615,
+    "held_brick": 7.0925763249397304
+   },
+   "finger_box_min_mm": 0.09625241780185541,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.340190053214105,
+   "min_clearance_mm": {
+    "finger": 0.4426205122843403,
+    "arm": 41.2515969461643,
+    "arm_arm": 98.75962138175964,
+    "held_brick": 6.997036123275762
+   },
+   "finger_box_min_mm": 0.8870976416574025,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r0.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.247384161374555,
+   "min_clearance_mm": {
+    "finger": -0.09558961670430122,
+    "arm": 34.310054563485906,
+    "arm_arm": 97.59283065795898,
+    "held_brick": 6.97814890146256
+   },
+   "finger_box_min_mm": 0.19795381800569514,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.026152432275016,
+   "min_clearance_mm": {
+    "finger": 2.338855155464262,
+    "arm": 42.61259004771709,
+    "arm_arm": 95.59585154056549,
+    "held_brick": 327.5899024330172
+   },
+   "finger_box_min_mm": 2.7874233142241205,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.30294339329953,
+   "min_clearance_mm": {
+    "finger": -0.0014590925202445995,
+    "arm": 34.468636681856296,
+    "arm_arm": 111.40831559896469,
+    "held_brick": 334.0486624225042
+   },
+   "finger_box_min_mm": 0.20075174097833673,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.377047392141556,
+   "min_clearance_mm": {
+    "finger": 0.6745468610897661,
+    "arm": 41.48482891656925,
+    "arm_arm": 101.47015005350113,
+    "held_brick": 8.928424167633057
+   },
+   "finger_box_min_mm": 1.1186528836502296,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.0181249107455,
+   "min_clearance_mm": {
+    "finger": 0.011220979192096213,
+    "arm": 34.46644125568844,
+    "arm_arm": 100.67152231931686,
+    "held_brick": 8.827193129062653
+   },
+   "finger_box_min_mm": 0.2998043633252283,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.11917620696666,
+   "min_clearance_mm": {
+    "finger": 0.5616817312315133,
+    "arm": 42.26943432366169,
+    "arm_arm": 91.23405814170837,
+    "held_brick": 7.10521996021271
+   },
+   "finger_box_min_mm": 0.9970475966262528,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.188390186122934,
+   "min_clearance_mm": {
+    "finger": -0.030533778381687894,
+    "arm": 34.330001131125066,
+    "arm_arm": 107.66579955816269,
+    "held_brick": 7.034335136413577
+   },
+   "finger_box_min_mm": 0.13752004018338648,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.34047146835248,
+   "min_clearance_mm": {
+    "finger": 0.47702356819063607,
+    "arm": 41.2855793979726,
+    "arm_arm": 98.74281287193298,
+    "held_brick": 7.031413102149968
+   },
+   "finger_box_min_mm": 0.9214897371134625,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r1.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.246123925262314,
+   "min_clearance_mm": {
+    "finger": -0.07673684422385488,
+    "arm": 34.25349139556163,
+    "arm_arm": 97.60875999927521,
+    "held_brick": 6.918611311912541
+   },
+   "finger_box_min_mm": 0.21807927279729813,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    486,
+    557
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.025289595693124,
+   "min_clearance_mm": {
+    "finger": 2.3396793759427967,
+    "arm": 42.61343941390514,
+    "arm_arm": 95.59369832277298,
+    "held_brick": 327.591061121547
+   },
+   "finger_box_min_mm": 2.788256060252284,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 1,
+   "brick": "b_001",
+   "frames": [
+    1029,
+    1100
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.29971578976565,
+   "min_clearance_mm": {
+    "finger": -0.0008376089830874336,
+    "arm": 34.4550427896895,
+    "arm_arm": 111.41467839479446,
+    "held_brick": 334.0631505449413
+   },
+   "finger_box_min_mm": 0.20179360901004598,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 2,
+   "brick": "b_002",
+   "frames": [
+    1573,
+    1644
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.378016425568653,
+   "min_clearance_mm": {
+    "finger": 0.6670627528801562,
+    "arm": 41.477190556560736,
+    "arm_arm": 101.41206532716751,
+    "held_brick": 8.92098103761673
+   },
+   "finger_box_min_mm": 1.1111732857256724,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 3,
+   "brick": "b_003",
+   "frames": [
+    2113,
+    2184
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.020056596675996,
+   "min_clearance_mm": {
+    "finger": 0.018899173998212386,
+    "arm": 34.48192020439371,
+    "arm_arm": 100.66841542720795,
+    "held_brick": 8.840358304977418
+   },
+   "finger_box_min_mm": 0.30826685257652303,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 4,
+   "brick": "b_004",
+   "frames": [
+    2649,
+    2720
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.119706915443288,
+   "min_clearance_mm": {
+    "finger": 0.5516066836193231,
+    "arm": 42.25884524199229,
+    "arm_arm": 91.2361890077591,
+    "held_brick": 7.0952138304710415
+   },
+   "finger_box_min_mm": 0.9871455361946322,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 5,
+   "brick": "b_005",
+   "frames": [
+    3184,
+    3255
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.183891503336074,
+   "min_clearance_mm": {
+    "finger": -0.05214001725563833,
+    "arm": 34.351499750386886,
+    "arm_arm": 107.64982551336288,
+    "held_brick": 7.059644758701327
+   },
+   "finger_box_min_mm": 0.11103360145580873,
+   "monitor_events": [
+    "unintended",
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 6,
+   "brick": "b_006",
+   "frames": [
+    3720,
+    3791
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.340584229500063,
+   "min_clearance_mm": {
+    "finger": 0.4771502280607838,
+    "arm": 41.28563791101115,
+    "arm_arm": 98.68583083152771,
+    "held_brick": 7.031495058536534
+   },
+   "finger_box_min_mm": 0.9216500414231049,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  },
+  {
+   "file": "cube_lever_press_r2.npz",
+   "b_step": 7,
+   "brick": "b_007",
+   "frames": [
+    4254,
+    4325
+   ],
+   "samples_2mm": 15,
+   "tcp_path_mm": 27.245703612692683,
+   "min_clearance_mm": {
+    "finger": -0.09986698412474025,
+    "arm": 34.310678572283386,
+    "arm_arm": 97.59427607059479,
+    "held_brick": 6.9793409943580675
+   },
+   "finger_box_min_mm": 0.19384009324099546,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  }
+ ]
+}

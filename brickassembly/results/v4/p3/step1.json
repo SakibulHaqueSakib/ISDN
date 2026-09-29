@@ -1,0 +1,22 @@
+{
+ "torch": "2.10.0+cu128",
+ "warp": "1.13.0",
+ "newton": "1.2.1",
+ "curobo": "0.8.0.post1.dev43",
+ "curobo_file": "/home/bakasakib/Documents/ISDN_Robofab/curobo/curobo/__init__.py",
+ "cuda_core": "1.2.1",
+ "python": "3.12.3",
+ "device": "NVIDIA GeForce RTX 5090 D",
+ "import_s": 0.4,
+ "newton_step_ok": true,
+ "franka_warmup_s": 4.96,
+ "franka_plan_ok": true,
+ "franka_plan_ms": [
+  118.0,
+  112.8,
+  107.8,
+  109.0,
+  105.7
+ ],
+ "ok": true
+}

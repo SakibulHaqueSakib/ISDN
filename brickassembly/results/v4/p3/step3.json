@@ -1,0 +1,45 @@
+{
+ "graph_inits": 24,
+ "torch_captures": 24,
+ "warm_s": 15.1,
+ "phase_s": {
+  "A_planner_warmup_s": 3.62,
+  "A_query_types_s": 3.83,
+  "B_planner_warmup_s": 3.58,
+  "B_query_types_s": 2.56
+ },
+ "captured": [
+  "SeedIKSolver._compute_pose_error_and_jacobian",
+  "SeedIKSolver._levenberg_marquardt_step_inner_iterations_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "RobotRollout._compute_metrics_from_state_impl",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "SeedIKSolver._compute_pose_error_and_jacobian",
+  "SeedIKSolver._levenberg_marquardt_step_inner_iterations_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "RobotRollout._compute_metrics_from_state_impl",
+  "SeedIKSolver._compute_pose_error_and_jacobian",
+  "SeedIKSolver._levenberg_marquardt_step_inner_iterations_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "GradientOptCore._opt_iters",
+  "RobotRollout._compute_metrics_from_action_impl",
+  "RobotRollout._compute_metrics_from_state_impl"
+ ],
+ "post_warmup": {
+  "graph_inits": 0,
+  "torch_captures": 0,
+  "new": []
+ },
+ "checked_plans": 6,
+ "total_spheres": 398,
+ "ok": true
+}

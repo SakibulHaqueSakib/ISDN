@@ -1,0 +1,68 @@
+{
+ "viewer": "null",
+ "viewer_note": null,
+ "cameras": {
+  "names": [
+   "top",
+   "wrist_B"
+  ],
+  "every_n_frames": 6
+ },
+ "plans_requested": 200,
+ "plans_completed": 200,
+ "plans_ok": 196,
+ "infeasible_pairs": 1,
+ "exceptions": 0,
+ "exception_samples": [],
+ "cuda_errors": 0,
+ "cuda_error_samples": [],
+ "post_warmup_graph_inits": 0,
+ "post_warmup_torch_captures": 0,
+ "new_inits": [],
+ "planner_thread_names": [
+  "planner_0"
+ ],
+ "soak_s": 34.4,
+ "frames": 1689,
+ "plan_ms": {
+  "median": 130.8870285283774,
+  "p95": 256.08538766391564,
+  "max": 545.449527038727
+ },
+ "frame_work_ms": {
+  "baseline_p50": 7.948622514959425,
+  "baseline_p99": 15.117417925503105,
+  "soak_p50": 8.71670397464186,
+  "soak_p99": 39.409531494602554,
+  "soak_max": 41.41270602121949
+ },
+ "frame_period_ms": {
+  "baseline_p99": 17.153689686674625,
+  "soak_p99": 39.41485720453783,
+  "soak_max": 41.418595996219665
+ },
+ "first_camera_render_ms": 29.592237959150225,
+ "frame_parts_ms_mean": {
+  "sim_monitor": 13.172053241993387,
+  "viewer": 0.00013556321305529265,
+  "cameras": 6.224063468589432,
+  "monitor": 7.7508607560182226
+ },
+ "frames_over_33ms": 131,
+ "monitor_events": {},
+ "warm": {
+  "graph_inits": 16,
+  "torch_captures": 16,
+  "warm_s": 10.3,
+  "phase_s": {
+   "A_planner_warmup_s": 3.17,
+   "A_query_types_s": 2.42,
+   "B_planner_warmup_s": 2.59,
+   "B_query_types_s": 1.74
+  }
+ },
+ "monitor_note": "the arms hold their parked pose during the soak, so the monitor is exercised for cost only; its positive control is step 5",
+ "sample_ok": true,
+ "gate": true,
+ "ok": true
+}

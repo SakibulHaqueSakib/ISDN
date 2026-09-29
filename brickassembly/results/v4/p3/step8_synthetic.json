@@ -1,0 +1,145 @@
+{
+ "segments": 2,
+ "files": 2,
+ "pads_mm": [
+  0.0,
+  0.25,
+  0.5,
+  1.0
+ ],
+ "pad0": {
+  "flagged": 1,
+  "false_positives": 0,
+  "true_positives": 1,
+  "missed_events": 0
+ },
+ "pad0.25": {
+  "flagged": 1,
+  "false_positives": 0,
+  "true_positives": 1,
+  "missed_events": 0
+ },
+ "pad0.5": {
+  "flagged": 1,
+  "false_positives": 0,
+  "true_positives": 1,
+  "missed_events": 0
+ },
+ "pad1": {
+  "flagged": 1,
+  "false_positives": 0,
+  "true_positives": 1,
+  "missed_events": 0
+ },
+ "segments_with_monitor_events": 1,
+ "max_padding_without_false_positive_mm": 1.0,
+ "min_clean_segment_clearance_mm": 2.0500436431728306,
+ "margin_mm": 1.0500436431728306,
+ "max_event_segment_clearance_mm": -19.749856437556446,
+ "finger_box_diagnostic_mm": {
+  "clean_segments_min": 2.5000429934260864,
+  "clean_segments_p5": 2.5000429934260864,
+  "event_segments_max": -19.299855174467716
+ },
+ "ok": true,
+ "rows": [
+  {
+   "file": "cube_grasp_lp_r0.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    100,
+    129
+   ],
+   "samples_2mm": 14,
+   "tcp_path_mm": 25.999807001937025,
+   "min_clearance_mm": {
+    "finger": 2.0500436431728306,
+    "arm": 42.331047508120534,
+    "arm_arm": 96.7269316315651,
+    "held_brick": 327.3799924427313
+   },
+   "finger_box_min_mm": 2.5000429934260864,
+   "monitor_events": [],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.25": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad0.5": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   },
+   "flag_pad1": {
+    "finger": false,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": false
+   }
+  },
+  {
+   "file": "cube_grasp_lp_r1.npz",
+   "b_step": 0,
+   "brick": "b_000",
+   "frames": [
+    100,
+    129
+   ],
+   "samples_2mm": 27,
+   "tcp_path_mm": 50.999976798119384,
+   "min_clearance_mm": {
+    "finger": -19.749856437556446,
+    "arm": 17.331157031655316,
+    "arm_arm": 96.3200330734253,
+    "held_brick": 327.37973328534014
+   },
+   "finger_box_min_mm": -19.299855174467716,
+   "monitor_events": [
+    "unintended"
+   ],
+   "monitor_events_known": true,
+   "flag_pad0": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.25": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad0.5": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   },
+   "flag_pad1": {
+    "finger": true,
+    "arm": false,
+    "arm_arm": false,
+    "held_brick": false,
+    "any": true
+   }
+  }
+ ]
+}

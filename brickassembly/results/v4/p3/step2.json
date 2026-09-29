@@ -1,0 +1,491 @@
+{
+ "full": {
+  "links": {
+   "fr3_link0": {
+    "n_base": 63,
+    "n": 113,
+    "vertex_max_mm": 1.977,
+    "surface_max_mm": 1.991,
+    "protrusion_max_mm": 7.196,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link1": {
+    "n_base": 83,
+    "n": 70,
+    "vertex_max_mm": 1.92,
+    "surface_max_mm": 1.996,
+    "protrusion_max_mm": 7.188,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link2": {
+    "n_base": 73,
+    "n": 62,
+    "vertex_max_mm": 1.868,
+    "surface_max_mm": 1.992,
+    "protrusion_max_mm": 7.195,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link3": {
+    "n_base": 74,
+    "n": 57,
+    "vertex_max_mm": 1.878,
+    "surface_max_mm": 1.989,
+    "protrusion_max_mm": 7.194,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link4": {
+    "n_base": 61,
+    "n": 59,
+    "vertex_max_mm": 1.839,
+    "surface_max_mm": 1.982,
+    "protrusion_max_mm": 7.195,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link5": {
+    "n_base": 76,
+    "n": 82,
+    "vertex_max_mm": 1.934,
+    "surface_max_mm": 1.979,
+    "protrusion_max_mm": 7.188,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link6": {
+    "n_base": 95,
+    "n": 60,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.999,
+    "protrusion_max_mm": 7.19,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_link7": {
+    "n_base": 57,
+    "n": 47,
+    "vertex_max_mm": 1.971,
+    "surface_max_mm": 1.997,
+    "protrusion_max_mm": 7.183,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_hand": {
+    "n_base": 79,
+    "n": 56,
+    "vertex_max_mm": 1.937,
+    "surface_max_mm": 1.986,
+    "protrusion_max_mm": 7.19,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 8.0,
+    "ok": true
+   },
+   "fr3_leftfinger": {
+    "n_base": 3,
+    "n": 413,
+    "vertex_max_mm": 0.488,
+    "surface_max_mm": 0.499,
+    "protrusion_max_mm": 0.449,
+    "limit_mm": 0.5,
+    "protrusion_limit_mm": 0.5,
+    "ok": true
+   },
+   "fr3_rightfinger": {
+    "n_base": 3,
+    "n": 403,
+    "vertex_max_mm": 0.492,
+    "surface_max_mm": 0.499,
+    "protrusion_max_mm": 0.45,
+    "limit_mm": 0.5,
+    "protrusion_limit_mm": 0.5,
+    "ok": true
+   }
+  },
+  "total_spheres": 1309,
+  "yml": "motion/fr3.yml",
+  "finger_lock_m": 0.0075,
+  "ok": true,
+  "fk": {
+   "max_err_mm": 0.0002,
+   "n": 8
+  }
+ },
+ "plan": {
+  "links": {
+   "fr3_link0": {
+    "n_base": 63,
+    "n": 68,
+    "vertex_max_mm": 1.95,
+    "surface_max_mm": 1.989,
+    "protrusion_max_mm": 10.794,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link1": {
+    "n_base": 83,
+    "n": 42,
+    "vertex_max_mm": 1.823,
+    "surface_max_mm": 1.953,
+    "protrusion_max_mm": 10.795,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link2": {
+    "n_base": 73,
+    "n": 36,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.885,
+    "protrusion_max_mm": 10.797,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link3": {
+    "n_base": 74,
+    "n": 35,
+    "vertex_max_mm": 1.991,
+    "surface_max_mm": 1.981,
+    "protrusion_max_mm": 10.795,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link4": {
+    "n_base": 61,
+    "n": 44,
+    "vertex_max_mm": 1.962,
+    "surface_max_mm": 1.982,
+    "protrusion_max_mm": 10.761,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link5": {
+    "n_base": 76,
+    "n": 46,
+    "vertex_max_mm": 1.968,
+    "surface_max_mm": 1.997,
+    "protrusion_max_mm": 10.787,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link6": {
+    "n_base": 95,
+    "n": 38,
+    "vertex_max_mm": 1.96,
+    "surface_max_mm": 1.963,
+    "protrusion_max_mm": 10.774,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link7": {
+    "n_base": 57,
+    "n": 27,
+    "vertex_max_mm": 1.578,
+    "surface_max_mm": 1.988,
+    "protrusion_max_mm": 10.783,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_hand": {
+    "n_base": 79,
+    "n": 36,
+    "vertex_max_mm": 1.827,
+    "surface_max_mm": 1.989,
+    "protrusion_max_mm": 10.798,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_leftfinger": {
+    "n_base": 3,
+    "n": 36,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.97,
+    "protrusion_max_mm": 2.698,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 3.0,
+    "ok": true
+   },
+   "fr3_rightfinger": {
+    "n_base": 3,
+    "n": 42,
+    "vertex_max_mm": 1.801,
+    "surface_max_mm": 1.972,
+    "protrusion_max_mm": 2.694,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 3.0,
+    "ok": true
+   }
+  },
+  "total_spheres": 382,
+  "yml": "motion/fr3_plan.yml",
+  "finger_lock_m": 0.0075,
+  "ok": true,
+  "fk": {
+   "max_err_mm": 0.0002,
+   "n": 8
+  }
+ },
+ "ok": true,
+ "lite": {
+  "links": {
+   "fr3_link0": {
+    "n_base": 63,
+    "n": 39,
+    "vertex_max_mm": 1.936,
+    "surface_max_mm": 1.906,
+    "protrusion_max_mm": 17.999,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link1": {
+    "n_base": 83,
+    "n": 17,
+    "vertex_max_mm": 1.913,
+    "surface_max_mm": 1.911,
+    "protrusion_max_mm": 17.911,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link2": {
+    "n_base": 73,
+    "n": 16,
+    "vertex_max_mm": 1.992,
+    "surface_max_mm": 1.513,
+    "protrusion_max_mm": 17.183,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link3": {
+    "n_base": 74,
+    "n": 17,
+    "vertex_max_mm": 1.535,
+    "surface_max_mm": 1.973,
+    "protrusion_max_mm": 17.969,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link4": {
+    "n_base": 61,
+    "n": 13,
+    "vertex_max_mm": 1.843,
+    "surface_max_mm": 1.611,
+    "protrusion_max_mm": 17.959,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link5": {
+    "n_base": 76,
+    "n": 26,
+    "vertex_max_mm": 1.813,
+    "surface_max_mm": 1.958,
+    "protrusion_max_mm": 17.956,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link6": {
+    "n_base": 95,
+    "n": 13,
+    "vertex_max_mm": 1.692,
+    "surface_max_mm": 1.978,
+    "protrusion_max_mm": 17.941,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_link7": {
+    "n_base": 57,
+    "n": 11,
+    "vertex_max_mm": 1.735,
+    "surface_max_mm": 1.937,
+    "protrusion_max_mm": 17.965,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_hand": {
+    "n_base": 79,
+    "n": 18,
+    "vertex_max_mm": 0.615,
+    "surface_max_mm": 1.923,
+    "protrusion_max_mm": 17.979,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 20.0,
+    "ok": true
+   },
+   "fr3_leftfinger": {
+    "n_base": 3,
+    "n": 25,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.98,
+    "protrusion_max_mm": 3.598,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 4.0,
+    "ok": true
+   },
+   "fr3_rightfinger": {
+    "n_base": 3,
+    "n": 27,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.936,
+    "protrusion_max_mm": 3.598,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 4.0,
+    "ok": true
+   }
+  },
+  "total_spheres": 222,
+  "yml": "motion/fr3_lite.yml",
+  "finger_lock_m": 0.0075,
+  "ok": true,
+  "fk": {
+   "max_err_mm": 0.0002,
+   "n": 8
+  }
+ },
+ "mixed": {
+  "links": {
+   "fr3_link0": {
+    "n_base": 63,
+    "n": 68,
+    "vertex_max_mm": 1.95,
+    "surface_max_mm": 1.989,
+    "protrusion_max_mm": 10.794,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link1": {
+    "n_base": 83,
+    "n": 42,
+    "vertex_max_mm": 1.823,
+    "surface_max_mm": 1.953,
+    "protrusion_max_mm": 10.795,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link2": {
+    "n_base": 73,
+    "n": 36,
+    "vertex_max_mm": 1.8,
+    "surface_max_mm": 1.885,
+    "protrusion_max_mm": 10.797,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link3": {
+    "n_base": 74,
+    "n": 35,
+    "vertex_max_mm": 1.991,
+    "surface_max_mm": 1.981,
+    "protrusion_max_mm": 10.795,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link4": {
+    "n_base": 61,
+    "n": 44,
+    "vertex_max_mm": 1.962,
+    "surface_max_mm": 1.982,
+    "protrusion_max_mm": 10.761,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link5": {
+    "n_base": 76,
+    "n": 46,
+    "vertex_max_mm": 1.968,
+    "surface_max_mm": 1.997,
+    "protrusion_max_mm": 10.787,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link6": {
+    "n_base": 95,
+    "n": 38,
+    "vertex_max_mm": 1.96,
+    "surface_max_mm": 1.963,
+    "protrusion_max_mm": 10.774,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_link7": {
+    "n_base": 57,
+    "n": 27,
+    "vertex_max_mm": 1.578,
+    "surface_max_mm": 1.988,
+    "protrusion_max_mm": 10.783,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_hand": {
+    "n_base": 79,
+    "n": 36,
+    "vertex_max_mm": 1.827,
+    "surface_max_mm": 1.989,
+    "protrusion_max_mm": 10.798,
+    "limit_mm": 2.0,
+    "protrusion_limit_mm": 12.0,
+    "ok": true
+   },
+   "fr3_leftfinger": {
+    "n_base": 3,
+    "n": 413,
+    "vertex_max_mm": 0.488,
+    "surface_max_mm": 0.499,
+    "protrusion_max_mm": 0.449,
+    "limit_mm": 0.5,
+    "protrusion_limit_mm": 0.5,
+    "ok": true
+   },
+   "fr3_rightfinger": {
+    "n_base": 3,
+    "n": 403,
+    "vertex_max_mm": 0.492,
+    "surface_max_mm": 0.499,
+    "protrusion_max_mm": 0.45,
+    "limit_mm": 0.5,
+    "protrusion_limit_mm": 0.5,
+    "ok": true
+   }
+  },
+  "total_spheres": 1188,
+  "yml": "motion/fr3_mixed.yml",
+  "finger_lock_m": 0.0075,
+  "ok": true,
+  "fk": {
+   "max_err_mm": 0.0002,
+   "n": 8
+  }
+ }
+}

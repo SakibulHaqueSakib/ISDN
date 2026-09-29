@@ -1,0 +1,19 @@
+{
+ "stages_mb": {
+  "context": 0,
+  "newton_cell": 964,
+  "two_planners_warm": 2324,
+  "after_plans": 2324
+ },
+ "torch_reserved_mb": 1198.0,
+ "torch_max_reserved_mb": 1198.0,
+ "gpu_total_mb": 32607,
+ "gpu_used_now_mb": 2834,
+ "other_processes_mb": 510,
+ "cpu_cores": 32,
+ "workers_by_vram": 11,
+ "workers_by_cpu": 16,
+ "note": "a memory UPPER bound: workers = min(by_vram, by_cpu) from one process's footprint; camera/BVH memory, compute contention between workers and other GPU jobs (other_processes_mb) are not included. Measure throughput before using it.",
+ "workers": 11,
+ "ok": true
+}
