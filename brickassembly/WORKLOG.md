@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-194 entries. Later entries supersede earlier ones; retractions are marked.
+197 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -195,6 +195,17 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **probe** `v4_rl_planner_lp_probe`
     - result: Planner [P] and Codex [R] LP numbers, exactly as in the plan §0 facts 2, 7 and 8. S3 step 13: unbraced u0 3.43; best braced 1.97 with the committed mask [P], 1.56 with the relaxed mask [R]; at half press 0.49 / 0.08. S3 step 14: 1.96 -> 0.44 / 0.00. Arch step 10: 0.95 -> 0.95. The LP costs 2-4 ms per solve. Candidates per critical step: 40-178 on S3, S5 and the arch; median 28 on a corbel family (…
     - finding: unsaved CPU probe (planner [P] scripts not in the repo; [R] is Codex's recomputation), to be reproduced by segment S0.1 (--self-check writes results/v4/rl/r0/lp_probe.json) before any report cites it. The LP lets the brace supply any bounded wrench, so the braced values are optimistic, not executed benefits
+
+- **result** `v4_phase2_acceptance`
+    - result: Phase 2 segment (b), acceptance runs (commit 8ec883b): unbraced, ground-truth poses, breakable joints, 3 repeats each. cube 8/8 x3, arch 11/11 x3, hollow_box 12/12 x3; 0 breaks in all 9; failure null. Per shape [u_peak_max range; M2 peak excursion range mm (worst brick); M3 residual max mm; rtf range]: cube [0.0329-0.0362; 0.0234-0.0241 (b_004); 0.00010 (8.5e-5 to 9.8e-5); 1.442-1.446]; arch [0.05…
+
+- **problem** `v4_pipeline_pyramid_inaccessible_grasp`
+    - finding: The user's drawing (blueprints/user/pyramid_front.png + pyramid_side.png, --width 5; layers 5x5, 3x3, 1x1; 11 bricks; plans/sim_pyramid_none.json) run live by the user: steps 0 (b_000, 1x1) and 1 (b_001, 2x4) placed (final_error 0.23 / 0.19 mm, dz -0.37 / -0.31 mm, tilt 0.08 / 0.01 deg); step 2 (b_002, 1x4) gate miss (failure_mode gate: lateral 0.12 mm, dz +7.84 mm, tilt 0.9 deg, sim_time 26.98 s)…
+    - implication: Phase 2's gate is met on the acceptance shapes (free grasp faces at every step, v4_phase2_acceptance) and is NOT met on the user's drawing (G7: built 2 of 11). Filled layers cannot be built with the side-pinch grasp. Carried to the Phase 2 gate; addressed by the placer track (v4_placer_rl_primitives).
+
+- **decided** `v4_placer_rl_primitives`
+    - outcome: the placer arm is trained with RL for placement in tight spaces between several bricks, and the pyramid (with other filled-layer shapes) goes into the RL training set. RL controls placement primitives: a new drop-and-press primitive (release above the neighbours, then press the brick down from the top) is added, and RL chooses per brick how to place: grasp-insert vs drop-and-press, release height,…
+    - status: a plan of record for the placer track is being written by the planner, not yet adopted; the Phase 2 gate review by Codex is pending. The pyramid becomes a training and reference structure of the placer track.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
