@@ -40,6 +40,7 @@ from newton.examples.contacts import example_brick_stacking as ex
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import blueprint as B  # noqa: E402
 import planner as P  # noqa: E402
+import stability as ST  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EE = 11                       # fr3_hand_tcp, in a single-arm builder
@@ -86,6 +87,11 @@ ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 # BrickSim's default gate. §2.3.3 asks for 1.2 mm; position-controlled IK
 # without a force loop does not reliably get there yet.
 GATE = {"lateral_mm": 2.0, "dz_mm": 1.5, "yaw_deg": 5.0}
+# Break rule (plan_v4 r5-3, class JointBreaker): u >= U_BREAK on BREAK_SAMPLES consecutive end-of-frame
+# samples, enforced from BREAK_SETTLE_S after that weld fired.
+U_BREAK = 1.0
+BREAK_SAMPLES = 2
+BREAK_SETTLE_S = 0.1
 
 
 # --- small pose helpers (quaternions are xyzw, as warp stores them) ----------
@@ -108,6 +114,11 @@ def rotate(q, v):
     return v + 2 * np.cross(u, np.cross(u, v) + w * v)
 
 
+def rotmat(q):
+    """3x3 rotation matrix of quaternion q (xyzw)."""
+    return np.stack([rotate(q, e) for e in np.eye(3)], axis=1)
+
+
 def qrot(r):
     """Quaternion from a rotation vector (axis * angle)."""
     a = float(np.linalg.norm(r))
@@ -127,6 +138,43 @@ def wrap(a, period=2 * math.pi):
 
 
 Q_DOWN = np.array([1.0, 0.0, 0.0, 0.0])  # gripper pointing down
+
+
+# --- weld wrench from the solver (plan_v4 r5, S2; validated by probe 13 parts C/J-b) ------
+EQUALITY = 0                                                    # mujoco.mjtConstraint.mjCNSTR_EQUALITY
+
+
+def weld_rows(solver):
+    """{newton weld idx: (f6 constraint-space force, pos residual 6, first row, mujoco eq id)} for every
+    enabled weld, from solver.mjw_data.efc."""
+    d = solver.mjw_data
+    nefc = int(d.nefc.numpy()[0])
+    typ, ids = d.efc.type.numpy()[0, :nefc], d.efc.id.numpy()[0, :nefc]
+    frc, pos = d.efc.force.numpy()[0, :nefc], d.efc.pos.numpy()[0, :nefc]
+    m = solver.mjc_eq_to_newton_eq.numpy()[0]
+    out = {}
+    for mid in sorted(set(ids[typ == EQUALITY])):
+        if m[mid] < 0:
+            continue                                            # the fingers' mimic constraint (1 row), not a weld
+        rows = np.where((typ == EQUALITY) & (ids == mid))[0]
+        assert len(rows) == 6 and rows.max() - rows.min() == 5, (mid, rows)   # one 6-row block per weld
+        out[int(m[mid])] = (frc[rows].astype(float), pos[rows].astype(float), int(rows.min()), int(mid))
+    return out
+
+
+def brick_wrench(solver, model, eq, w, body, xmat=None):
+    """Wrench the weld `eq` exerts ON its body2 (Newton body `body`), about the body origin, world frame.
+    MuJoCo's efc force acts on body1 as +J^T f, so on body2 it is -f. The 3 rotational rows are
+    0.5 * torquescale * R2^T-rotated (quaternion-error Jacobian), hence torque = 0.5 * ts * R2 f_rot.
+    R2 is the SOLVE-TIME orientation, solver.mjw_data.xmat: efc.force belongs to the pre-integration
+    kinematics (mujoco_warp forward.py:604 kinematics, :261 _advance integrates qpos without refreshing
+    xmat), while state.body_q is one dt later. `xmat` (3x3) may be passed in to skip the lookup."""
+    if xmat is None:
+        b2n = solver.mjc_body_to_newton.numpy()[0]
+        xmat = solver.mjw_data.xmat.numpy()[0][int(np.where(b2n == body)[0][0])]
+    f, _, _, _ = w
+    ts = float(model.equality_constraint_torquescale.numpy()[eq])
+    return -f[:3], -0.5 * ts * (np.asarray(xmat) @ f[3:6])
 
 
 # --- scene -------------------------------------------------------------------
@@ -242,6 +290,103 @@ class Arm:
         return (self.cmd[0] + self.bias,) + self.cmd[1:]
 
 
+class JointBreaker:
+    """The break rule (plan_v4 r5-3): a weld lets go when the patch it stands for is over-utilised.
+
+    Every frame after simulate(), for each enabled weld: the end-of-frame weld wrench on the upper
+    brick (F, M about its origin, world) is moved to the patch centre c (conn.centre for the plate; the
+    lower brick's current pose applied to the nominal centre otherwise), M_c = M + (p_U - c) x F, and
+    rotated into the nominal axes by R = R_L,nom R_L,now^T. u = conn.patch.utilization(Fz, Mx, My) with
+    compression +Fz: axial and prying load only (shear and torsion are recorded, never used). Raw
+    end-of-frame u, no filtering. A weld breaks when u >= U_BREAK on BREAK_SAMPLES consecutive samples,
+    counted from BREAK_SETTLE_S after that weld fired (u is logged during the settle). Everything is
+    read at the solve-time pose that efc.force belongs to (see brick_wrench).
+
+    `ex` is the Example (or a test fixture with the same attributes: model, solver, welds, body, target,
+    shapes_of, set_group, frame, sim_time, b_step, A, B, failure, fail); `conns` overrides the
+    stability.connections() of the structure."""
+
+    def __init__(self, ex, conns=None):
+        self.ex = ex
+        conns = ST.connections(P.STRUCTURES[ex.name]) if conns is None else conns
+        self.conn = {(c.upper, c.lower): c for c in conns}
+        self.weld = {(bid, w[1]): w for bid, ws in ex.welds.items() for w in ws}
+        assert set(self.weld) == set(self.conn), "weld pool vs stability.connections: %s / %s" % (
+            sorted(set(self.weld) - set(self.conn), key=str), sorted(set(self.conn) - set(self.weld), key=str))
+        b2n = ex.solver.mjc_body_to_newton.numpy()[0]
+        self.mj = {bid: int(np.where(b2n == b)[0][0]) for bid, b in ex.body.items()}
+        self.fired = {}                    # brick id -> sim time its welds fired
+        self.count = {k: 0 for k in self.weld}
+        self.enabled = True
+        self.breaks, self.u_peak_by_step, self.shear_torsion_peak_by_step = [], {}, {}
+
+    def fire(self, bid):
+        self.fired[bid] = self.ex.sim_time
+
+    def sample(self):
+        """{(brick, support): dict(u, edge, F, M, Fp, Mp, shear, torsion)} for every enabled weld, from the last
+        solver step. F, M: world, about the upper origin; Fp, Mp: patch centre, nominal axes."""
+        ex, d = self.ex, self.ex.solver.mjw_data
+        rows = weld_rows(ex.solver)
+        xpos, xmat = d.xpos.numpy()[0], d.xmat.numpy()[0]
+        out = {}
+        for (bid, sid), w in self.weld.items():
+            if not w[3]:
+                continue
+            up = self.mj[bid]
+            F, M = brick_wrench(ex.solver, ex.model, w[0], rows[w[0]], ex.body[bid], xmat[up])
+            conn = self.conn[(bid, sid)]
+            if sid is None:
+                c, R = conn.centre, np.eye(3)
+            else:
+                lo, (p_nom, yaw, _) = self.mj[sid], ex.target[sid]
+                R_nom = rotmat(qz(yaw))
+                c = xpos[lo] + xmat[lo] @ R_nom.T @ (conn.centre - p_nom)
+                R = R_nom @ xmat[lo].T
+            Fp, Mp = R @ F, R @ (M + np.cross(xpos[up] - c, F))
+            out[(bid, sid)] = dict(u=float(conn.patch.utilization(Fp[2], Mp[0], Mp[1])),
+                                   edge=conn.patch.critical_edge(Fp[2], Mp[0], Mp[1]), F=F, M=M, Fp=Fp, Mp=Mp,
+                                   shear=float(np.hypot(Fp[0], Fp[1])), torsion=float(Mp[2]))
+        return out
+
+    def update(self):
+        ex = self.ex
+        if not self.enabled or ex.failure or not any(w[3] for w in self.weld.values()):
+            return                         # off once anything has failed (also under --continue)
+        step = -1 if ex.b_step is None else ex.b_step
+        broke = []
+        for pair, r in self.sample().items():
+            pk = self.u_peak_by_step
+            pk[step] = max(pk.get(step, 0.0), r["u"])
+            st = self.shear_torsion_peak_by_step.setdefault(step, [0.0, 0.0])
+            st[0], st[1] = max(st[0], r["shear"]), max(st[1], abs(r["torsion"]))
+            if ex.sim_time - self.fired[pair[0]] < BREAK_SETTLE_S - 1e-9:
+                continue
+            self.count[pair] = self.count[pair] + 1 if r["u"] >= U_BREAK else 0
+            if self.count[pair] >= BREAK_SAMPLES:
+                broke.append((pair, r))
+        for pair, r in broke:
+            self.break_weld(pair, r)
+        if broke:
+            ex.fail("joint_break")          # after every weld that broke this frame is off (fixes `built`)
+
+    def break_weld(self, pair, r):
+        ex, (bid, sid) = self.ex, pair
+        w = self.weld[pair]
+        en = ex.model.equality_constraint_enabled.numpy()
+        en[w[0]] = False
+        ex.model.equality_constraint_enabled.assign(en)
+        ex.solver.notify_model_changed(newton.solvers.SolverNotifyFlags.CONSTRAINT_PROPERTIES)
+        w[3] = False
+        ex.set_group(ex.shapes_of[bid], 1)  # back to the default group: the brick collides with the structure
+        lst = lambda v: [round(float(x), 6) for x in v]
+        self.breaks.append(dict(frame=ex.frame, t=round(ex.sim_time, 4), step=ex.b_step, pair=[bid, sid],
+                                u=round(r["u"], 4), critical_edge=r["edge"],
+                                wrench=dict(F=lst(r["F"]), M=lst(r["M"]), F_patch=lst(r["Fp"]), M_patch=lst(r["Mp"])),
+                                A_phase=ex.A.phase, B_phase=ex.B.phase))
+        print("  BREAK %s on %s: u %.3f, frame %d, step %s" % (bid, sid, r["u"], ex.frame, ex.b_step))
+
+
 class Example:
     def __init__(self, viewer, args):
         self.viewer, self.args = viewer, args
@@ -251,6 +396,8 @@ class Example:
         self.sim_time = 0.0
 
         self.plan, self.name = make_plan(args)
+        self.failure = self.failed_at_step = self.built_at_failure = None   # end at the first failure (see fail())
+        self.stopped = False                  # the arms were sent home after a failure
         bricks = {b["id"]: b for b in self.plan["bricks"]}
         steps = self.plan["sequence"]
         top = max(s["target_pose"][2] for s in steps) + P.BRICK_H
@@ -353,6 +500,7 @@ class Example:
         self.control = self.model.control()
         self.contacts = self.pipeline.contacts()
         newton.eval_fk(self.model, self.model.joint_q, self.model.joint_qd, self.state_0)
+        self.breaker = JointBreaker(self)
 
         # --- IK: both arms in one batched solve, each in its own base frame ---
         self.ik_q = wp.array(np.tile(park_q, (2, 1)), dtype=wp.float32)
@@ -415,6 +563,13 @@ class Example:
     def schedule(self):
         """Hand the next plan step to B; send A to brace when that step needs it."""
         steps = self.plan["sequence"]
+        if self.failure and not getattr(self.args, "continue_", False):
+            if not self.stopped:                   # end at the first failure: nothing more is queued
+                self.stopped = True
+                for arm in (self.A, self.B):
+                    self.abort(arm)
+                print("FAILURE %s at step %s: arms open and park" % (self.failure, self.failed_at_step))
+            return
         if self.B.idle() and not self.done:
             if self.next_step < len(steps):
                 self.b_step = self.next_step
@@ -429,6 +584,25 @@ class Example:
             s = steps[self.b_step]
             if s["requires_brace"] and self.b_step not in self.braced:
                 self.queue_brace(self.b_step, s["brace"])
+
+    def abort(self, arm):
+        """Drop the queue: open the fingers where the hand is, rise, park."""
+        p, yaw, _, tilt = arm.cmd
+        arm.moves.clear()
+        arm.cur = None
+        arm.push("abort", p, yaw, 0.03, 0.4, tilt=tilt)
+        arm.push("abort", [p[0], p[1], max(p[2], self.z_travel)], yaw, 0.03, 1.0, tilt=tilt)
+        arm.push("park", self.parks[arm], 0.0, 0.03, 1.5)
+
+    def fail(self, reason):
+        """The first failure of the build: a gate miss, joint break, divergence (or, later, wait timeout)."""
+        if self.failure is None:
+            self.failure, self.failed_at_step = reason, self.b_step
+            self.built_at_failure = self.built()
+
+    def built(self):
+        """Bricks placed with all their welds intact."""
+        return sum(all(w[3] for w in ws) for ws in self.welds.values())
 
     def queue_place(self, s):
         bid = s["brick_id"]
@@ -509,10 +683,10 @@ class Example:
         B.bias[:] = self.hand_off + [*self.i_xy, 0.0]
 
     # -- clutch -----------------------------------------------------------------
-    def set_group(self, shapes):
-        """Put shapes in STRUCT_GROUP, in place: a captured graph reads the array contents."""
+    def set_group(self, shapes, group=STRUCT_GROUP):
+        """Put shapes in `group` (STRUCT_GROUP; 1 = default again), in place: a captured graph reads the array contents."""
         g = self.model.shape_collision_group.numpy()
-        g[shapes] = STRUCT_GROUP
+        g[shapes] = group
         self.model.shape_collision_group.assign(g)
 
     def snap(self, s):
@@ -529,7 +703,9 @@ class Example:
               and dyaw < GATE["yaw_deg"] and tilt < GATE["yaw_deg"])
         self.last_gate = {"brick": bid, "lateral_mm": round(lateral, 2), "dz_mm": round(dz, 2),
                           "yaw_deg": round(dyaw, 2), "tilt_deg": round(tilt, 2)}
+        after = self.failure is not None      # only under --continue
         if ok:
+            self.breaker.fire(bid)
             en = self.model.equality_constraint_enabled.numpy()
             for w in self.welds[bid]:
                 en[w[0]] = True
@@ -537,6 +713,8 @@ class Example:
             self.model.equality_constraint_enabled.assign(en)
             self.solver.notify_model_changed(newton.solvers.SolverNotifyFlags.CONSTRAINT_PROPERTIES)
             self.set_group(self.shapes_of[bid])
+        else:
+            self.fail("gate_miss")
         brace = s["brace"] if s["requires_brace"] else None
         row = {"run_id": "%s_%s" % (self.name, self.plan["validation"]["bracing_strategy"]),
                "structure": self.name, "brick_id": bid, "step": s["step"],
@@ -546,7 +724,7 @@ class Example:
                "tilt_deg": self.last_gate["tilt_deg"], "sim_time_s": round(self.sim_time, 2),
                "brace_active": brace is not None,
                "brace_target": brace["target_brick_id"] if brace else None,
-               "failure_mode": None if ok else "gate"}
+               "failure_mode": None if ok else "gate", "after_failure": after}
         self.episodes.append(row)
         self.snap_gates.append(dict(self.last_gate, ok=ok, sim_time_s=round(self.sim_time, 3)))
         with self.log_path.open("a") as f:
@@ -575,6 +753,7 @@ class Example:
     def step(self):
         body_q = self.state_0.body_q.numpy()
         if not np.isfinite(body_q).all():
+            self.fail("divergence")
             raise RuntimeError("simulation diverged at t=%.2f s (step %s, B %s, A %s)"
                                % (self.sim_time, self.b_step, self.B.phase, self.A.phase))
         self.schedule()
@@ -609,12 +788,13 @@ class Example:
             self.simulate()
         self.sim_time += self.frame_dt
         self.frame += 1
+        self.breaker.update()
         if self.monitor:
             self.monitor.step(self)
         if self.inserts is not None and (self.B.phase == "insert" or self.A.phase in ("brace", "hold")):
             self.inserts.append((self.frame, self.state_0.joint_q.numpy()[:18].copy(), self.A.phase,
                                  self.B.phase, -1 if self.b_step is None else self.b_step))
-        if (self.done and self.B.idle() and self.A.idle() and getattr(self.args, "viewer", None) == "null"):
+        if ((self.done or self.stopped) and self.B.idle() and self.A.idle() and getattr(self.args, "viewer", None) == "null"):
             self.viewer.num_frames = self.viewer.frame_count + 1   # null viewer: stop when finished
 
     def render(self):
@@ -666,6 +846,8 @@ class Example:
     def test_final(self):
         n = len(self.plan["sequence"])
         ok = sum(e["success"] for e in self.episodes)
+        assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+                                                                   self.built_at_failure)
         assert self.done, "only reached step %s of %d" % (self.b_step, n)
         assert ok == n, "%d / %d snapped: %s" % (ok, n, [e for e in self.episodes if not e["success"]])
         body_q = self.state_0.body_q.numpy()
@@ -691,7 +873,14 @@ class Example:
                 "events": events,
                 "displaced": sorted({e["brick"] for e in events if e["class"] == "displaced"}),
                 "snaps": self.snap_gates,   # dz_mm: at the moment |dz| < 1.5 mm welds the brick
-                "brace_required": self.plan["validation"]["brace_required_count"]}
+                "brace_required": self.plan["validation"]["brace_required_count"],
+                "continue": bool(getattr(a, "continue_", False)), "failure": self.failure,
+                "failed_at_step": self.failed_at_step,
+                "built": self.built() if self.failure is None else self.built_at_failure,
+                "breaks": self.breaker.breaks,
+                "u_peak_by_step": {k: round(v, 4) for k, v in self.breaker.u_peak_by_step.items()},
+                "shear_torsion_peak_by_step": {k: [round(x, 5) for x in v] for k, v in
+                                               self.breaker.shear_torsion_peak_by_step.items()}}
 
     def finish(self, error=None):
         """After the run (also after a failed one): write --p0-out and --record-inserts."""
@@ -771,6 +960,8 @@ if __name__ == "__main__":
                         choices=["none", "nearest", "weakest_joint"])
     parser.add_argument("--brace-model", default="grasp_lp", choices=["grasp_lp", "lever_press"],
                         help="planner.build_plan brace model")
+    parser.add_argument("--continue", dest="continue_", action="store_true",
+                        help="do not stop at the first failure; the break model is off after it, later rows are after_failure")
     parser.add_argument("--monitor", action="store_true", help="attach the sec 2.4 contact monitor")
     parser.add_argument("--p0-out", type=Path, help="append one P0 baseline row (JSONL); implies --monitor")
     parser.add_argument("--repeat", type=int, default=0, help="repeat index, recorded in the P0 row")

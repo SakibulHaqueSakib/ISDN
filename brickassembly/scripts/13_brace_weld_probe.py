@@ -39,6 +39,14 @@ results/v4/j/. Run from brickassembly/; parts B/C/S leave plans/*.json and resul
     bash scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 20000
     bash scripts/run.sh scripts/13_brace_weld_probe.py --part s --shape cube --viewer null --test --num-frames 20000 --quiet
     bash scripts/run.sh scripts/13_brace_weld_probe.py --part s --shape cube --no-group --viewer null --test --num-frames 20000 --quiet
+
+Plan v4 r5, step S2 + gate J-c (break rule, dual_arm_sim.JointBreaker). TEST FIXTURE: body forces on weld-held bricks
+in grouped static scenes, never an executor path. Run from brickassembly/ (-> results/v4/j/j_c.json):
+    bash scripts/run.sh scripts/13_brace_weld_probe.py --part d --viewer null
+  Cube smoke build (8/8, 0 breaks) and arch --strategy none (11/11, 0 breaks); restore plans/sim_*.json and
+  results/proto_episodes.jsonl afterwards:
+    bash scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 20000
+    bash scripts/run.sh dual_arm_sim.py --shape arch --strategy none --viewer null --test --num-frames 40000
 """
 
 import argparse
@@ -536,32 +544,19 @@ def j_a_gates(rows, summ, path, torquescale):
 
 
 # --- Part C: weld constraint wrench from the solver ---------------------------
-EQUALITY = 0                                                    # mujoco.mjtConstraint.mjCNSTR_EQUALITY
+EQUALITY = D.EQUALITY
 
 
 def weld_rows(st):
-    """{newton weld idx: (f6 constraint-space force, pos residual 6)} from mjw_data.efc."""
-    d = st.solver.mjw_data
-    nefc = int(d.nefc.numpy()[0])
-    typ, ids = d.efc.type.numpy()[0, :nefc], d.efc.id.numpy()[0, :nefc]
-    frc, pos = d.efc.force.numpy()[0, :nefc], d.efc.pos.numpy()[0, :nefc]
-    m = st.solver.mjc_eq_to_newton_eq.numpy()[0]
-    out = {}
-    for mid in sorted(set(ids[typ == EQUALITY])):
-        rows = np.where((typ == EQUALITY) & (ids == mid))[0]
-        assert len(rows) == 6 and rows.max() - rows.min() == 5, (mid, rows)   # one 6-row block per weld
-        out[int(m[mid])] = (frc[rows].astype(float), pos[rows].astype(float), int(rows.min()), int(mid))
-    return out
+    """{newton weld idx: (f6 constraint-space force, pos residual 6, first row, mujoco eq id)} from mjw_data.efc
+    (moved to dual_arm_sim.weld_rows, plan_v4 r5 S2)."""
+    return D.weld_rows(st.solver)
 
 
 def brick_wrench(st, k, w, eq=None):
-    """Wrench the weld exerts ON brick k (body2), about the brick origin, world frame.
-    MuJoCo's efc force acts on body1 as +J^T f, so on body2 it is -f. The 3 rotational rows are
-    0.5 * torquescale * R2^T-rotated (quaternion-error Jacobian), hence torque = 0.5 * ts * R2 f_rot."""
-    f, _, _, _ = w
-    ts = float(st.model.equality_constraint_torquescale.numpy()[st.welds[k] if eq is None else eq])
-    q = st.q(k)
-    return -f[:3], -0.5 * ts * D.rotate(q[3:], f[3:6])
+    """Wrench the weld exerts ON brick k (body2), about the brick origin, world frame (dual_arm_sim.brick_wrench:
+    the rotational rows use the solve-time orientation, mjw_data.xmat)."""
+    return D.brick_wrench(st.solver, st.model, st.welds[k] if eq is None else eq, w, st.body[k])
 
 
 def expected_wrench(st, k, ext_n, ext_f):
@@ -888,9 +883,9 @@ class SmokeExample(D.Example):
         self.sb = self.model.shape_body.numpy()
         self.rows = []
 
-    def set_group(self, shapes):
+    def set_group(self, shapes, group=D.STRUCT_GROUP):
         if self.group:
-            super().set_group(shapes)
+            super().set_group(shapes, group)
 
     def step(self):
         super().step()
@@ -1589,9 +1584,386 @@ def _print_case(c):
 
 
 # =============================================================================
+# Part D -- J-c: the break rule on test-fixture body forces (plan_v4 r5, S2)
+# =============================================================================
+LAYOUT["pull2"] = [(0, 0), (0, 1)]                     # a 2x4 on a 2x4 on the plate
+UP, DOWN = np.array([0.0, 0.0, 1.0]), np.array([0.0, 0.0, -1.0])
+RAMP_HOLD_S = 120                                      # frames of settle before a ramp / pulse
+
+
+class Fixture:
+    """A grouped static scene as the `ex` of a JointBreaker (TEST FIXTURE: body forces, never the executor)."""
+
+    def __init__(self, kind, substeps=16):
+        self.st = st = Static(kind, "solimp9999", substeps, group=True)
+        self.model, self.solver = st.model, st.solver
+        nm = lambda n: "b%d" % n
+        sb = self.model.shape_body.numpy()
+        self.body = {nm(n): st.body[n] for n in range(len(st.body))}
+        self.shapes_of = {nm(n): np.flatnonzero(sb == st.body[n]) for n in range(len(st.body))}
+        self.target = {nm(n): (b["p"], 0.0, False) for n, b in enumerate(st.bricks)}
+        self.welds, self.geo, conns = {}, {}, []
+        for info in st.weld_info:
+            n, lo = info["up"], info["lo"]
+            self.welds.setdefault(nm(n), []).append([info["eq"], None if lo < 0 else nm(lo), None, True])
+            patch, cl = patch_of(st, n, lo)
+            R_n = rotmat(st.bricks[n]["q"])
+            c_w = st.bricks[n]["p"] + R_n @ cl
+            self.geo[info["eq"]] = (patch, c_w, R_n)
+            conns.append(ST.Connection(nm(n), None if lo < 0 else nm(lo), frozenset(), c_w, patch))
+        self.top = len(st.body) - 1
+        self.frame, self.sim_time, self.b_step, self.failure = 0, 0.0, None, None
+        self.A = self.B = argparse.Namespace(phase="fixture")
+        self.breaker = D.JointBreaker(self, conns)
+        for bid in self.welds:
+            self.breaker.fire(bid)                       # every weld "fired" at t = 0
+        self.peaks = {}                                  # pair -> peak u / shear / torsion over the end-of-frame samples
+
+    def set_group(self, shapes, group=D.STRUCT_GROUP):
+        D.Example.set_group(self, shapes, group)
+
+    def fail(self, reason):
+        self.failure = self.failure or reason
+
+    def pair(self, info):
+        return ("b%d" % info["up"], None if info["lo"] < 0 else "b%d" % info["lo"])
+
+    def force(self, f, tau=(0.0, 0.0, 0.0)):
+        self.st.set_force(self.top, np.asarray(f, float), np.asarray(tau, float))
+
+    def frame_end(self, update=True):
+        """After a frame has run: advance the clock, take the end-of-frame samples, apply the break rule."""
+        self.frame += 1
+        self.sim_time += 1.0 / 60
+        smp = self.breaker.sample()
+        for k, r in smp.items():
+            p = self.peaks.setdefault(k, dict(u=0.0, shear_N=0.0, torsion_mNm=0.0))
+            p["u"], p["shear_N"] = max(p["u"], r["u"]), max(p["shear_N"], r["shear"])
+            p["torsion_mNm"] = max(p["torsion_mNm"], abs(r["torsion"]) * 1e3)
+        if update:
+            self.breaker.update()
+        return smp
+
+    def run_frame(self, update=True):
+        """One graphed frame (what the executor runs)."""
+        self.st.run(1)
+        return self.frame_end(update)
+
+    def run_substeps(self, force_at=None, sub=None, update=True):
+        """One ungraphed frame; force_at(ss) runs before substep ss, sub(ss, sample) after it."""
+        st = self.st
+        st.pipeline.collide(st.state_0, st.contacts)
+        for ss in range(st.substeps):
+            if force_at:
+                force_at(ss)
+            st.solver.step(st.state_0, st.state_1, st.control, st.contacts, st.dt)
+            st.state_0, st.state_1 = st.state_1, st.state_0
+            if sub:
+                sub(ss, self.breaker.sample())
+        return self.frame_end(update)
+
+    def an_u(self, f, tau=(0.0, 0.0, 0.0)):
+        """{pair: analytic u} of the applied load (f, tau on the top brick) plus gravity, nominal geometry
+        (single-parent chains only)."""
+        st, tau = self.st, np.asarray(tau, float)
+        loads = nominal_loads(st, self.top, f, tau)
+        out = {}
+        for info in st.weld_info:
+            n, (patch, c_w, R_n) = info["up"], self.geo[info["eq"]]
+            Fa, Ma = analytic_on(st, n, loads, self.top, tau)
+            Fp, Mp = to_patch(st, n, c_w, R_n, Fa, Ma, st.bricks[n]["p"])
+            out[self.pair(info)] = float(patch.utilization(Fp[2], Mp[0], Mp[1]))
+        return out
+
+    def load_at(self, direction, u_target):
+        """Load along `direction` (N) at which the largest analytic u equals u_target."""
+        lo, hi = 0.0, 500.0
+        for _ in range(60):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if max(self.an_u(direction * mid).values()) < u_target else (lo, mid)
+        return 0.5 * (lo + hi)
+
+    def close(self):
+        del self.st, self.breaker
+
+
+def _pk(k):
+    return "%s<-%s" % k
+
+
+def ramp(kind, direction, rate, enforce, ungraphed, u_stop=1.3, tau_fn=None):
+    """Load ramp (N/s along `direction`) on the top brick after RAMP_HOLD_S settle frames. enforce=True: the break
+    rule is live and the ramp ends at the first break (graphed, as the executor runs it). enforce=False: the welds
+    cannot break; the ramp runs until the analytic u reaches u_stop, and (ungraphed) every substep is sampled too."""
+    fx = Fixture(kind)
+    for _ in range(RAMP_HOLD_S):
+        fx.run_frame()
+    assert fx.failure is None, "broke during settle: %s" % fx.breaker.breaks
+    fx.breaker.enabled = enforce
+    rows, k = [], 0
+    while True:
+        k += 1
+        F = rate * k / 60.0
+        tau = tau_fn(F) if tau_fn else (0.0, 0.0, 0.0)
+        fx.force(direction * F, tau)
+        subm = {}
+        if ungraphed:
+            def cb(ss, smp):
+                for p, r in smp.items():
+                    subm[p] = max(subm.get(p, 0.0), r["u"])
+            smp = fx.run_substeps(sub=cb, update=enforce)
+        else:
+            smp = fx.run_frame(update=enforce)
+        au = fx.an_u(direction * F, tau) if kind != "bridge" else {}
+        rows.append(dict(frame=fx.frame, F=F, u=({_pk(p): r["u"] for p, r in smp.items()}),
+                         u_an={_pk(p): v for p, v in au.items()}, u_sub_max={_pk(p): v for p, v in subm.items()}))
+        if fx.failure or (not enforce and max(au.values()) >= u_stop) or F > 400:
+            break
+    out = dict(rows=rows, breaks=fx.breaker.breaks, peaks={_pk(p): v for p, v in fx.peaks.items()})
+    fx.close()
+    return out
+
+
+def first_over(rows, key="u"):
+    """(F, frame, weld) of the first frame with two consecutive end-of-frame u >= 1 (the frame rule) and of the
+    first single sample >= 1, per weld, then the earliest of each."""
+    best = {}
+    for w in rows[0][key]:
+        s = [r[key][w] for r in rows]
+        one = next((i for i, x in enumerate(s) if x >= D.U_BREAK), None)
+        two = next((i for i in range(len(s) - 1) if s[i] >= D.U_BREAK and s[i + 1] >= D.U_BREAK), None)
+        best[w] = dict(first_sample_F=None if one is None else rnd(rows[one]["F"], 2),
+                       two_consecutive_F=None if two is None else rnd(rows[two + 1]["F"], 2))
+    return best
+
+
+def ratio_stats(pairs, floor=0.5):
+    """pairs: [(end-of-frame u, max-over-substeps u)] -> distribution of max_sub / eof where eof >= floor, plus the
+    frames where the substep maximum reached U_BREAK and the end-of-frame sample did not."""
+    r = np.array([s / e for e, s in pairs if e >= floor])
+    return dict(n_frames=len(pairs), n_ratio=len(r), floor=floor,
+                p50=rnd(np.percentile(r, 50), 4) if len(r) else None, p95=rnd(np.percentile(r, 95), 4) if len(r) else None,
+                p99=rnd(np.percentile(r, 99), 4) if len(r) else None, max=rnd(r.max(), 4) if len(r) else None,
+                frames_sub_ge1=sum(s >= D.U_BREAK for e, s in pairs), frames_eof_ge1=sum(e >= D.U_BREAK for e, s in pairs),
+                frames_sub_ge1_eof_lt1=sum(s >= D.U_BREAK > e for e, s in pairs))
+
+
+def ramp_ratio_pairs(rows):
+    return [(r["u"][w], r["u_sub_max"][w]) for r in rows for w in r["u"]]
+
+
+def dwell(kind, direction, levels=(0.90, 0.95, 0.98, 1.00), settle=30, frames=120):
+    """Hold the load at analytic u = level (breaker off) and record the raw end-of-frame u of every weld."""
+    fx = Fixture(kind)
+    fx.breaker.enabled = False
+    for _ in range(RAMP_HOLD_S):
+        fx.run_frame()
+    out = {}
+    for lv in levels:
+        F = fx.load_at(direction, lv)
+        au = fx.an_u(direction * F)
+        crit = max(au, key=au.get)
+        fx.force(direction * F)
+        for _ in range(settle):
+            fx.run_frame(update=False)
+        u = np.array([fx.run_frame(update=False)[crit]["u"] for _ in range(frames)])
+        over = u >= D.U_BREAK
+        smp = fx.run_frame(update=False)              # readout vs statics of the DEFORMED chain (actual poses)
+        stat = {}
+        for info in fx.st.weld_info:
+            Fe, Me = expected_wrench(fx.st, info["up"], fx.top, direction * F)
+            r = smp[fx.pair(info)]
+            stat[_pk(fx.pair(info))] = dict(F_err_mN=rnd(np.linalg.norm(r["F"] - Fe) * 1e3, 4), F_mN=rnd(np.linalg.norm(Fe) * 1e3, 1),
+                                            M_err_mNm=rnd(np.linalg.norm(r["M"] - Me) * 1e3, 4), M_mNm=rnd(np.linalg.norm(Me) * 1e3, 3))
+        tip = fx.st.q(fx.top)[:3] - fx.st.bricks[fx.top]["p"]
+        out["%.2f" % lv] = dict(load_N=rnd(F, 3), deformed_statics=stat, top_brick_disp_mm=[rnd(x * 1e3, 4) for x in tip], weld=_pk(crit), u_an=rnd(au[crit], 5), u_mean=rnd(u.mean(), 5),
+                                u_std=rnd(u.std(), 5), u_min=rnd(u.min(), 5), u_max=rnd(u.max(), 5),
+                                mean_minus_an=rnd(u.mean() - au[crit], 5), frames=frames,
+                                frames_ge1=int(over.sum()), two_consecutive_ge1=int((over[:-1] & over[1:]).sum()),
+                                u_series=[rnd(x, 4) for x in u])
+    fx.close()
+    return out
+
+
+def band(rows, weld, lo=0.9, hi=1.0):
+    """Raw end-of-frame u vs analytic u for the frames with lo <= analytic u <= hi (the near-threshold band)."""
+    b = [(r["F"], r["u_an"][weld], r["u"][weld]) for r in rows if lo <= r["u_an"][weld] <= hi]
+    d = np.array([u - a for _, a, u in b])
+    return dict(weld=weld, band=[lo, hi], n_frames=len(b), series=[[rnd(F, 2), rnd(a, 4), rnd(u, 4)] for F, a, u in b],
+                mean_err=rnd(d.mean(), 5) if len(d) else None, std_err=rnd(d.std(), 5) if len(d) else None,
+                min_err=rnd(d.min(), 5) if len(d) else None, max_err=rnd(d.max(), 5) if len(d) else None)
+
+
+def pulse(dur, phase, u_pulse=1.5, kind="pull2"):
+    """Upward force worth analytic u = u_pulse on the top brick for `dur` substeps, starting `phase` substeps into a
+    frame; the break rule live; every substep sampled. Detected = the rule broke a weld."""
+    fx = Fixture(kind)
+    F = fx.load_at(UP, u_pulse)
+    for _ in range(RAMP_HOLD_S):
+        fx.run_frame()
+    assert fx.failure is None
+    nf = (phase + dur + fx.st.substeps - 1) // fx.st.substeps + 4
+    on = [False]
+    eof, sub_max = [], []
+    for f in range(nf):
+        def force_at(ss):
+            k = f * fx.st.substeps + ss
+            want = phase <= k < phase + dur
+            if want != on[0]:
+                fx.force(UP * F if want else (0.0, 0.0, 0.0))
+                on[0] = want
+        m = {}
+        def cb(ss, smp):
+            for p, r in smp.items():
+                m[p] = max(m.get(p, 0.0), r["u"])
+        smp = fx.run_substeps(force_at, cb)
+        eof.append({_pk(p): r["u"] for p, r in smp.items()})
+        sub_max.append({_pk(p): v for p, v in m.items()})
+    o = dict(dur=dur, phase=phase, load_N=rnd(F, 3), detected=bool(fx.breaker.breaks), breaks=fx.breaker.breaks,
+             eof_u_max=rnd(max(max(e.values(), default=0.0) for e in eof), 4),
+             sub_u_max=rnd(max(max(e.values(), default=0.0) for e in sub_max), 4),
+             pairs=[(e[w], sm[w]) for e, sm in zip(eof, sub_max) for w in sm if w in e], peaks={_pk(p): v for p, v in fx.peaks.items()})
+    fx.close()
+    return o
+
+
+def part_d(args):
+    OUTJ.mkdir(parents=True, exist_ok=True)
+    res = dict(gate="J-c", fixture="TEST FIXTURE: body forces (state.body_f) on weld-held bricks in grouped static scenes (solimp9999, "
+                     "16 substeps, plate + bricks in STRUCT_GROUP), break rule = dual_arm_sim.JointBreaker; never an executor path",
+               rule=dict(U_BREAK=D.U_BREAK, BREAK_SAMPLES=D.BREAK_SAMPLES, BREAK_SETTLE_S=D.BREAK_SETTLE_S,
+                         readout="raw end-of-frame u from mjw_data.efc.force, solve-time pose"))
+    from sim.joint_model.capacity import grid_patch
+    cap = float(grid_patch(4, 2).pull_capacity())
+
+    # (i) 2x4 on 2x4 pull-up ramp, 60 N/s
+    print("\n=== (i) 2x4 on 2x4, pull-up ramp 60 N/s")
+    g = ramp("pull2", UP, 60.0, enforce=True, ungraphed=False)
+    fx = Fixture("pull2")
+    F_an = fx.load_at(UP, 1.0)
+    fx.close()
+    bk = g["breaks"][0]
+    F_b = next(r["F"] for r in g["rows"] if r["frame"] == bk["frame"])
+    i = dict(rate_N_s=60.0, target_N=rnd(cap, 3), analytic_u1_load_N=rnd(F_an, 3), first_break=dict(pair=bk["pair"], u=bk["u"], frame=bk["frame"]),
+             break_load_N=rnd(F_b, 3), rel_err_vs_target=rnd((F_b - cap) / cap, 4), pass_5pct=bool(abs(F_b - cap) <= 0.05 * cap),
+             first_sample_over=first_over(g["rows"]), peaks=g["peaks"], n_breaks=len(g["breaks"]), breaks=g["breaks"])
+    print("break %s at %.2f N (target %.2f, analytic u=1 %.2f): %+.2f %% -> %s" % (bk["pair"], F_b, cap, F_an,
+          100 * i["rel_err_vs_target"], "PASS" if i["pass_5pct"] else "FAIL"))
+    t = ramp("pull2", UP, 60.0, enforce=False, ungraphed=True)
+    crit = max(t["rows"][-1]["u_an"], key=t["rows"][-1]["u_an"].get)
+    i["readout"] = dict(band_ramp=band(t["rows"], crit), dwell=dwell("pull2", UP), ratio=ratio_stats(ramp_ratio_pairs(t["rows"])),
+                        first_over_ungraphed=first_over(t["rows"]), first_over_substep=first_over(t["rows"], "u_sub_max"))
+    res["i"] = i
+
+    # (ii) staircase cantilever, downward tip ramp
+    print("\n=== (ii) staircase cantilever, downward tip ramp 10 N/s")
+    g = ramp("cantilever", DOWN, 10.0, enforce=True, ungraphed=False)
+    fx = Fixture("cantilever")
+    F_an = fx.load_at(DOWN, 1.0)
+    au = fx.an_u(DOWN * F_an)
+    fx.close()
+    bk = g["breaks"][0]
+    F_b = next(r["F"] for r in g["rows"] if r["frame"] == bk["frame"])
+    ii = dict(rate_N_s=10.0, analytic_u1_load_N=rnd(F_an, 3), analytic_u_at_that_load={_pk(p): rnd(v, 4) for p, v in au.items()},
+              first_break=dict(pair=bk["pair"], u=bk["u"], frame=bk["frame"]), break_load_N=rnd(F_b, 3),
+              rel_err_vs_analytic=rnd((F_b - F_an) / F_an, 4), pass_5pct=bool(abs(F_b - F_an) <= 0.05 * F_an),
+              first_sample_over=first_over(g["rows"]), peaks=g["peaks"], n_breaks=len(g["breaks"]), breaks=g["breaks"])
+    print("break %s at %.3f N (analytic u=1 %.3f): %+.2f %% -> %s" % (bk["pair"], F_b, F_an, 100 * ii["rel_err_vs_analytic"],
+          "PASS" if ii["pass_5pct"] else "FAIL"))
+    t = ramp("cantilever", DOWN, 10.0, enforce=False, ungraphed=True)
+    crit = max(au, key=au.get)
+    ii["readout"] = dict(critical_weld=_pk(crit), band_ramp=band(t["rows"], _pk(crit)), dwell=dwell("cantilever", DOWN),
+                         ratio=ratio_stats(ramp_ratio_pairs(t["rows"])), first_over_ungraphed=first_over(t["rows"]),
+                         first_over_substep=first_over(t["rows"], "u_sub_max"))
+    res["ii"] = ii
+
+    # (iii) column, 1 N lateral for 5 s
+    print("\n=== (iii) column, 1 N lateral for 5 s")
+    fx = Fixture("column")
+    for _ in range(RAMP_HOLD_S):
+        fx.run_frame()
+    fx.force((1.0, 0.0, 0.0))
+    upk = 0.0
+    for _ in range(300):
+        smp = fx.run_frame()
+        upk = max(upk, max(r["u"] for r in smp.values()) if smp else 0.0)
+    au = fx.an_u(np.array([1.0, 0.0, 0.0]))
+    res["iii"] = dict(load_N=1.0, seconds=5.0, n_breaks=len(fx.breaker.breaks), breaks=fx.breaker.breaks, pass_zero_breaks=not fx.breaker.breaks,
+                      u_peak=rnd(upk, 5), u_analytic={_pk(p): rnd(v, 5) for p, v in au.items()}, peaks={_pk(p): v for p, v in fx.peaks.items()})
+    print("breaks %d, u peak %.4f -> %s" % (res["iii"]["n_breaks"], upk, "PASS" if res["iii"]["pass_zero_breaks"] else "FAIL"))
+    fx.close()
+
+    # (iv) bridge, eccentric pull-up ramp: the upward force acts e = 12 mm from the top brick's centre along +x (force at
+    # the COM plus the couple tau_y = -e F)
+    print("\n=== (iv) bridge, eccentric ramp 60 N/s")
+    E = 0.012
+    g = ramp("bridge", UP, 60.0, enforce=True, ungraphed=False, tau_fn=lambda F: (0.0, -E * F, 0.0))
+    bk = g["breaks"][0]
+    F_b = next(r["F"] for r in g["rows"] if r["frame"] == bk["frame"])
+    fx = Fixture("bridge")
+    lp = bridge_lp(fx, E)
+    fx.close()
+    res["iv"] = dict(rate_N_s=60.0, eccentricity_m=E, first_break=dict(pair=bk["pair"], u=bk["u"], frame=bk["frame"]),
+                     break_load_N=rnd(F_b, 3), u_at_break_frames=[{k: rnd(v, 4) for k, v in r["u"].items()} for r in g["rows"][-4:]],
+                     lp=lp, peaks=g["peaks"], n_breaks=len(g["breaks"]), breaks=g["breaks"])
+    print("first break %s at %.2f N; LP s=1 at %.2f N, weakest %s" % (bk["pair"], F_b, lp["load_s1_N"], lp["weakest_at_s1"]))
+
+    # (v) pulses, and (vi) their end-of-frame vs substep distribution
+    print("\n=== (v) pulses at analytic u = 1.5")
+    v = []
+    for dur in (1, 8, 16, 24, 40, 60):
+        for phase in (0, 4, 8, 12):
+            o = pulse(dur, phase)
+            v.append(o)
+            print("  %2d substeps, phase %2d: %s (eof max %.3f, substep max %.3f)" % (dur, phase, "detected" if o["detected"] else "-", o["eof_u_max"], o["sub_u_max"]))
+    by = {}
+    for o in v:
+        by.setdefault(o["dur"], []).append(o["detected"])
+    ok_long = all(all(x) for d, x in by.items() if d >= 32)
+    none_short = not any(any(x) for d, x in by.items() if d <= 16)
+    res["v"] = dict(u_pulse=1.5, load_N=v[0]["load_N"], phases_substeps=[0, 4, 8, 12], detected_of_4={str(d): "%d/4" % sum(x) for d, x in by.items()},
+                    pass_ge32_all_detected=bool(ok_long), pass_le16_none_detected=bool(none_short), pass_=bool(ok_long and none_short),
+                    pulses=[{k: x for k, x in o.items() if k != "pairs"} for o in v])
+    res["vi_pulses"] = ratio_stats([p for o in v for p in o["pairs"]])
+    res["vi_pulses"]["per_duration_frames_sub_ge1_eof_lt1"] = {str(d): sum(pp[1] >= D.U_BREAK > pp[0] for o in v if o["dur"] == d for pp in o["pairs"]) for d in by}
+    res["vi"] = dict(i=res["i"]["readout"]["ratio"], ii=res["ii"]["readout"]["ratio"], v=res["vi_pulses"])
+    print("pulse rule: >=32 all detected %s, <=16 none detected %s" % (ok_long, none_short))
+    res["vii"] = dict(note="peak |shear| (N) and |torsion| (mN.m) at the patch centre, nominal axes, end-of-frame samples, per weld, per experiment (never used by the rule)",
+                      i=res["i"]["peaks"], ii=res["ii"]["peaks"], iii=res["iii"]["peaks"], iv=res["iv"]["peaks"],
+                      v=[dict(dur=o["dur"], phase=o["phase"], peaks=o["peaks"]) for o in v])
+    for o in res["v"]["pulses"]:
+        o.pop("peaks", None)
+    res["verdict"] = dict(i=res["i"]["pass_5pct"], ii=res["ii"]["pass_5pct"], iii=res["iii"]["pass_zero_breaks"], v=res["v"]["pass_"])
+    (OUTJ / "j_c.json").write_text(json.dumps(res, indent=1))
+    print("\nJ-c verdicts (pre-registered): %s -> %s" % (res["verdict"], OUTJ / "j_c.json"))
+
+
+def bridge_lp(fx, e):
+    """stability.analyze on the bridge (2x2 piers under a 2x4), the upward force F at the top brick's COM + e along x:
+    F at which the LP's minimax utilisation s = 1, and the weakest joint there."""
+    keep = P.VOXEL_ORIGIN
+    P.VOXEL_ORIGIN = (0.0, 0.0, D.Z0)
+    try:
+        bricks = [("p0", "2x2", 0, 0, 0, 0), ("p1", "2x2", 2, 0, 0, 0), ("top", "2x4", 0, 0, 1, 1)]
+        st = fx.st
+        pt = st.bricks[2]["p"] + st.com[2] + np.array([e, 0.0, 0.0])
+        run = lambda F: ST.analyze(bricks, loads=[("top", np.array([0.0, 0.0, F]), pt)])
+        lo, hi = 0.0, 400.0
+        for _ in range(50):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if run(mid).s < 1.0 else (lo, mid)
+        r = run(0.5 * (lo + hi))
+    finally:
+        P.VOXEL_ORIGIN = keep
+    return dict(load_s1_N=rnd(0.5 * (lo + hi), 3), weakest_at_s1="%s<-%s" % r.weakest, util_at_s1={"%s<-%s" % k: rnd(v, 4) for k, v in r.util.items()},
+                note="LP = lower-bound (best admissible distribution); the first weld break of a rigid indeterminate weld set need not match it")
+
+
+
+# =============================================================================
 if __name__ == "__main__":
     parser = newton.examples.create_parser()
-    parser.add_argument("--part", required=True, choices=["a", "b", "c", "s"])
+    parser.add_argument("--part", required=True, choices=["a", "b", "c", "s", "d"])
     parser.add_argument("--shape", choices=list(D.B.SAMPLES))
     parser.add_argument("--structure", choices=list(P.STRUCTURES))
     parser.add_argument("--strategy", default="weakest_joint", choices=["none", "nearest", "weakest_joint"])
@@ -1602,6 +1974,8 @@ if __name__ == "__main__":
     parser.add_argument("--torquescale", type=float, help="weld torquescale (default: Newton's), for the J-a branch")
     parser.add_argument("--samples", action="store_true", help="part c --group: write the per-frame readout series to j_b_samples.json")
     parser.add_argument("--diag", action="store_true", help="part c --group: chatter diagnostic (j_b_diag.json)")
+    parser.add_argument("--continue", dest="continue_", action="store_true",
+                        help="parts a/s: do not stop at the first failure (the pre-S2 behaviour)")
     parser.add_argument("--no-group", action="store_true", help="part s: leave the structure ungrouped (the comparison run)")
     parser.add_argument("--substeps", type=int, default=16, help="part C --group: substeps per frame")
     parser.add_argument("--suffix", default="", help="parts B/C --group: suffix of the j_a/j_b output files")
@@ -1619,6 +1993,8 @@ if __name__ == "__main__":
         part_s(args, viewer)
     elif args.part == "b":
         part_b(args)
+    elif args.part == "d":
+        part_d(args)
     elif args.group and args.diag:
         part_c_diag(args)
     elif args.group and args.samples:
