@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-183 entries. Later entries supersede earlier ones; retractions are marked.
+189 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -158,6 +158,26 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **deviated** `v4_jb_accepted_with_known_cause`
     - rationale: J-c shows the break decision lands within 2 % of the model near threshold (2x4 pull-off +1.77 %, cantilever -1.11 %) and no false break at analytic u 0.98 on the full 2x4 patch (0 of 120 frames >= 1; the cantilever, with its own +0.025 bias, reads 1.005 there); the cause is solver-side weld-force error of tens of mN (GPU solve exits after 1-2 iterations), not a readout defect (v4_j_b_chatter_diagn…
+
+- **result** `v4_j_pre`
+    - result: J-pre (plan v4 r5 Phase 2, segment 1; commit 245697b; scripts/13_brace_weld_probe.py part A, the r5 breakable joints, the legacy brace executor, grasp_lp, strategy weakest_joint, n = 1 per structure, descriptive). cube: placed 8/8, built 8, brace_required 0, no breaks, no failure, u peak by step at most 0.0339 (step 4), sim 74.88 s, 4493 frames. hollow_box: placed 12/12, built 12, brace_required 0…
+
+- **result** `v4_brace_executor_seg2`
+    - result: Phase 2 segment 2 (S3.1-S3.4): the grasp-and-hold brace with contact guard and the acyclic hand-off protocol (commit 73a4bd5), plus brace grip and mu plumbed into the LP (commit de853f3), run once on arch (new executor, and --legacy-brace as the control) and once on S3 (new executor), n = 1 each, descriptive. arch, new executor: placed 10/11, built 9, joint_break at step 10 (failure joint_break, c…
+
+- **problem** `v4_s3_step1_loss_divergence`
+    - finding: S3 with the r5 joints loses b_001 at step 1 (failure gate_miss, failed_at_step 1, built 1; snap lateral 240.87 mm, tilt 90.03 deg at 18.583 s in J-pre) and the simulation then diverges at t=37.42 s (step 3, B release, A park) in J-pre (results/v4/j/pre/j_pre.jsonl). The seg2 S3 run with the new brace executor (results/v4/j/seg2/S3_new.jsonl) shows the same: b_001 lost at step 1 (lateral 206.86 mm,…
+
+- **decided** `v4_brace_to_rl`
+    - outcome: hand-planned bracing stops; bracing goes to an RL workflow. Dropped from r5: S3.5 dry-run hands-fit, J-e, the G1/G5 brace gate items, and the fixed / none / legacy brace controls. Stays in the code, unused by default: the committed grasp-and-hold brace executor and the acyclic hand-off protocol (commit 73a4bd5), the grip and mu plumbing (de853f3), and --legacy-brace. Bracing becomes a separately p…
+    - rationale: J-pre and seg2 (v4_j_pre, v4_brace_executor_seg2): the hand-planned brace does not save the arch (legacy u 2.0862 in J-pre; new grasp-hold brace and hand-off protocol u 1.1365, still joint_break at step 10, 2 arm_arm events, realised grip 25.5 / 7.52 N against 14.3 N nominal, contact with 5 bricks while 2 were gripped), and the LP brace helps little at the executor's grip (S3 step 13 braced 1.9688…
+
+- **decided** `v4_pipeline_unbraced_now`
+    - outcome: the image -> structure pipeline runs unbraced now: no stabilizer (strategy none) and the r5 breakable joints; an overloaded joint breaks and ends the build (v4_build_ends_at_first_failure). This is the pipeline default until the RL bracing phase delivers a policy
+    - rationale: J-pre: cube 8/8 and hollow_box 12/12 need no brace and record no break (v4_j_pre); ledger v4_j_s0 (before the breakable joints) built the arch 11/11 with strategy none under both weld settings. Not shown by any file: an unbraced arch or S3 build under the r5 breakable joints; the planner's unbraced utilisation is 0.9458 for the arch (step 10) and 3.4311 for S3 (step 13), so an unbraced break is po…
+
+- **deviated** `v4_r5_phases_revised`
+    - rationale: v4_brace_to_rl and v4_pipeline_unbraced_now (user direction 2026-09-30): hand-planned bracing is dropped from v4's critical path, so J-e, S3.5, the brace gate items and the brace controls leave Phase 2; the image pipeline moves up into Phase 2
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
