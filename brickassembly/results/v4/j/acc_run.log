@@ -1,0 +1,315 @@
+== cube r0
+preflight: cube  4 x 4 studs x 4 layers, 8 bricks {'2x4': 8}, feeder slots 8 of 24
+k=3  GGHH  GGHH  GGHH  GGHH
+k=2  EEEE  EEEE  FFFF  FFFF
+k=1  CCDD  CCDD  CCDD  CCDD
+k=0  AAAA  AAAA  BBBB  BBBB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_cube_none.json
+cube: 8 bricks, 0 braced (none), 14 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.19, 'dz_mm': -0.3, 'yaw_deg': 0.01, 'tilt_deg': 0.03}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.17, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.1}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.05}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.09, 'dz_mm': -0.23, 'yaw_deg': 0.0, 'tilt_deg': 0.07}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.08, 'dz_mm': -0.24, 'yaw_deg': 0.0, 'tilt_deg': 0.03}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.09, 'dz_mm': -0.24, 'yaw_deg': 0.01, 'tilt_deg': 0.31}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.1, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.02}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.09, 'dz_mm': -0.21, 'yaw_deg': 0.02, 'tilt_deg': 0.54}
+done: 8 / 8 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_007)
+== cube r1
+preflight: cube  4 x 4 studs x 4 layers, 8 bricks {'2x4': 8}, feeder slots 8 of 24
+k=3  GGHH  GGHH  GGHH  GGHH
+k=2  EEEE  EEEE  FFFF  FFFF
+k=1  CCDD  CCDD  CCDD  CCDD
+k=0  AAAA  AAAA  BBBB  BBBB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_cube_none.json
+cube: 8 bricks, 0 braced (none), 14 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.19, 'dz_mm': -0.3, 'yaw_deg': 0.01, 'tilt_deg': 0.07}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.18, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.14}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.09, 'dz_mm': -0.23, 'yaw_deg': 0.0, 'tilt_deg': 0.05}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.08, 'dz_mm': -0.24, 'yaw_deg': 0.0, 'tilt_deg': 0.06}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.09, 'dz_mm': -0.23, 'yaw_deg': 0.0, 'tilt_deg': 0.44}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.0, 'tilt_deg': 0.05}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.09, 'dz_mm': -0.23, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+done: 8 / 8 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_007)
+== cube r2
+preflight: cube  4 x 4 studs x 4 layers, 8 bricks {'2x4': 8}, feeder slots 8 of 24
+k=3  GGHH  GGHH  GGHH  GGHH
+k=2  EEEE  EEEE  FFFF  FFFF
+k=1  CCDD  CCDD  CCDD  CCDD
+k=0  AAAA  AAAA  BBBB  BBBB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_cube_none.json
+cube: 8 bricks, 0 braced (none), 14 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.19, 'dz_mm': -0.3, 'yaw_deg': 0.01, 'tilt_deg': 0.06}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.17, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.14}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.03}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.11, 'dz_mm': -0.23, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.08, 'dz_mm': -0.24, 'yaw_deg': 0.0, 'tilt_deg': 0.05}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.09, 'dz_mm': -0.24, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.08, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.09, 'dz_mm': -0.22, 'yaw_deg': 0.02, 'tilt_deg': 0.46}
+done: 8 / 8 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_007)
+== arch r0
+preflight: arch  2 x 10 studs x 5 layers, 11 bricks {'2x2': 8, '2x4': 2, '2x6': 1}, feeder slots 11 of 24
+k=4  IIKKKKKKJJ  IIKKKKKKJJ
+k=3  GGGG..HHHH  GGGG..HHHH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_arch_none.json
+arch: 11 bricks, 0 braced (none), 12 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.29}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.12}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.03, 'tilt_deg': 0.1}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.33, 'yaw_deg': 0.02, 'tilt_deg': 0.34}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.52}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.38}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.29}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.1}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.17, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.26}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.16, 'dz_mm': -0.33, 'yaw_deg': 0.03, 'tilt_deg': 0.28}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.1, 'dz_mm': -0.17, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+done: 11 / 11 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_010)
+== arch r1
+preflight: arch  2 x 10 studs x 5 layers, 11 bricks {'2x2': 8, '2x4': 2, '2x6': 1}, feeder slots 11 of 24
+k=4  IIKKKKKKJJ  IIKKKKKKJJ
+k=3  GGGG..HHHH  GGGG..HHHH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_arch_none.json
+arch: 11 bricks, 0 braced (none), 12 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.15}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.2}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.14}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.33, 'yaw_deg': 0.02, 'tilt_deg': 0.4}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.33}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.32}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.23}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.11}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.16, 'dz_mm': -0.33, 'yaw_deg': 0.03, 'tilt_deg': 0.22}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.11, 'dz_mm': -0.17, 'yaw_deg': 0.01, 'tilt_deg': 0.08}
+done: 11 / 11 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_010)
+== arch r2
+preflight: arch  2 x 10 studs x 5 layers, 11 bricks {'2x2': 8, '2x4': 2, '2x6': 1}, feeder slots 11 of 24
+k=4  IIKKKKKKJJ  IIKKKKKKJJ
+k=3  GGGG..HHHH  GGGG..HHHH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_arch_none.json
+arch: 11 bricks, 0 braced (none), 12 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.21}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.19}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.14}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.33, 'yaw_deg': 0.02, 'tilt_deg': 0.44}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.12}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.22}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.01, 'tilt_deg': 0.11}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.16, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.12}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.16, 'dz_mm': -0.33, 'yaw_deg': 0.01, 'tilt_deg': 0.26}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.1, 'dz_mm': -0.16, 'yaw_deg': 0.01, 'tilt_deg': 0.17}
+done: 11 / 11 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_010)
+== hollow_box r0
+preflight: hollow_box  6 x 6 studs x 3 layers, 12 bricks {'1x4': 6, '1x6': 6}, feeder slots 12 of 24
+k=2  IIIIII  J....K  J....K  J....K  J....K  LLLLLL
+k=1  EFFFFG  E....G  E....G  E....G  E....G  EHHHHG
+k=0  AAAAAA  B....C  B....C  B....C  B....C  DDDDDD
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_hollow_box_none.json
+hollow_box: 12 bricks, 0 braced (none), 20 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.38, 'yaw_deg': 0.01, 'tilt_deg': 0.12}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.01, 'tilt_deg': 0.05}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.0, 'tilt_deg': 0.05}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.23, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.21, 'dz_mm': -0.22, 'yaw_deg': 0.07, 'tilt_deg': 0.36}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.25, 'dz_mm': -0.38, 'yaw_deg': 0.0, 'tilt_deg': 0.15}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.25, 'dz_mm': -0.21, 'yaw_deg': 0.04, 'tilt_deg': 0.37}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.27, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.13}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.11, 'dz_mm': -0.19, 'yaw_deg': 0.02, 'tilt_deg': 0.35}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.0, 'tilt_deg': 0.1}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.04}
+  step 11 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.26, 'dz_mm': -0.27, 'yaw_deg': 0.06, 'tilt_deg': 0.31}
+done: 12 / 12 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_011)
+== hollow_box r1
+preflight: hollow_box  6 x 6 studs x 3 layers, 12 bricks {'1x4': 6, '1x6': 6}, feeder slots 12 of 24
+k=2  IIIIII  J....K  J....K  J....K  J....K  LLLLLL
+k=1  EFFFFG  E....G  E....G  E....G  E....G  EHHHHG
+k=0  AAAAAA  B....C  B....C  B....C  B....C  DDDDDD
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_hollow_box_none.json
+hollow_box: 12 bricks, 0 braced (none), 20 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.38, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.23, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.2, 'dz_mm': -0.21, 'yaw_deg': 0.13, 'tilt_deg': 0.45}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.25, 'dz_mm': -0.38, 'yaw_deg': 0.0, 'tilt_deg': 0.14}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.24, 'dz_mm': -0.22, 'yaw_deg': 0.03, 'tilt_deg': 0.32}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.27, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.12}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.12, 'dz_mm': -0.19, 'yaw_deg': 0.03, 'tilt_deg': 0.34}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.0, 'tilt_deg': 0.06}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.0, 'tilt_deg': 0.02}
+  step 11 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.28, 'dz_mm': -0.26, 'yaw_deg': 0.11, 'tilt_deg': 0.37}
+done: 12 / 12 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_011)
+== hollow_box r2
+preflight: hollow_box  6 x 6 studs x 3 layers, 12 bricks {'1x4': 6, '1x6': 6}, feeder slots 12 of 24
+k=2  IIIIII  J....K  J....K  J....K  J....K  LLLLLL
+k=1  EFFFFG  E....G  E....G  E....G  E....G  EHHHHG
+k=0  AAAAAA  B....C  B....C  B....C  B....C  DDDDDD
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_hollow_box_none.json
+hollow_box: 12 bricks, 0 braced (none), 20 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.38, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.23, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.23, 'dz_mm': -0.21, 'yaw_deg': 0.04, 'tilt_deg': 0.47}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.25, 'dz_mm': -0.38, 'yaw_deg': 0.0, 'tilt_deg': 0.16}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.24, 'dz_mm': -0.22, 'yaw_deg': 0.02, 'tilt_deg': 0.29}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.27, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.12}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.11, 'dz_mm': -0.19, 'yaw_deg': 0.18, 'tilt_deg': 0.46}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.01, 'tilt_deg': 0.06}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.03}
+  step 11 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.28, 'dz_mm': -0.26, 'yaw_deg': 0.1, 'tilt_deg': 0.36}
+done: 12 / 12 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_011)
+== S3 r0
+preflight: S3  2 x 10 studs x 9 layers, 16 bricks {'2x2': 11, '2x4': 4, '2x6': 1}, feeder slots 16 of 24
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_S3_none.json
+S3: 16 bricks, 0 braced (none), 17 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.08}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.09}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.16}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.19, 'dz_mm': -0.31, 'yaw_deg': 0.01, 'tilt_deg': 0.07}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.05, 'tilt_deg': 0.14}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.17, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.0, 'tilt_deg': 0.06}
+  step 8 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 9 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.11}
+  step 10 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.08}
+  step 11 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.06, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+  step 12 b_013 SNAP  {'brick': 'b_013', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.07}
+  step 13 b_012 SNAP  {'brick': 'b_012', 'lateral_mm': 0.14, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.18}
+  step 14 b_014 SNAP  {'brick': 'b_014', 'lateral_mm': 0.13, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.12}
+  step 15 b_015 MISS  {'brick': 'b_015', 'lateral_mm': 246.2, 'dz_mm': -72.06, 'yaw_deg': 1.37, 'tilt_deg': 90.03}
+FAILURE gate_miss at step 15: arms open and park
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1246, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1051, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: gate_miss at step 15 (15 built)
+run failed: S3 r0
+== S3 r1
+preflight: S3  2 x 10 studs x 9 layers, 16 bricks {'2x2': 11, '2x4': 4, '2x6': 1}, feeder slots 16 of 24
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_S3_none.json
+S3: 16 bricks, 0 braced (none), 17 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.2}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.31, 'yaw_deg': 0.0, 'tilt_deg': 0.07}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.03, 'tilt_deg': 0.41}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.0, 'tilt_deg': 0.39}
+  step 8 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.03, 'tilt_deg': 0.07}
+  step 9 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.14}
+  step 10 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.09}
+  step 11 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.07, 'dz_mm': -0.26, 'yaw_deg': 0.01, 'tilt_deg': 0.11}
+  step 12 b_013 SNAP  {'brick': 'b_013', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+  step 13 b_012 SNAP  {'brick': 'b_012', 'lateral_mm': 0.13, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.1}
+  step 14 b_014 SNAP  {'brick': 'b_014', 'lateral_mm': 0.12, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.12}
+  step 15 b_015 MISS  {'brick': 'b_015', 'lateral_mm': 246.61, 'dz_mm': -72.06, 'yaw_deg': 1.63, 'tilt_deg': 90.03}
+FAILURE gate_miss at step 15: arms open and park
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1246, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1051, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: gate_miss at step 15 (15 built)
+run failed: S3 r1
+== S3 r2
+preflight: S3  2 x 10 studs x 9 layers, 16 bricks {'2x2': 11, '2x4': 4, '2x6': 1}, feeder slots 16 of 24
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_S3_none.json
+S3: 16 bricks, 0 braced (none), 17 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.14}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.11}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.21}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.19, 'dz_mm': -0.31, 'yaw_deg': 0.02, 'tilt_deg': 0.09}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.25}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.11}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 8 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.07}
+  step 9 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.11}
+  step 10 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.11}
+  step 11 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.06, 'dz_mm': -0.26, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+  step 12 b_013 SNAP  {'brick': 'b_013', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+  step 13 b_012 SNAP  {'brick': 'b_012', 'lateral_mm': 0.12, 'dz_mm': -0.28, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+  step 14 b_014 SNAP  {'brick': 'b_014', 'lateral_mm': 0.12, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+  step 15 b_015 MISS  {'brick': 'b_015', 'lateral_mm': 1.94, 'dz_mm': 3.76, 'yaw_deg': 0.07, 'tilt_deg': 35.26}
+FAILURE gate_miss at step 15: arms open and park
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1246, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1051, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: gate_miss at step 15 (15 built)
+run failed: S3 r2

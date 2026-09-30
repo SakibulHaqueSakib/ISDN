@@ -1168,9 +1168,9 @@ def make_plan(args):
     NI = max(b[2] + P.footprint(b[1], b[5])[0] for b in bricks)
     NJ = max(b[3] + P.footprint(b[1], b[5])[1] for b in bricks)
     feeder_slots(len(bricks))                                     # bricks <= feeder slots
-    if B.components(bricks) != 1:
+    if B.pieces(bricks) != 1:             # separate objects; a base ring held only by the plate is one piece
         raise SystemExit("preflight: the drawing is %d separate pieces -- connect them so one piece is built"
-                         % B.components(bricks))
+                         % B.pieces(bricks))
     pre = {"name": name, "grid": [NI, NJ, max(b[4] for b in bricks) + 1], "n_bricks": len(bricks),
            "by_type": {t: sum(b[1] == t for b in bricks) for t in sorted({b[1] for b in bricks})},
            "types": {b[0]: b[1] for b in bricks}, "feeder_slots_used": len(bricks), "feeder_slots": len(feeder_grid())}

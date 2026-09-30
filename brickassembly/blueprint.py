@@ -165,6 +165,25 @@ def components(bricks):
     return len({root(b[0]) for b in bricks})
 
 
+def pieces(bricks):
+    """Number of separate objects in the drawing: bricks joined by studs or touching side by
+    side on a layer count as one (a stepped pyramid's outer base ring is tied to the rest only
+    through the baseplate, so components() calls it several groups)."""
+    cell = {(i, j, k): b[0] for b in bricks for (i, j), k in [(c, P.cells(b)[1]) for c in P.cells(b)[0]]}
+    parent = {b[0]: b[0] for b in bricks}
+
+    def root(x):
+        while parent[x] != x:
+            x = parent[x]
+        return x
+
+    for (i, j, k), a in cell.items():
+        for n in ((i + 1, j, k), (i, j + 1, k), (i, j, k + 1)):
+            if n in cell:
+                parent[root(cell[n])] = root(a)
+    return len({root(b[0]) for b in bricks})
+
+
 def ascii(bricks):
     """Top-down text view of each layer, one letter per brick."""
     NI = max(b[2] + P.footprint(b[1], b[5])[0] for b in bricks)
