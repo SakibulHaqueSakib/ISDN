@@ -393,7 +393,7 @@ def _bricksim_crosscheck(structure_id, order):
 
 
 def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_model="grasp_lp",
-               clearance=None):
+               clearance=None, brace_grip_N=None, brace_mu=None):
     """Emit an assembly_plan.json dict per §2.6.
 
     brace_model: "grasp_lp" (v3.1: bracing.py over stability.py's force
@@ -402,6 +402,8 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
     clearance: callable(brick, y, z, tilt) -> bool, the hands-fit check for a
     brace grasp (sim/mj/checks.BraceClearance in the twin's frame); None
     keeps the 28 mm rule.
+    brace_grip_N, brace_mu: the grasp the LP plans with (per-finger grip, pad
+    friction); None keeps bracing.py's defaults (70 N, mu 1).
     """
     bricks = STRUCTURES[structure_id]
     order = sequence(bricks)
@@ -409,6 +411,8 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
     if brace_model == "grasp_lp":
         import bracing
         import stability
+        grasp_kw = {k: v for k, v in (("grip_N", brace_grip_N), ("mu", brace_mu))
+                    if v is not None}
     for n, b in enumerate(order):
         bid, btype, i, j, k, yaw = b
         sup = supports(b, placed)
@@ -419,7 +423,7 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
             r0 = stability.insertion_utilisation(b, placed) if placed else None
             utils.append((r0.s, r0.weakest) if r0 else (0.0, None))
             brace = bracing.assign(b, placed, strategy, unbraced=r0,
-                                   clearance=clearance) if placed else None
+                                   clearance=clearance, **grasp_kw) if placed else None
         else:
             brace = brace_for(b, placed, strategy)
         grasp = grasp_for(b, placed)
@@ -450,6 +454,8 @@ def build_plan(structure_id, strategy="weakest_joint", crosscheck=False, brace_m
             "stability_method": "stablelego_force_balance (stability.py, capacity.Patch)",
             "bracing_strategy": strategy,
             "brace_model": brace_model,
+            "brace_grip_N": brace_grip_N if brace_grip_N is not None else bracing.GRIP_N,
+            "brace_mu": brace_mu if brace_mu is not None else 1.0,
             "weakest_joint": list(worst[1]) if worst[1] else None,
             "max_util_unbraced": round(worst[0], 4),
             "single_arm_fails": bool(worst[0] >= 1.0),
