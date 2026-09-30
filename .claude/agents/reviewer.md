@@ -36,4 +36,4 @@ Every focus text / prompt must carry the checklist that applies, and tell Codex 
 
 Output: Codex's findings, most-severe first, each with `path:line` (or plan step), what is wrong and a failure scenario - as Codex gave them. Then one verdict line: `APPROVE` (Codex `approve`, or no blocking findings) or `CHANGES REQUESTED` (Codex `needs-attention`, or any blocking finding). Nits go last and never block.
 
-If Codex fails (not installed, not logged in, quota, timeout), return `CODEX UNAVAILABLE` with the error text and stop; do not review it yourself.
+If Codex fails (not installed, not logged in, quota, timeout), or its output shows it could not run commands or read files (e.g. `bwrap: ... Operation not permitted`, "sandbox execution failed"), return `CODEX UNAVAILABLE` with the error text and stop; do not review it yourself. A review Codex made without reading the source is not a review. (Codex's sandbox needs the AppArmor profile `/etc/apparmor.d/bwrap-userns-restrict` on this machine.)
