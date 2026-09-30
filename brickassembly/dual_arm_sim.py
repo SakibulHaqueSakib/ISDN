@@ -12,13 +12,15 @@ live, in a window or a browser.
     bash scripts/run.sh dual_arm_sim.py --structure S3
     bash scripts/run.sh dual_arm_sim.py --front my.png --top my_top.png --width 8
 
-ponytail: the clutch is a pre-allocated weld pool switched on when the gate
-passes (plan §3.3, "loop joints"), and a weld never lets go -- so the brace is
-executed but cannot change an outcome here. Measured: the worst pry at the
-arch crown was 0.34 mm unbraced vs 0.41 mm braced. Joint failure, and with it
-ablation A6, stays on BrickSim's force model (orchestration/run_plan.py).
-Motion is IK on interpolated waypoints with no collision-aware planning; the
-two arms work from opposite sides of the build.
+The clutch is a pre-allocated pool of stiff, breakable welds switched on when the snap gate
+passes (plan_v4 r5); welded bricks and the baseplate share a collision group. JointBreaker
+breaks a weld when its patch utilisation u >= 1 (capacity.Patch: axial and prying load only)
+on 2 consecutive end-of-frame samples, and the build ends at its first failure (gate miss,
+break, divergence): the arms open and park. So a brace can change an outcome through a break,
+or through a sub-critical displacement that changes the snap gate. Motion is still IK on
+interpolated waypoints with no collision-aware planning (the hand-off protocol and the
+clearance check arrive in Phase 2); the two arms work from opposite sides of the build.
+--record-all PATH.npz saves a per-frame record (cell/record.py).
 """
 
 import json
@@ -533,6 +535,7 @@ class Example:
         # P0 instrumentation, all off by default (attached from __main__)
         self.monitor = None                   # cell.contacts.ContactMonitor, read-only
         self.inserts = None                   # --record-inserts: per-frame rows
+        self.recorder = None                  # cell.record.Recorder (--record-all), read-only
         self.frame, self.place_t, self.done_t = 0, {}, None
         self.snap_gates = []                  # the gate values at every snap (dz_mm = the weld gate's dz)
 
@@ -791,6 +794,8 @@ class Example:
         self.breaker.update()
         if self.monitor:
             self.monitor.step(self)
+        if self.recorder:
+            self.recorder.step(self)
         if self.inserts is not None and (self.B.phase == "insert" or self.A.phase in ("brace", "hold")):
             self.inserts.append((self.frame, self.state_0.joint_q.numpy()[:18].copy(), self.A.phase,
                                  self.B.phase, -1 if self.b_step is None else self.b_step))
@@ -891,6 +896,8 @@ class Example:
             out.parent.mkdir(parents=True, exist_ok=True)
             with out.open("a") as f:
                 f.write(json.dumps(self.p0_row(error)) + "\n")
+        if self.recorder:
+            self.recorder.save(self.args.record_all, self)
         if self.inserts is not None:
             r = self.inserts
             Path(self.args.record_inserts).parent.mkdir(parents=True, exist_ok=True)
@@ -966,6 +973,9 @@ if __name__ == "__main__":
     parser.add_argument("--p0-out", type=Path, help="append one P0 baseline row (JSONL); implies --monitor")
     parser.add_argument("--repeat", type=int, default=0, help="repeat index, recorded in the P0 row")
     parser.add_argument("--tag", help="run tag for the P0 row (default shape_model_rK)")
+    parser.add_argument("--record-all", type=Path, metavar="PATH.npz",
+                        help="save a compressed per-frame record of the run (cell/record.py: q, phases, brick poses, "
+                             "weld events, raw contact flags)")
     parser.add_argument("--record-inserts", type=Path, metavar="PATH.npz",
                         help="save both arms' joint q every frame B inserts or A braces")
     parser.set_defaults(shape="arch")
@@ -976,6 +986,9 @@ if __name__ == "__main__":
     if args.monitor or args.p0_out:
         from cell.contacts import ContactMonitor
         example.monitor = ContactMonitor(example)
+    if args.record_all:
+        from cell.record import Recorder
+        example.recorder = Recorder(example)
     if args.record_inserts:
         example.inserts = []
     err = None
