@@ -1,0 +1,46 @@
+[
+ {
+  "run": "test_shape_r0",
+  "built": 3,
+  "n": 3,
+  "failure": null,
+  "breaks": [],
+  "u_peak_max": 0.0244,
+  "m2_max_mm": 0.0848511959766275,
+  "m2_brick": "b_002",
+  "m2_frame": 1623,
+  "m2_b_phase": "release",
+  "m3_max_mm": 4.287373820084068e-05,
+  "rtf": 1.785,
+  "gates": {
+   "G2": true,
+   "G3": true,
+   "G4": true,
+   "G6": true,
+   "G7": true
+  },
+  "bricks": {
+   "b_000": {
+    "fire_frame": 555,
+    "m1_mm": 0.4471,
+    "m2_mm": 0.0229,
+    "m2_frame": 1618,
+    "m3_mm": 0.0
+   },
+   "b_001": {
+    "fire_frame": 1088,
+    "m1_mm": 0.4192,
+    "m2_mm": 0.0562,
+    "m2_frame": 1618,
+    "m3_mm": 0.0
+   },
+   "b_002": {
+    "fire_frame": 1617,
+    "m1_mm": 0.4302,
+    "m2_mm": 0.0849,
+    "m2_frame": 1623,
+    "m3_mm": 0.0
+   }
+  }
+ }
+]

@@ -8,11 +8,17 @@ its brick and before B carries it in, until B has retracted. Physics is
 Newton (MuJoCo-Warp solver) with studded, hollow brick meshes; the viewer runs
 live, in a window or a browser.
 
-    bash scripts/run.sh dual_arm_sim.py --shape arch               # window
+    bash scripts/run.sh dual_arm_sim.py --shape arch               # window, unbraced
     bash scripts/run.sh dual_arm_sim.py --shape arch --viewer viser  # :8080
-    bash scripts/run.sh dual_arm_sim.py --shape arch --strategy none
     bash scripts/run.sh dual_arm_sim.py --structure S3
-    bash scripts/run.sh dual_arm_sim.py --front my.png --top my_top.png --width 8
+    bash scripts/run.sh dual_arm_sim.py --front my.png --width 8 --name mine   # a drawing
+    bash scripts/run.sh dual_arm_sim.py --front my.png --width 8 --name mine --viewer null --test \
+        --num-frames 40000 --out results/v4/pipeline/mine.jsonl --record-all results/v4/pipeline/mine.npz
+
+The pipeline is unbraced by default (--strategy none: arm A stays parked); bracing is left to a later RL
+phase, --strategy nearest|weakest_joint still plans and runs the hand-planned braces. A preflight in
+make_plan stops with a one-line reason and fix on an unbuildable drawing (too many bricks, disconnected,
+overhang, unreadable image, missing --width) and prints a summary of the build before the run.
 
 The clutch is a pre-allocated pool of stiff, breakable welds switched on when the snap gate
 passes (plan_v4 r5); welded bricks and the baseplate share a collision group. JointBreaker
@@ -32,6 +38,7 @@ import inspect
 import json
 import math
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -604,6 +611,7 @@ class Example:
         self.viewer.set_model(self.model)
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
         self.capture()
+        self.wall0 = time.perf_counter()      # for the row's rtf
         print("%s: %d bricks, %d braced (%s), %d clutch welds" % (
             self.name, len(steps), self.plan["validation"]["brace_required_count"],
             self.plan["validation"]["bracing_strategy"], sum(len(w) for w in self.welds.values())))
@@ -1045,9 +1053,11 @@ class Example:
         assert self.done, "only reached step %s of %d" % (self.b_step, n)
         assert ok == n, "%d / %d snapped: %s" % (ok, n, [e for e in self.episodes if not e["success"]])
         body_q = self.state_0.body_q.numpy()
-        for bid, (tgt, _, _) in self.target.items():   # and they stayed there
-            err = np.linalg.norm(body_q[self.body[bid]][:3] - tgt) * 1000
-            assert err < 3.0, "%s drifted %.1f mm after assembly" % (bid, err)
+        drift = {bid: np.linalg.norm(body_q[self.body[bid]][:3] - tgt) * 1000     # and they stayed there
+                 for bid, (tgt, _, _) in self.target.items()}
+        worst = max(drift, key=drift.get)
+        print("max brick drift %.3f mm (%s)" % (drift[worst], worst))
+        assert drift[worst] <= 1.0, "%s drifted %.2f mm after assembly" % (worst, drift[worst])
 
     def p0_row(self, error=None):
         """One P0 baseline row (plan_v4 P0): completion, cycle, contact events, dz at snap."""
@@ -1072,7 +1082,9 @@ class Example:
                 "failed_at_step": self.failed_at_step,
                 "built": self.built() if self.failure is None else self.built_at_failure,
                 "breaks": self.breaker.breaks,
-                "legacy_brace": self.legacy,
+                "legacy_brace": self.legacy, "perception": "ground_truth", "weld": list(WELD_ATTRS["mujoco:eq_solimp"]),
+                "grouped": True, "rtf": round(self.sim_time / max(time.perf_counter() - self.wall0, 1e-9), 3),
+                "preflight": self.plan.get("preflight"),
                 "brace_by_step": {n: self.brace_row(n) for n in sorted(self.brace_by_step)},
                 "u_peak_by_step": {k: round(v, 4) for k, v in self.breaker.u_peak_by_step.items()},
                 "shear_torsion_peak_by_step": {k: [round(x, 5) for x in v] for k, v in
@@ -1099,8 +1111,8 @@ class Example:
                      b_step=np.array([x[4] for x in r], int))
 
 
-def feeder_slots(n):
-    """Pick-up spots on the placer's -y side, 70 mm apart, 0.40-0.65 m from its
+def feeder_grid():
+    """All feeder slots. Pick-up spots on the placer's -y side, 70 mm apart, 0.40-0.65 m from its
     base, nearest first. The first 14 are the measured layout; the ring added
     after them serves bigger builds. (Slots on the +y side were tried: picks
     from there missed on the cube.)"""
@@ -1112,8 +1124,13 @@ def feeder_slots(n):
     grid += sorted((g for g in ((x, -y) for x in (0.03, 0.10, 0.17, 0.24, 0.31, 0.38)
                                 for y in (0.22, 0.29, 0.36, 0.43, 0.50, 0.57))
                     if near(g) and g not in grid), key=dist)
+    return grid
+
+
+def feeder_slots(n):
+    grid = feeder_grid()
     if n > len(grid):
-        raise SystemExit("%d bricks but only %d feeder slots" % (n, len(grid)))
+        raise SystemExit("preflight: %d bricks but only %d feeder slots -- draw a smaller shape" % (n, len(grid)))
     return grid[:n]
 
 
@@ -1130,7 +1147,19 @@ def make_plan(args):
     """images/sample/authored structure -> assembly_plan dict in the sim's world frame."""
     if args.front:
         name = args.name or args.front.stem
-        bricks = B.tile(B.carve(args.front, args.side, args.top, args.width, args.depth))
+        if not args.width:
+            raise SystemExit("preflight: --front needs --width W (studs across the front view) -- add it")
+        for view in (args.front, args.side, args.top):
+            if view:
+                try:
+                    B.mask(view)
+                except (OSError, ValueError) as e:
+                    raise SystemExit("preflight: cannot read %s (%s) -- give a readable image of a dark shape "
+                                     "on a light background" % (view, e))
+        try:
+            bricks = B.tile(B.carve(args.front, args.side, args.top, args.width, args.depth))
+        except ValueError as e:
+            raise SystemExit("preflight: %s -- redraw with support under the overhang" % e)
     elif args.shape:
         name, bricks = args.shape, B.load(args.shape)
     else:
@@ -1138,6 +1167,16 @@ def make_plan(args):
     P.STRUCTURES[name] = bricks
     NI = max(b[2] + P.footprint(b[1], b[5])[0] for b in bricks)
     NJ = max(b[3] + P.footprint(b[1], b[5])[1] for b in bricks)
+    feeder_slots(len(bricks))                                     # bricks <= feeder slots
+    if B.components(bricks) != 1:
+        raise SystemExit("preflight: the drawing is %d separate pieces -- connect them so one piece is built"
+                         % B.components(bricks))
+    pre = {"name": name, "grid": [NI, NJ, max(b[4] for b in bricks) + 1], "n_bricks": len(bricks),
+           "by_type": {t: sum(b[1] == t for b in bricks) for t in sorted({b[1] for b in bricks})},
+           "types": {b[0]: b[1] for b in bricks}, "feeder_slots_used": len(bricks), "feeder_slots": len(feeder_grid())}
+    print("preflight: %s  %d x %d studs x %d layers, %d bricks %s, feeder slots %d of %d\n%s" % (
+        name, *pre["grid"], pre["n_bricks"], pre["by_type"], pre["feeder_slots_used"], pre["feeder_slots"],
+        B.ascii(bricks)))
     # centre the build between the arms
     P.VOXEL_ORIGIN = (-NI * P.PITCH / 2, -NJ * P.PITCH / 2, Z0)
     model = getattr(args, "brace_model", "grasp_lp")
@@ -1155,8 +1194,8 @@ def make_plan(args):
     out = HERE / "plans" / ("sim_%s_%s%s.json" % (name, args.strategy,
                                                   "" if model == "grasp_lp" else "_" + model))
     out.write_text(json.dumps(plan, indent=1))
-    print(B.ascii(bricks))
     print("plan -> %s" % out.relative_to(HERE))
+    plan["preflight"] = pre                # in memory only, for the run row
     return plan, name
 
 
@@ -1171,7 +1210,7 @@ if __name__ == "__main__":
     parser.add_argument("--width", type=int, help="studs across the front image")
     parser.add_argument("--depth", type=int, help="studs deep, if no side/top image")
     parser.add_argument("--name", help="structure name for an image blueprint")
-    parser.add_argument("--strategy", default="weakest_joint",
+    parser.add_argument("--strategy", default="none",
                         choices=["none", "nearest", "weakest_joint"])
     parser.add_argument("--brace-model", default="grasp_lp", choices=["grasp_lp", "lever_press"],
                         help="planner.build_plan brace model")
@@ -1181,7 +1220,7 @@ if __name__ == "__main__":
     parser.add_argument("--continue", dest="continue_", action="store_true",
                         help="do not stop at the first failure; the break model is off after it, later rows are after_failure")
     parser.add_argument("--monitor", action="store_true", help="attach the sec 2.4 contact monitor")
-    parser.add_argument("--p0-out", type=Path, help="append one P0 baseline row (JSONL); implies --monitor")
+    parser.add_argument("--p0-out", "--out", type=Path, dest="p0_out", help="append one P0 baseline row (JSONL); implies --monitor")
     parser.add_argument("--repeat", type=int, default=0, help="repeat index, recorded in the P0 row")
     parser.add_argument("--tag", help="run tag for the P0 row (default shape_model_rK)")
     parser.add_argument("--record-all", type=Path, metavar="PATH.npz",
