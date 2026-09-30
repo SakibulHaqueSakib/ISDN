@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-189 entries. Later entries supersede earlier ones; retractions are marked.
+194 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -178,6 +178,23 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **deviated** `v4_r5_phases_revised`
     - rationale: v4_brace_to_rl and v4_pipeline_unbraced_now (user direction 2026-09-30): hand-planned bracing is dropped from v4's critical path, so J-e, S3.5, the brace gate items and the brace controls leave Phase 2; the image pipeline moves up into Phase 2
+
+- **decided** `v4_rl_brace_plan`
+    - outcome: Phase R0 (feasibility) of the RL bracing plan (Docs/plan_v4_rl_brace.md, Phase 3) is ADOPTED with amendments A1-A7 (plan §11); Phases R1 and R2 remain a DRAFT, to be revised once at the G-R0 gate and only if R0 passes. Adopted: plan §0, §2 (task definition), §2.8 arms as used in R0, §4 Phase R0 with gate G-R0, the R0 rows of §5, the R0 items of §7 and §10. Not adopted (draft): §1 verdict tests, §3…
+    - rationale: Review history: the planner wrote the plan 2026-09-30; Codex round 1 CHANGES REQUESTED (12 findings; the planner revised once); the user asked for a second Codex pass and approved the compute budget (U-RL-7); Codex round 2 CHANGES REQUESTED (6 blocking, 1 for R0); escalated to the user after two rounds
+
+- **deviated** `v4_press_fixture`
+    - rationale: on the tested unbraced builds the native regime gives a brace policy almost no break signal (cube 8/8, arch 11/11, hollow_box 12/12, no breaks; u_peak cube 0.033-0.036, arch 0.057-0.059, hollow_box 0.318-0.424; plan §0 fact 1), so training needs a load source; the LP predicts a where problem under a design press (v4_rl_planner_lp_probe)
+
+- **deviated** `v4_step_episode_nominal_start`
+    - rationale: a build reaching every scored state costs full-build time per sample; the step-episode makes per-context sampling affordable within the approved budget
+
+- **deviated** `v4_brace_executor_e1`
+    - rationale: at about 0.5 m reach A holds with about 1.6 N/mm at the hand against 23-24 N/mm (column lateral) and 34-70 N/mm (cantilever) for the welded structure, so the committed hold is expected to carry a few percent of the load (plan §0 fact 3); R0 measures the reaction before anything else is spent
+
+- **probe** `v4_rl_planner_lp_probe`
+    - result: Planner [P] and Codex [R] LP numbers, exactly as in the plan §0 facts 2, 7 and 8. S3 step 13: unbraced u0 3.43; best braced 1.97 with the committed mask [P], 1.56 with the relaxed mask [R]; at half press 0.49 / 0.08. S3 step 14: 1.96 -> 0.44 / 0.00. Arch step 10: 0.95 -> 0.95. The LP costs 2-4 ms per solve. Candidates per critical step: 40-178 on S3, S5 and the arch; median 28 on a corbel family (…
+    - finding: unsaved CPU probe (planner [P] scripts not in the repo; [R] is Codex's recomputation), to be reproduced by segment S0.1 (--self-check writes results/v4/rl/r0/lp_probe.json) before any report cites it. The LP lets the brace supply any bounded wrench, so the braced values are optimistic, not executed benefits
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
