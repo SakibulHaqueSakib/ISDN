@@ -116,6 +116,8 @@ Under the phases > segments > subtasks workflow (commit 4c8cea7) reviews and pla
 
 The J-a..J-e checks keep their pre-registered criteria but are reviewed together at their phase gate. The proposed J-b criterion revision "r5.1" was NOT adopted (withdrawn under the new workflow); J-b's result is carried to the Phase 1 gate.
 
+**Phase 1 gate outcome (2026-09-30).** Reviewed once by Codex (code approved). J-a passes and J-c passes on its pre-registered items (2x4 pull-off break at 92.0 N against 90.4 N, +1.77 %; cantilever break 1.11 % below the analytic u = 1 load; 1 N lateral for 5 s, no break; pulses of 40 and 60 substeps detected, of 16 or fewer not). J-b **fails as written**: 66 of 3060 force/moment readings and 12 utilisation readings fall outside tolerance (worst 22.387 mN, 0.191 mN.m), caused by the GPU MuJoCo-Warp solve stopping after 1-2 iterations (solver-side, "float32" inferred). Codex's verdict was CHANGES REQUESTED; **by user decision (asked directly, options: revise J-b once, try a solver fix, accept) J-b is accepted as a documented limitation and Phase 2 proceeds**, so a pre-registered criterion is replaced by decision, not met. The readout is validated only for the tested cases (full 2x4 patch, one cantilever geometry; not partial, rotated or multi-support patches near threshold), and the report's J1/J2 tables must say so. Non-gating follow-ups in Phase 2: 32-substep pulse trials, save the J-c repeat runs, keep reporting the substep-vs-frame gap. Ledger: `v4_j_c_break_rule`, `v4_phase1_joint_model`, `v4_jb_accepted_with_known_cause`.
+
 ---
 
 ## Revision r4 (P0 findings and P1 probe findings)

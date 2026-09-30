@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-180 entries. Later entries supersede earlier ones; retractions are marked.
+183 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -148,6 +148,16 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **result** `v4_j_b_chatter_diagnosis`
     - result: Diagnosis of the per-frame weld-force error in J-b (question: A micro-vibration or B readout defect, pre- vs post-integration pose). Not physical vibration: static and dynamic force balance residuals are equal (max per brick, mN: column 10.974 static / 10.9739 dyn on brick2; cantilever 22.3988 / 22.3972 on brick2; bridge 24.6456 / 24.6493 on brick2), m*a_com is at most 0.0106 mN; brick motion is a…
+
+- **result** `v4_j_c_break_rule`
+    - result: J-c PASS on its pre-registered items (i), (ii), (iii), (v) (plan v4 r5, segment S2; test fixture: body forces on weld-held bricks in grouped static scenes, solimp 0.9999, 16 substeps, break rule dual_arm_sim.JointBreaker with U_BREAK 1.0, BREAK_SAMPLES 2, BREAK_SETTLE_S 0.1, raw end-of-frame u from mjw_data.efc.force at the solve-time pose). (i) 2x4 pull-off, ramp 60 N/s: first break at 92.0 N (fr…
+
+- **GATE** `v4_phase1_joint_model` → **changes_requested (J-b); J-a pass, J-c pass**
+    - result: changes_requested (J-b); J-a pass, J-c pass
+    - status: Phase 1 'Joint model' gate (plan v4 r5; phase commits a890b68, 4ad91a7, 0dd4f8b; base f227fd4), reviewed once by Codex (adversarial review of f227fd4..HEAD). Code approved: JointBreaker signs, moment shift, rotation, settle and the 2-consecutive rule; in-place grouping; build ends at first failure; record.py read-only. J-a PASS (v4_j_a_weld_grouped). J-c PASS on its pre-registered items (v4_j_c_br…
+
+- **deviated** `v4_jb_accepted_with_known_cause`
+    - rationale: J-c shows the break decision lands within 2 % of the model near threshold (2x4 pull-off +1.77 %, cantilever -1.11 %) and no false break at analytic u 0.98 on the full 2x4 patch (0 of 120 frames >= 1; the cantilever, with its own +0.025 bias, reads 1.005 there); the cause is solver-side weld-force error of tens of mN (GPU solve exits after 1-2 iterations), not a readout defect (v4_j_b_chatter_diagn…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
@@ -559,6 +569,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **G5**: not_applicable — WP6 skipped on A3 (decision vision_decision)
 - **G6**: fail — 0/15 planned full-loop assemblies (RL-first inserter R1, scripted fallback); full system on S1-S3 x 5 seeds: 1/15; RL seats 54% of its attempts, the fallback 10…
 - **G7**: pass_with_recorded_exceptions — S5's A6 exception removed (20 seeds per cell, a6_s5_20seeds); remaining exception: G6 has one planned seed plus 4 extra on S1-S3
+- **v4_phase1_joint_model**: changes_requested (J-b); J-a pass, J-c pass — Phase 1 'Joint model' gate (plan v4 r5; phase commits a890b68, 4ad91a7, 0dd4f8b; base f227fd4), reviewed once by Codex (adversarial review of f227fd4..HEAD). Co…
 
 ## Open — needs a decision
 
