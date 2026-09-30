@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-197 entries. Later entries supersede earlier ones; retractions are marked.
+198 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -206,6 +206,10 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `v4_placer_rl_primitives`
     - outcome: the placer arm is trained with RL for placement in tight spaces between several bricks, and the pyramid (with other filled-layer shapes) goes into the RL training set. RL controls placement primitives: a new drop-and-press primitive (release above the neighbours, then press the brick down from the top) is added, and RL chooses per brick how to place: grasp-insert vs drop-and-press, release height,…
     - status: a plan of record for the placer track is being written by the planner, not yet adopted; the Phase 2 gate review by Codex is pending. The pyramid becomes a training and reference structure of the placer track.
+
+- **decided** `v4_session_2026_09_30_handoff`
+    - outcome: End-of-day state on branch v4-newton-vision (HEAD after this entry; work commits fd000b7..3ce7d90). DONE: plan v4 r5 adopted (fd000b7); S0 (f227fd4); workflow changed to phases > segments > subtasks with reviews and revisions only at phase gates (4c8cea7); Phase 1 Joint model closed: stiff grouped clutch welds (a890b68), breakable joints with build-ends-at-first-failure (4ad91a7), --record-all (0d…
+    - rationale: The user ended the session ('pack up the current progress and log everything and thats all for today'); two background agents were stopped mid-work (the placer planner, by the user; the S0.1 implementer, by the orchestrator).
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
