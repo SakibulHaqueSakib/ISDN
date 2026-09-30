@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-163 entries. Later entries supersede earlier ones; retractions are marked.
+175 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -93,6 +93,45 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **decided** `v4_agent_routing`
     - outcome: plan revisions go to a new plan-reviser agent (opus, high effort); the planner agent (opus, xhigh) is used only for start-of-phase long-horizon plans of record. Recorded because r4 was the first revision routed this way; the plan text says plan-reviser wherever a revision goes to the planner
+
+- **probe** `v4_p4_brace_weld`
+    - finding: P4 brace/weld probe (scripts/13_brace_weld_probe.py, parts A, B, C; outputs results/v4/p4_brace_weld/*). Part A (arch and S3 builds, current brace executor): arch step 10 arm-arm contact A-hand <-> B-arm mean 161 N during transport, 220-231 N from pre-insert to release, peak 442 N, correlation with welded-brick displacement 0.938; S3 steps 13/14 arm-arm peaks 173/243 N, 1026 N with a stiff weld; S…
+    - implication: a brace can change an outcome essentially only at S3 step 13 above about 9 N (through a break); the r4 weld is too soft (F3), nothing breaks (F4), and the brace executor pushes far harder than the brace model assumes (F1, F2); motivates plan v4 r5
+
+- **problem** `v4_brace_overforce`
+    - finding: user observed braced builds bending and springing back; P4 traced it to three faults. F1: arm-arm contact between A's hand and B's arm during the brace is the dominant load (arch step 10 mean 161 N transport, 220-231 N pre-insert to release, peak 442 N, correlation 0.938 with welded-brick displacement; S3 13/14 peaks 173/243 N, 1026 N with a stiff weld). F2: the brace position target is 2 mm insid…
+    - implication: the r4 statement that a brace cannot change an outcome once a brick is welded is contradicted (arch step 10 brace window: 51.4 mm peak, 21.9 mm remaining 1 s after retract); fixed by plan v4 r5 (r5-1 weld stiffness, r5-4 brace executor, r5-5 hand-off protocol and hands-fit)
+
+- **decided** `v4_joint_scope_r5`
+    - outcome: U4 = yes now: rigid, breakable joints in v4. WP5 splits: WP5a (stiff, breakable, grouped weld pool and its break model) is done now, before WP1, in the r5 J stages; WP5b (detent n*f_insert, v3.1 forces, contact spike, E5) still decides after M1
+    - rationale: the user wants the joint model rigid and breakable now; WP5a needs no contact spike, since loads among welded bricks go through welds and only the new brick (3-6 N) and the arms touch the structure
+
+- **decided** `v4_pipeline_gt_now`
+    - outcome: image -> structure on ground truth now: a GT-first pipeline (stage PL): the user gives 1-2 drawings, the sim rebuilds the drawn shape from simulator poses (not vision); vision-only M1 unchanged
+
+- **decided** `v4_plan_r5`
+    - outcome: plan of record v4 amended to r5 (2026-09-30): weld stiffened (r5-1), structure collision group (r5-2), breakable clutch (r5-3), brace executor to grasp_lp semantics commanding no push (r5-4), acyclic hand-off protocol and executed-path hands-fit (r5-5), new stages J-pre, J-e, J-d (M0-J) and PL before WP1 (r5-6); gates J-a, J-b, J-c, J-pre, J-e, J-d, PL. M0, M0.5 and M1 slip about 4 agent-days (+ <…
+
+- **deviated** `v4_clutch_weld_stiffness`
+    - rationale: P4 part B: the r4 weld gives a column lateral stiffness of 0.70-1.35 N/mm and a 15 mm set after 50 N; ungrouped with the new solimp: column lateral 23-24 N/mm, vertical about 560 N/mm, cantilever 34 / 65-70 N/mm, set <= 0.03 mm, stable at 16 and 32 substeps. Gate J-a (grouped): column lateral secant >= 20 N/mm and vertical >= 300 N/mm at 1-50 N, cantilever >= 30 N/mm, set <= 0.05 mm after 50 N
+
+- **deviated** `v4_structure_collision_group`
+    - rationale: drops (i) bearing/friction between same-course welded neighbours, (ii) non-interpenetration among welded bricks (bounded by gate G3, M2 <= 1.0 mm), (iii) load sharing through contact; external loads on welded bricks (the pressed brick, B's and A's fingers) remain contacts. Readout with collisions off <= 0.12% (measured / reviewer-reported); runtime shape_collision_group.assign without re-capture (…
+
+- **deviated** `v4_clutch_breakable`
+    - rationale: U4 = yes now (WP5a). Restricted model accepted by the user (U-r5-5); J-c quantifies what frame sampling misses (pulses at u = 1.5 for 1-60 substeps, substep vs frame readout) and reports shear/torsion
+
+- **deviated** `v4_build_ends_at_first_failure`
+    - rationale: the grouped weld-only idealisation (v4_structure_collision_group) is valid only before the first failure; a brick is welded only onto grouped welded supports and post-break states are never scored (Codex round 1 finding 2). U-r5-2
+
+- **deviated** `v4_brace_executor_r5`
+    - rationale: F2 and F1 (v4_brace_overforce). The hold is measured, not assumed: gate G5 (max per-brick |F_A| <= 10 N [assumed threshold], realised grip >= 0.8x nominal over the closed-hold interval, contacted set within gripped_bricks); no 'cannot overload' claim. Newton plans change (brace_force_N 14.3, mu, expected_reaction_wrench, predicted_util_braced; feed-forward fields emitted but unused)
+
+- **deviated** `v4_handoff_protocol_r5`
+    - rationale: Codex round 1 found the zone deadlock/park; round 2 confirmed the acyclic protocol with the real Arm class and ideal tracking (arch 5,940, S3 9,104, all-braced S3 13,355 updates, no cycle). Margin: 12 mm provisional (P3 step5.json padding_needed_mm 12.08 at time scale 1.0 is cuRobo evidence), then max(5 mm, p99 + 2 mm) of the waypoint executor's measured deviation from J-pre (empirical padding); r…
+
+- **deviated** `v4_milestone_order_r5`
+    - rationale: U-r5-4 (J before WP1); M0, M0.5 and M1 slip about 4 agent-days (+ <= 1 day if the WP1 seating pull fires; pre-registered branch of J-pre). v3.1 frozen and not comparable; P0/P0' historical; P3 step 8 used P0' cube inserts and is re-run on P0'' before use; P3 steps 5/7 tracking/padding transfer only to cuRobo paths, steps 1-4 and 6 unaffected; P1(f) rows void, re-run under r5; P2 unaffected
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
