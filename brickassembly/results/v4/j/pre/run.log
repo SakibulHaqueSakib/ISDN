@@ -1,0 +1,91 @@
+== cube
+k=3  GGHH  GGHH  GGHH  GGHH
+k=2  EEEE  EEEE  FFFF  FFFF
+k=1  CCDD  CCDD  CCDD  CCDD
+k=0  AAAA  AAAA  BBBB  BBBB
+plan -> plans/sim_cube_weakest_joint.json
+cube: 8 bricks, 0 braced (weakest_joint), 14 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.19, 'dz_mm': -0.3, 'yaw_deg': 0.01, 'tilt_deg': 0.02}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.17, 'dz_mm': -0.29, 'yaw_deg': 0.01, 'tilt_deg': 0.1}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.01, 'tilt_deg': 0.02}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.1, 'dz_mm': -0.23, 'yaw_deg': 0.03, 'tilt_deg': 0.07}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.08, 'dz_mm': -0.24, 'yaw_deg': 0.0, 'tilt_deg': 0.02}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.09, 'dz_mm': -0.24, 'yaw_deg': 0.01, 'tilt_deg': 0.14}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.1, 'dz_mm': -0.25, 'yaw_deg': 0.0, 'tilt_deg': 0.01}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.09, 'dz_mm': -0.23, 'yaw_deg': 0.01, 'tilt_deg': 0.04}
+done: 8 / 8 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+== arch
+k=4  IIKKKKKKJJ  IIKKKKKKJJ
+k=3  GGGG..HHHH  GGGG..HHHH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+plan -> plans/sim_arch_weakest_joint.json
+arch: 11 bricks, 1 braced (weakest_joint), 12 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.22}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.2}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.14}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.33, 'yaw_deg': 0.02, 'tilt_deg': 0.39}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.31}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.0, 'tilt_deg': 0.27}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.22}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.15, 'dz_mm': -0.32, 'yaw_deg': 0.01, 'tilt_deg': 0.11}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.15, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.26}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.15, 'dz_mm': -0.31, 'yaw_deg': 0.03, 'tilt_deg': 0.35}
+  BREAK b_000 on None: u 2.086, frame 5801, step 10
+  step 10 b_010 MISS  {'brick': 'b_010', 'lateral_mm': 243.28, 'dz_mm': 53.28, 'yaw_deg': 29.41, 'tilt_deg': 7.39}
+done: 10 / 11 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 996, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 854, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: joint_break at step 10 (9 built)
+run ended nonzero: arch
+== hollow_box
+k=2  IIIIII  J....K  J....K  J....K  J....K  LLLLLL
+k=1  EFFFFG  E....G  E....G  E....G  E....G  EHHHHG
+k=0  AAAAAA  B....C  B....C  B....C  B....C  DDDDDD
+plan -> plans/sim_hollow_box_weakest_joint.json
+hollow_box: 12 bricks, 0 braced (weakest_joint), 20 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.38, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.24, 'dz_mm': -0.37, 'yaw_deg': 0.01, 'tilt_deg': 0.03}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.05}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.23, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.21, 'dz_mm': -0.21, 'yaw_deg': 0.1, 'tilt_deg': 0.48}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.25, 'dz_mm': -0.38, 'yaw_deg': 0.0, 'tilt_deg': 0.15}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.25, 'dz_mm': -0.21, 'yaw_deg': 0.04, 'tilt_deg': 0.33}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.28, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.13}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.18, 'dz_mm': -0.25, 'yaw_deg': 0.11, 'tilt_deg': 0.04}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.23, 'dz_mm': -0.37, 'yaw_deg': 0.0, 'tilt_deg': 0.1}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.04}
+  step 11 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.27, 'dz_mm': -0.26, 'yaw_deg': 0.07, 'tilt_deg': 0.32}
+done: 12 / 12 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+== S3
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+plan -> plans/sim_S3_weakest_joint.json
+S3: 16 bricks, 3 braced (weakest_joint), 17 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.22, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.08}
+  step 1 b_001 MISS  {'brick': 'b_001', 'lateral_mm': 240.87, 'dz_mm': 4.74, 'yaw_deg': 11.4, 'tilt_deg': 90.03}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.21}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.24, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.1}
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 996, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 321, in run
+    example.step()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 760, in step
+    raise RuntimeError("simulation diverged at t=%.2f s (step %s, B %s, A %s)"
+RuntimeError: simulation diverged at t=37.42 s (step 3, B release, A park)
+run ended nonzero: S3
