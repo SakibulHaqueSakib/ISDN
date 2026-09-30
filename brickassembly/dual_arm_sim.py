@@ -73,8 +73,14 @@ def finger_contact_kd(substeps, fps=60):
 BRACE_TILT = math.radians(45)  # stabilizer leans away from the placer, so the
                                # two hands (63 mm thick) fit 30-40 mm apart
 # Clutch welds ~100x stiffer than MuJoCo's default (0.02 s): a 2.5 g brick
-# welded at the default yields tens of mm under an arm's push.
-WELD_ATTRS = {"mujoco:eq_solref": (0.002, 1.0), "mujoco:eq_solimp": (0.95, 0.99, 0.001, 0.5, 2.0)}
+# welded at the default yields tens of mm under an arm's push. solimp (0.9999, 0.9999, ...)
+# (plan_v4 r5-1) stiffens it further: results/v4/p4_brace_weld/part_b_summary.json, ungrouped:
+# column lateral 23-24 N/mm, vertical ~560 N/mm (the r4 (0.95, 0.99, ...) gave 0.7-1.35 N/mm).
+WELD_ATTRS = {"mujoco:eq_solref": (0.002, 1.0), "mujoco:eq_solimp": (0.9999, 0.9999, 0.001, 0.5, 2.0)}
+# Newton broad phase (geometry/broad_phase_common.py:133-150 test_group_pair): a negative group
+# collides with everything except the same group, so the baseplate and every welded brick, all in
+# -2, ignore each other and still collide with arms, the held brick and the ground (group 1).
+STRUCT_GROUP = -2
 TRAVEL = 0.08                 # clearance above the structure while moving
 ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 # BrickSim's default gate. §2.3.3 asks for 1.2 mm; position-controlled IK
@@ -274,15 +280,15 @@ class Example:
                              xform=wp.transform((cx, cy, Z0 - ex.BRICK_HEIGHT), wp.quat_identity()),
                              cfg=newton.ModelBuilder.ShapeConfig(has_shape_collision=False,
                                                                  has_particle_collision=False))
-        scene.add_shape_box(-1, hx=(NI + 4) * P.PITCH / 2, hy=(NJ + 4) * P.PITCH / 2, hz=Z0 / 2,
-                            xform=wp.transform((cx, cy, Z0 / 2), wp.quat_identity()), cfg=PROXY_CFG)
+        self.plate_shapes = [scene.add_shape_box(-1, hx=(NI + 4) * P.PITCH / 2, hy=(NJ + 4) * P.PITCH / 2, hz=Z0 / 2,
+                            xform=wp.transform((cx, cy, Z0 / 2), wp.quat_identity()), cfg=PROXY_CFG)]
         stud_hh = 0.5 * ex.STUD_HEIGHT - ex.COLLIDER_INSET
         for i in range(NI):
             for j in range(NJ):
-                scene.add_shape_cylinder(-1, radius=ex.STUD_COLLIDER_RADIUS, half_height=stud_hh,
-                                         cfg=PROXY_CFG, xform=wp.transform(
-                                             (ox + (i + 0.5) * P.PITCH, oy + (j + 0.5) * P.PITCH,
-                                              Z0 + stud_hh), wp.quat_identity()))
+                self.plate_shapes.append(scene.add_shape_cylinder(
+                    -1, radius=ex.STUD_COLLIDER_RADIUS, half_height=stud_hh, cfg=PROXY_CFG,
+                    xform=wp.transform((ox + (i + 0.5) * P.PITCH, oy + (j + 0.5) * P.PITCH,
+                                        Z0 + stud_hh), wp.quat_identity())))
 
         # --- bricks, waiting in the placer's feeder with their final yaw ------
         solimp = scene.custom_attributes["mujoco:geom_solimp"]
@@ -329,6 +335,9 @@ class Example:
         scene.add_ground_plane(cfg=newton.ModelBuilder.ShapeConfig(mu=0.75))
         self.model = scene.finalize()
         self.n_arm_bodies = n_arm_bodies
+        sb = self.model.shape_body.numpy()
+        self.shapes_of = {bid: np.flatnonzero(sb == b) for bid, b in self.body.items()}
+        self.set_group(self.plate_shapes)
 
         contact_max = 32768
         self.model.rigid_contact_max = contact_max
@@ -500,6 +509,12 @@ class Example:
         B.bias[:] = self.hand_off + [*self.i_xy, 0.0]
 
     # -- clutch -----------------------------------------------------------------
+    def set_group(self, shapes):
+        """Put shapes in STRUCT_GROUP, in place: a captured graph reads the array contents."""
+        g = self.model.shape_collision_group.numpy()
+        g[shapes] = STRUCT_GROUP
+        self.model.shape_collision_group.assign(g)
+
     def snap(self, s):
         """§2.3.3 gate on the pressed brick; if it passes, engage its clutch welds."""
         bid = s["brick_id"]
@@ -521,6 +536,7 @@ class Example:
                 w[3] = True
             self.model.equality_constraint_enabled.assign(en)
             self.solver.notify_model_changed(newton.solvers.SolverNotifyFlags.CONSTRAINT_PROPERTIES)
+            self.set_group(self.shapes_of[bid])
         brace = s["brace"] if s["requires_brace"] else None
         row = {"run_id": "%s_%s" % (self.name, self.plan["validation"]["bracing_strategy"]),
                "structure": self.name, "brick_id": bid, "step": s["step"],

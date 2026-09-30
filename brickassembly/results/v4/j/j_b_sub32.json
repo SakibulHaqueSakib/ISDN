@@ -1,0 +1,5984 @@
+{
+ "gate": "J-b",
+ "tolerance": "1 % or 1 mN (F) / 0.1 mN.m (M_patch) absolute; u 1 %; Jacobian and bridge sum 1 % or the same absolutes",
+ "weld": "solimp9999, 32 substeps, plate + bricks in STRUCT_GROUP",
+ "torquescale": null,
+ "statics": [
+  {
+   "scene": "column",
+   "load": "gravity",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0069,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0153,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0068,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "gravity",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.05017
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0022,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0051,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0023,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "gravity",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0021,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0046,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0021,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "gravity",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0005,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0014,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0006,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "+1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.010324,
+   "F_measured": [
+    0.0,
+    0.0,
+    -0.9333
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.93312
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.1894,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010322,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0203,
+   "samples30": {
+    "F_err_mN_max": 1.111,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.141,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "+1 N z",
+   "weld": "0->1",
+   "u_measured": 0.010502,
+   "F_measured": [
+    0.0,
+    0.0,
+    -0.94936
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.94984
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.4742,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010507,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0499,
+   "samples30": {
+    "F_err_mN_max": 2.045,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.2912,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "+1 N z",
+   "weld": "1->2",
+   "u_measured": 0.01067,
+   "F_measured": [
+    0.0,
+    0.0,
+    -0.96456
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.96656
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 2.0017,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010692,
+   "u_ok": true,
+   "u_rel_err_pct": 0.2071,
+   "samples30": {
+    "F_err_mN_max": 8.6174,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 1.2909,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "+1 N z",
+   "weld": "2->3",
+   "u_measured": 0.010911,
+   "F_measured": [
+    0.0,
+    0.0,
+    -0.98633
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.98328
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 3.0475,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010877,
+   "u_ok": true,
+   "u_rel_err_pct": 0.3099,
+   "samples30": {
+    "F_err_mN_max": 13.3543,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 2,
+    "u_samples_failing": 2,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 1.9814,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "-1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    1.06619
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.6985,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 2.0346,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0237,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "-1 N z",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    1.04991
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.2501,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.8503,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0105,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "-1 N z",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    1.03674
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 3.3003,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 9.7398,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.111,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "-1 N z",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    1.01219
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 4.5361,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 13.1487,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 1,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.1507,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N x",
+   "weld": "-1->0",
+   "u_measured": 0.011311,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -17.4304,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -17.4295,
+    0.0
+   ],
+   "F_err_mN": 0.0004,
+   "M_err_mNm": 0.00099,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.01131,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0061,
+   "samples30": {
+    "F_err_mN_max": 0.0231,
+    "M_err_mNm_max": 0.00512,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0016,
+    "mean_M_err_mNm": 0.001
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N x",
+   "weld": "0->1",
+   "u_measured": 0.008177,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -12.6302,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -12.6295,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.00076,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.008177,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0065,
+   "samples30": {
+    "F_err_mN_max": 0.0229,
+    "M_err_mNm_max": 0.00336,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0015,
+    "mean_M_err_mNm": 0.00072
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N x",
+   "weld": "1->2",
+   "u_measured": 0.005043,
+   "F_measured": [
+    -0.49684,
+    -0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -7.8299,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -7.8295,
+    0.0
+   ],
+   "F_err_mN": 3.156,
+   "M_err_mNm": 0.00044,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.005043,
+   "u_ok": true,
+   "u_rel_err_pct": 0.006,
+   "samples30": {
+    "F_err_mN_max": 9.023,
+    "M_err_mNm_max": 0.00128,
+    "samples_failing": 4,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0645,
+    "mean_M_err_mNm": 0.00036
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N x",
+   "weld": "2->3",
+   "u_measured": 0.00191,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -3.0296,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -3.0295,
+    0.0
+   ],
+   "F_err_mN": 0.0002,
+   "M_err_mNm": 0.0001,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.00191,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0038,
+   "samples30": {
+    "F_err_mN_max": 2.1251,
+    "M_err_mNm_max": 0.00037,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0251,
+    "mean_M_err_mNm": 0.0001
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N y",
+   "weld": "-1->0",
+   "u_measured": 0.023362,
+   "F_measured": [
+    0.0,
+    -0.5,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    17.4308,
+    -0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    17.4295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0043,
+   "M_err_mNm": 0.00131,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.023361,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0078,
+   "samples30": {
+    "F_err_mN_max": 0.0712,
+    "M_err_mNm_max": 0.01133,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0015,
+    "mean_M_err_mNm": 0.00164
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N y",
+   "weld": "0->1",
+   "u_measured": 0.01691,
+   "F_measured": [
+    -0.0,
+    -0.49977,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    12.6303,
+    -0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    12.6295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.2258,
+   "M_err_mNm": 0.00087,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.016908,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0072,
+   "samples30": {
+    "F_err_mN_max": 5.7866,
+    "M_err_mNm_max": 0.00446,
+    "samples_failing": 1,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.5688,
+    "mean_M_err_mNm": 0.00058
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N y",
+   "weld": "1->2",
+   "u_measured": 0.010457,
+   "F_measured": [
+    -0.0,
+    -0.5,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    7.8299,
+    0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    7.8295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0034,
+   "M_err_mNm": 0.00047,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010456,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0062,
+   "samples30": {
+    "F_err_mN_max": 4.517,
+    "M_err_mNm_max": 0.00522,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.3302,
+    "mean_M_err_mNm": 0.00028
+   }
+  },
+  {
+   "scene": "column",
+   "load": "0.5 N y",
+   "weld": "2->3",
+   "u_measured": 0.004004,
+   "F_measured": [
+    0.0,
+    -0.50113,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    3.0295,
+    0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    3.0295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 1.1261,
+   "M_err_mNm": 8e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.004004,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0029,
+   "samples30": {
+    "F_err_mN_max": 4.5704,
+    "M_err_mNm_max": 0.00494,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.5752,
+    "mean_M_err_mNm": 0.00032
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "gravity",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    -0.0,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.8027,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.8026,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.00011,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0024,
+    "M_err_mNm_max": 0.00069,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 2e-05
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "gravity",
+   "weld": "0->1",
+   "u_measured": 0.000741,
+   "F_measured": [
+    0.0,
+    -0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.5354,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.5351,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.0003,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.00074,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0023,
+    "M_err_mNm_max": 0.00081,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 9e-05
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "gravity",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.1336,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.1338,
+    0.0
+   ],
+   "F_err_mN": 0.0001,
+   "M_err_mNm": 0.00013,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0018,
+    "M_err_mNm_max": 0.00039,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 1e-05
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "+1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.032062,
+   "F_measured": [
+    0.0,
+    -0.0,
+    -0.94984
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    31.1765,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.94984
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    31.1974,
+    0.0
+   ],
+   "F_err_mN": 0.0014,
+   "M_err_mNm": 0.02085,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.032076,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0449,
+   "samples30": {
+    "F_err_mN_max": 0.0525,
+    "M_err_mNm_max": 0.03695,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0036,
+    "mean_M_err_mNm": 0.0215
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "+1 N z",
+   "weld": "0->1",
+   "u_measured": 0.086232,
+   "F_measured": [
+    0.0,
+    -0.0,
+    -0.96656
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    23.4489,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.96656
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    23.4649,
+    0.0
+   ],
+   "F_err_mN": 0.0014,
+   "M_err_mNm": 0.01606,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.086276,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0515,
+   "samples30": {
+    "F_err_mN_max": 7.5798,
+    "M_err_mNm_max": 0.04459,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0166,
+    "mean_M_err_mNm": 0.01596
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "+1 N z",
+   "weld": "1->2",
+   "u_measured": 0.043491,
+   "F_measured": [
+    0.0,
+    -0.0,
+    -0.98328
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    7.86,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.98328
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    7.8662,
+    0.0
+   ],
+   "F_err_mN": 0.0009,
+   "M_err_mNm": 0.00625,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.043508,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0397,
+   "samples30": {
+    "F_err_mN_max": 14.0767,
+    "M_err_mNm_max": 0.10825,
+    "samples_failing": 2,
+    "u_samples_failing": 1,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0395,
+    "mean_M_err_mNm": 0.00663
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "-1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.011078,
+   "F_measured": [
+    0.0,
+    -0.0,
+    1.05016
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -32.8256,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -32.8026,
+    0.0
+   ],
+   "F_err_mN": 0.0045,
+   "M_err_mNm": 0.023,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.011062,
+   "u_ok": true,
+   "u_rel_err_pct": 0.1437,
+   "samples30": {
+    "F_err_mN_max": 0.1121,
+    "M_err_mNm_max": 0.03999,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0019,
+    "mean_M_err_mNm": 0.02398
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "-1 N z",
+   "weld": "0->1",
+   "u_measured": 0.045036,
+   "F_measured": [
+    -0.00411,
+    -0.0,
+    1.03343
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -24.5526,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -24.5351,
+    0.0
+   ],
+   "F_err_mN": 4.1141,
+   "M_err_mNm": 0.01748,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.044988,
+   "u_ok": true,
+   "u_rel_err_pct": 0.1079,
+   "samples30": {
+    "F_err_mN_max": 19.771,
+    "M_err_mNm_max": 0.08444,
+    "samples_failing": 3,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 1.5436,
+    "mean_M_err_mNm": 0.00468
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "-1 N z",
+   "weld": "1->2",
+   "u_measured": 1.9e-05,
+   "F_measured": [
+    0.0,
+    -0.0,
+    1.01672
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -8.1406,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -8.1338,
+    0.0
+   ],
+   "F_err_mN": 0.0022,
+   "M_err_mNm": 0.00679,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 11.2201,
+    "M_err_mNm_max": 0.07055,
+    "samples_failing": 1,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.4752,
+    "mean_M_err_mNm": 0.01013
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N x",
+   "weld": "-1->0",
+   "u_measured": 0.008728,
+   "F_measured": [
+    -0.5,
+    0.0,
+    0.05017
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -13.4268,
+    0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -13.4321,
+    0.0
+   ],
+   "F_err_mN": 0.0025,
+   "M_err_mNm": 0.00532,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.008732,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0424,
+   "samples30": {
+    "F_err_mN_max": 0.0169,
+    "M_err_mNm_max": 0.00746,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0009,
+    "mean_M_err_mNm": 0.00552
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N x",
+   "weld": "0->1",
+   "u_measured": 0.022382,
+   "F_measured": [
+    -0.5,
+    0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -8.3608,
+    0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -8.3645,
+    0.0
+   ],
+   "F_err_mN": 0.0025,
+   "M_err_mNm": 0.00369,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.022392,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0458,
+   "samples30": {
+    "F_err_mN_max": 0.0171,
+    "M_err_mNm_max": 0.00502,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0009,
+    "mean_M_err_mNm": 0.00381
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N x",
+   "weld": "1->2",
+   "u_measured": 0.008378,
+   "F_measured": [
+    -0.5,
+    0.0,
+    0.01528
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -3.1518,
+    0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -3.1632,
+    0.0
+   ],
+   "F_err_mN": 1.4401,
+   "M_err_mNm": 0.01146,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.008378,
+   "u_ok": true,
+   "u_rel_err_pct": 0.002,
+   "samples30": {
+    "F_err_mN_max": 8.8137,
+    "M_err_mNm_max": 0.07058,
+    "samples_failing": 7,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.4861,
+    "mean_M_err_mNm": 0.00393
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N y",
+   "weld": "-1->0",
+   "u_measured": 0.016906,
+   "F_measured": [
+    -0.0,
+    -0.49999,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    12.6279,
+    -0.8026,
+    -15.9981
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    12.6295,
+    -0.8026,
+    -16.0
+   ],
+   "F_err_mN": 0.0089,
+   "M_err_mNm": 0.00251,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.016908,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0131,
+   "samples30": {
+    "F_err_mN_max": 0.0136,
+    "M_err_mNm_max": 0.00682,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0016,
+    "mean_M_err_mNm": 0.00035
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N y",
+   "weld": "0->1",
+   "u_measured": 0.02091,
+   "F_measured": [
+    0.0,
+    -0.50074,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    7.8285,
+    -0.5351,
+    -12.0054
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    7.8295,
+    -0.5351,
+    -12.0
+   ],
+   "F_err_mN": 0.741,
+   "M_err_mNm": 0.00545,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.020912,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0128,
+   "samples30": {
+    "F_err_mN_max": 3.5645,
+    "M_err_mNm_max": 0.02797,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.4948,
+    "mean_M_err_mNm": 0.004
+   }
+  },
+  {
+   "scene": "cantilever",
+   "load": "0.5 N y",
+   "weld": "1->2",
+   "u_measured": 0.008007,
+   "F_measured": [
+    -0.0,
+    -0.50653,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    3.0292,
+    -0.1338,
+    -4.0524
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    3.0295,
+    -0.1338,
+    -4.0
+   ],
+   "F_err_mN": 6.5317,
+   "M_err_mNm": 0.05239,
+   "F_ok": false,
+   "M_ok": true,
+   "u_analytic": 0.008008,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0086,
+   "samples30": {
+    "F_err_mN_max": 4.2976,
+    "M_err_mNm_max": 0.03446,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.7871,
+    "mean_M_err_mNm": 0.00637
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "gravity",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.0,
+    -0.0,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "gravity",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0004
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.00043,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0,
+    "M_err_mNm_max": 0.00048,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 2e-05
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "gravity",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0,
+    -0.0009
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.00089,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0,
+    "M_err_mNm_max": 0.001,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 5e-05
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "gravity",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.0,
+    0.0006
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.00063,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0,
+    "M_err_mNm_max": 0.00071,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 4e-05
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "+1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.010322,
+   "F_measured": [
+    -0.0,
+    -0.0,
+    -0.93312
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.93312
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 1e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010322,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0,
+   "samples30": {
+    "F_err_mN_max": 0.0003,
+    "M_err_mNm_max": 0.00012,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 1e-05
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "+1 N z",
+   "weld": "0->1",
+   "u_measured": 0.021014,
+   "F_measured": [
+    0.0,
+    0.0,
+    -0.94984
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.94984
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 1e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.021014,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0,
+   "samples30": {
+    "F_err_mN_max": 0.0004,
+    "M_err_mNm_max": 0.02279,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.00197
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "+1 N z",
+   "weld": "1->2",
+   "u_measured": 0.010692,
+   "F_measured": [
+    0.0,
+    -0.0,
+    -0.96656
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.96656
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 2e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010692,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0,
+   "samples30": {
+    "F_err_mN_max": 0.0004,
+    "M_err_mNm_max": 0.05591,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.00484
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "+1 N z",
+   "weld": "2->3",
+   "u_measured": 0.010877,
+   "F_measured": [
+    0.0,
+    -0.0,
+    -0.98328
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    -0.98328
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 2e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010877,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0,
+   "samples30": {
+    "F_err_mN_max": 0.0003,
+    "M_err_mNm_max": 0.04852,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.0042
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "-1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.0,
+    0.0,
+    1.06688
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.0,
+    0.0001
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0002,
+   "M_err_mNm": 0.00012,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0006,
+    "M_err_mNm_max": 0.00012,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "-1 N z",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.0,
+    -0.0,
+    1.05016
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0,
+    -0.0227
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.02273,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0006,
+    "M_err_mNm_max": 0.02304,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 0.00071
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "-1 N z",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.0,
+    0.0,
+    1.03344
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0,
+    0.0561
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.05612,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0003,
+    "M_err_mNm_max": 0.05688,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 0.00175
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "-1 N z",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.0,
+    0.0,
+    1.01672
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0,
+    -0.049
+   ],
+   "F_analytic": [
+    0.0,
+    0.0,
+    1.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0001,
+   "M_err_mNm": 0.04903,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0004,
+    "M_err_mNm_max": 0.0497,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0001,
+    "mean_M_err_mNm": 0.00153
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N x",
+   "weld": "-1->0",
+   "u_measured": 0.023362,
+   "F_measured": [
+    -0.0,
+    0.5,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    -17.4303,
+    -0.0,
+    0.0
+   ],
+   "F_analytic": [
+    -0.0,
+    0.5,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    -17.4295,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0004,
+   "M_err_mNm": 0.00086,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.023361,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0051,
+   "samples30": {
+    "F_err_mN_max": 0.012,
+    "M_err_mNm_max": 0.00372,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0006,
+    "mean_M_err_mNm": 0.00096
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N x",
+   "weld": "0->1",
+   "u_measured": 0.033819,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -12.6301,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -12.6295,
+    0.0
+   ],
+   "F_err_mN": 0.0004,
+   "M_err_mNm": 0.00068,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.033817,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0056,
+   "samples30": {
+    "F_err_mN_max": 0.0122,
+    "M_err_mNm_max": 0.00247,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0006,
+    "mean_M_err_mNm": 0.00074
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N x",
+   "weld": "1->2",
+   "u_measured": 0.005043,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -7.8298,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -7.8295,
+    0.0
+   ],
+   "F_err_mN": 0.0001,
+   "M_err_mNm": 0.00037,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.005043,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0051,
+   "samples30": {
+    "F_err_mN_max": 7.3088,
+    "M_err_mNm_max": 0.00124,
+    "samples_failing": 2,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.1948,
+    "mean_M_err_mNm": 0.0004
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N x",
+   "weld": "2->3",
+   "u_measured": 0.00191,
+   "F_measured": [
+    -0.5,
+    -0.0,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -3.0296,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    0.0,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -3.0295,
+    0.0
+   ],
+   "F_err_mN": 0.0002,
+   "M_err_mNm": 0.00011,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.00191,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0042,
+   "samples30": {
+    "F_err_mN_max": 0.08,
+    "M_err_mNm_max": 0.00019,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0028,
+    "mean_M_err_mNm": 0.00011
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N y",
+   "weld": "-1->0",
+   "u_measured": 0.011311,
+   "F_measured": [
+    -0.49999,
+    0.0,
+    0.06688
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -17.4309,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.5,
+    -0.0,
+    0.06688
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -17.4295,
+    0.0
+   ],
+   "F_err_mN": 0.0055,
+   "M_err_mNm": 0.00146,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.01131,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0089,
+   "samples30": {
+    "F_err_mN_max": 0.0436,
+    "M_err_mNm_max": 0.00661,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0006,
+    "mean_M_err_mNm": 0.00157
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N y",
+   "weld": "0->1",
+   "u_measured": 0.033819,
+   "F_measured": [
+    -0.0,
+    -0.49999,
+    0.05016
+   ],
+   "M_patch_measured_mNm": [
+    12.6301,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.05016
+   ],
+   "M_patch_analytic_mNm": [
+    12.6295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.006,
+   "M_err_mNm": 0.00063,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.033817,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0052,
+   "samples30": {
+    "F_err_mN_max": 4.9563,
+    "M_err_mNm_max": 0.00385,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.17,
+    "mean_M_err_mNm": 0.00119
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N y",
+   "weld": "1->2",
+   "u_measured": 0.010456,
+   "F_measured": [
+    -0.0,
+    -0.50068,
+    0.03344
+   ],
+   "M_patch_measured_mNm": [
+    7.8295,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.03344
+   ],
+   "M_patch_analytic_mNm": [
+    7.8295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.6759,
+   "M_err_mNm": 5e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010456,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0006,
+   "samples30": {
+    "F_err_mN_max": 7.5691,
+    "M_err_mNm_max": 0.00325,
+    "samples_failing": 3,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.8213,
+    "mean_M_err_mNm": 0.00058
+   }
+  },
+  {
+   "scene": "column_yaw",
+   "load": "0.5 N y",
+   "weld": "2->3",
+   "u_measured": 0.004004,
+   "F_measured": [
+    -0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_patch_measured_mNm": [
+    3.0291,
+    0.0,
+    0.0
+   ],
+   "F_analytic": [
+    0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_patch_analytic_mNm": [
+    3.0295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0042,
+   "M_err_mNm": 0.00031,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.004004,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0107,
+   "samples30": {
+    "F_err_mN_max": 3.1668,
+    "M_err_mNm_max": 0.00383,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.1245,
+    "mean_M_err_mNm": 0.00016
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "gravity",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00583,
+    -0.0,
+    0.06663
+   ],
+   "M_patch_measured_mNm": [
+    -0.0003,
+    -0.1193,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00583,
+    0.0,
+    0.06663
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.1193,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.00028,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0004,
+    "M_err_mNm_max": 0.00035,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 2e-05
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "gravity",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00437,
+    -0.0,
+    0.04997
+   ],
+   "M_patch_measured_mNm": [
+    0.0001,
+    -0.0685,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00437,
+    0.0,
+    0.04997
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.0685,
+    0.0
+   ],
+   "F_err_mN": 0.0001,
+   "M_err_mNm": 9e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0001,
+    "M_err_mNm_max": 0.00011,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 0.0
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "gravity",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00291,
+    0.0,
+    0.03332
+   ],
+   "M_patch_measured_mNm": [
+    0.0006,
+    -0.0317,
+    0.0
+   ],
+   "F_analytic": [
+    -0.00291,
+    0.0,
+    0.03332
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.0317,
+    0.0
+   ],
+   "F_err_mN": 0.0003,
+   "M_err_mNm": 0.00058,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0004,
+    "M_err_mNm_max": 0.00078,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 3e-05
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "gravity",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00146,
+    -0.0,
+    0.01666
+   ],
+   "M_patch_measured_mNm": [
+    -0.0011,
+    -0.0088,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00146,
+    0.0,
+    0.01666
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.0088,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "M_err_mNm": 0.00107,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.0,
+    "M_err_mNm_max": 0.00141,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0,
+    "mean_M_err_mNm": 6e-05
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "+1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.012298,
+   "F_measured": [
+    0.08133,
+    -0.0,
+    -0.92956
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    2.9149,
+    0.0
+   ],
+   "F_analytic": [
+    0.08133,
+    0.0,
+    -0.92956
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    2.9189,
+    -0.0
+   ],
+   "F_err_mN": 0.0039,
+   "M_err_mNm": 0.00395,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.012301,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0223,
+   "samples30": {
+    "F_err_mN_max": 0.0561,
+    "M_err_mNm_max": 0.03436,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0025,
+    "mean_M_err_mNm": 0.00101
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "+1 N z",
+   "weld": "0->1",
+   "u_measured": 0.011941,
+   "F_measured": [
+    0.08279,
+    -0.0,
+    -0.94622
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    2.1325,
+    -0.0
+   ],
+   "F_analytic": [
+    0.08278,
+    0.0,
+    -0.94622
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    2.133,
+    -0.0
+   ],
+   "F_err_mN": 0.0037,
+   "M_err_mNm": 0.00045,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.011942,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0027,
+   "samples30": {
+    "F_err_mN_max": 15.4112,
+    "M_err_mNm_max": 0.02265,
+    "samples_failing": 2,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.8755,
+    "mean_M_err_mNm": 0.00525
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "+1 N z",
+   "weld": "1->2",
+   "u_measured": 0.011574,
+   "F_measured": [
+    0.08198,
+    -0.0,
+    -0.96308
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    1.3314,
+    -0.0
+   ],
+   "F_analytic": [
+    0.08424,
+    0.0,
+    -0.96288
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    1.3331,
+    -0.0
+   ],
+   "F_err_mN": 2.2653,
+   "M_err_mNm": 0.00168,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.011573,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0088,
+   "samples30": {
+    "F_err_mN_max": 18.9868,
+    "M_err_mNm_max": 0.02015,
+    "samples_failing": 3,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.2558,
+    "mean_M_err_mNm": 0.00205
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "+1 N z",
+   "weld": "2->3",
+   "u_measured": 0.011188,
+   "F_measured": [
+    0.0811,
+    -0.0,
+    -0.97994
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.5037,
+    0.0
+   ],
+   "F_analytic": [
+    0.0857,
+    0.0,
+    -0.97954
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    0.5192,
+    -0.0
+   ],
+   "F_err_mN": 4.6141,
+   "M_err_mNm": 0.0155,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.011195,
+   "u_ok": true,
+   "u_rel_err_pct": 0.056,
+   "samples30": {
+    "F_err_mN_max": 10.477,
+    "M_err_mNm_max": 0.01224,
+    "samples_failing": 2,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.8089,
+    "mean_M_err_mNm": 0.00242
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "-1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.09302,
+    0.0,
+    1.06283
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -3.1679,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.09299,
+    0.0,
+    1.06282
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -3.1574,
+    0.0
+   ],
+   "F_err_mN": 0.038,
+   "M_err_mNm": 0.01053,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 0.051,
+    "M_err_mNm_max": 0.00934,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0037,
+    "mean_M_err_mNm": 0.00491
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "-1 N z",
+   "weld": "0->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.09156,
+    0.0,
+    1.04617
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -2.2756,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.09153,
+    0.0,
+    1.04617
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -2.2699,
+    0.0
+   ],
+   "F_err_mN": 0.0352,
+   "M_err_mNm": 0.00567,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 1.4679,
+    "M_err_mNm_max": 0.02517,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0419,
+    "mean_M_err_mNm": 0.00479
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "-1 N z",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.08734,
+    0.0,
+    1.02975
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -1.3953,
+    0.0
+   ],
+   "F_analytic": [
+    -0.09007,
+    0.0,
+    1.02951
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -1.3964,
+    0.0
+   ],
+   "F_err_mN": 2.742,
+   "M_err_mNm": 0.00109,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 17.1041,
+    "M_err_mNm_max": 0.03354,
+    "samples_failing": 3,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.4094,
+    "mean_M_err_mNm": 0.0015
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "-1 N z",
+   "weld": "2->3",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.09137,
+    -0.0,
+    1.01261
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.5363,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.08861,
+    0.0,
+    1.01285
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -0.5369,
+    0.0
+   ],
+   "F_err_mN": 2.7642,
+   "M_err_mNm": 0.00061,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.0,
+   "u_ok": true,
+   "u_rel_err_pct": null,
+   "samples30": {
+    "F_err_mN_max": 19.2864,
+    "M_err_mNm_max": 0.03824,
+    "samples_failing": 2,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 1.7242,
+    "mean_M_err_mNm": 0.00296
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N x",
+   "weld": "-1->0",
+   "u_measured": 0.011832,
+   "F_measured": [
+    -0.50392,
+    -0.0,
+    0.02305
+   ],
+   "M_patch_measured_mNm": [
+    -0.0001,
+    -17.482,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.50393,
+    0.0,
+    0.02305
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -17.4824,
+    0.0
+   ],
+   "F_err_mN": 0.0023,
+   "M_err_mNm": 0.00042,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.011832,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0024,
+   "samples30": {
+    "F_err_mN_max": 0.0144,
+    "M_err_mNm_max": 0.0008,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0007,
+    "mean_M_err_mNm": 0.00031
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N x",
+   "weld": "0->1",
+   "u_measured": 0.008675,
+   "F_measured": [
+    -0.50247,
+    0.0,
+    0.00639
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -12.6494,
+    0.0
+   ],
+   "F_analytic": [
+    -0.50247,
+    0.0,
+    0.00639
+   ],
+   "M_patch_analytic_mNm": [
+    0.0,
+    -12.6499,
+    0.0
+   ],
+   "F_err_mN": 0.0024,
+   "M_err_mNm": 0.00044,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.008675,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0035,
+   "samples30": {
+    "F_err_mN_max": 0.0145,
+    "M_err_mNm_max": 0.00085,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0007,
+    "mean_M_err_mNm": 0.00036
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N x",
+   "weld": "1->2",
+   "u_measured": 0.005527,
+   "F_measured": [
+    -0.50101,
+    0.0,
+    -0.01026
+   ],
+   "M_patch_measured_mNm": [
+    0.0001,
+    -7.8307,
+    0.0
+   ],
+   "F_analytic": [
+    -0.50101,
+    0.0,
+    -0.01026
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -7.8313,
+    0.0
+   ],
+   "F_err_mN": 0.0022,
+   "M_err_mNm": 0.0006,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.005528,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0074,
+   "samples30": {
+    "F_err_mN_max": 3.3844,
+    "M_err_mNm_max": 0.00372,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.1902,
+    "mean_M_err_mNm": 0.00045
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N x",
+   "weld": "2->3",
+   "u_measured": 0.002395,
+   "F_measured": [
+    -0.49955,
+    -0.0,
+    -0.02692
+   ],
+   "M_patch_measured_mNm": [
+    -0.0002,
+    -3.0328,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.49955,
+    0.0,
+    -0.02692
+   ],
+   "M_patch_analytic_mNm": [
+    -0.0,
+    -3.0268,
+    0.0
+   ],
+   "F_err_mN": 0.0027,
+   "M_err_mNm": 0.00601,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.00239,
+   "u_ok": true,
+   "u_rel_err_pct": 0.1737,
+   "samples30": {
+    "F_err_mN_max": 1.2099,
+    "M_err_mNm_max": 0.03228,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0526,
+    "mean_M_err_mNm": 2e-05
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N y",
+   "weld": "-1->0",
+   "u_measured": 0.023364,
+   "F_measured": [
+    -0.00583,
+    -0.49999,
+    0.06663
+   ],
+   "M_patch_measured_mNm": [
+    17.4301,
+    -0.1193,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00583,
+    -0.5,
+    0.06663
+   ],
+   "M_patch_analytic_mNm": [
+    17.4295,
+    -0.1193,
+    0.0
+   ],
+   "F_err_mN": 0.0056,
+   "M_err_mNm": 0.00067,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.023363,
+   "u_ok": true,
+   "u_rel_err_pct": 0.004,
+   "samples30": {
+    "F_err_mN_max": 0.0288,
+    "M_err_mNm_max": 0.01255,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0002,
+    "mean_M_err_mNm": 0.00052
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N y",
+   "weld": "0->1",
+   "u_measured": 0.016911,
+   "F_measured": [
+    -0.00437,
+    -0.49999,
+    0.04997
+   ],
+   "M_patch_measured_mNm": [
+    12.63,
+    -0.0685,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00437,
+    -0.5,
+    0.04997
+   ],
+   "M_patch_analytic_mNm": [
+    12.6295,
+    -0.0685,
+    0.0
+   ],
+   "F_err_mN": 0.0052,
+   "M_err_mNm": 0.00056,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.016911,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0046,
+   "samples30": {
+    "F_err_mN_max": 5.164,
+    "M_err_mNm_max": 0.00613,
+    "samples_failing": 1,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0125,
+    "mean_M_err_mNm": 0.00096
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N y",
+   "weld": "1->2",
+   "u_measured": 0.010458,
+   "F_measured": [
+    -0.00291,
+    -0.5,
+    0.03332
+   ],
+   "M_patch_measured_mNm": [
+    7.8298,
+    -0.0317,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00291,
+    -0.5,
+    0.03332
+   ],
+   "M_patch_analytic_mNm": [
+    7.8295,
+    -0.0317,
+    0.0
+   ],
+   "F_err_mN": 0.0045,
+   "M_err_mNm": 0.00031,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.010458,
+   "u_ok": true,
+   "u_rel_err_pct": 0.004,
+   "samples30": {
+    "F_err_mN_max": 0.7012,
+    "M_err_mNm_max": 0.00499,
+    "samples_failing": 0,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.0057,
+    "mean_M_err_mNm": 0.00054
+   }
+  },
+  {
+   "scene": "column_tilt",
+   "load": "0.5 N y",
+   "weld": "2->3",
+   "u_measured": 0.004005,
+   "F_measured": [
+    -0.00146,
+    -0.5,
+    0.01666
+   ],
+   "M_patch_measured_mNm": [
+    3.0295,
+    -0.0088,
+    -0.0
+   ],
+   "F_analytic": [
+    -0.00146,
+    -0.5,
+    0.01666
+   ],
+   "M_patch_analytic_mNm": [
+    3.0295,
+    -0.0088,
+    0.0
+   ],
+   "F_err_mN": 0.0029,
+   "M_err_mNm": 9e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "u_analytic": 0.004005,
+   "u_ok": true,
+   "u_rel_err_pct": 0.0031,
+   "samples30": {
+    "F_err_mN_max": 9.3268,
+    "M_err_mNm_max": 0.00676,
+    "samples_failing": 2,
+    "u_samples_failing": 0,
+    "mean_F_ok": true,
+    "mean_M_ok": true,
+    "mean_F_err_mN": 0.965,
+    "mean_M_err_mNm": 0.00041
+   }
+  },
+  {
+   "scene": "bridge",
+   "load": "gravity",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.00481,
+    0.0,
+    0.01671
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.0117,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "gravity",
+   "weld": "-1->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00481,
+    -0.0,
+    0.01671
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.0117,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "gravity",
+   "weld": "0->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.00481,
+    0.0,
+    0.00836
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.0579,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "gravity",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.00481,
+    -0.0,
+    0.00836
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    0.0579,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "+1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.012511,
+   "F_measured": [
+    -0.28938,
+    -0.0,
+    -0.48358
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    0.6552,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "+1 N z",
+   "weld": "-1->1",
+   "u_measured": 0.012479,
+   "F_measured": [
+    0.28937,
+    0.0,
+    -0.483
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.6483,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "+1 N z",
+   "weld": "0->2",
+   "u_measured": 0.020355,
+   "F_measured": [
+    -0.28293,
+    -0.0,
+    -0.49111
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    3.4316,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "+1 N z",
+   "weld": "1->2",
+   "u_measured": 0.020554,
+   "F_measured": [
+    0.2891,
+    0.0,
+    -0.49558
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -3.4675,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "-1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.29954,
+    -0.0,
+    0.51671
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.6765,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "-1 N z",
+   "weld": "-1->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.29954,
+    0.0,
+    0.51671
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    0.6765,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "-1 N z",
+   "weld": "0->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    0.29863,
+    -0.0,
+    0.50879
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -3.5542,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "-1 N z",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.29865,
+    0.0,
+    0.50879
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    3.5542,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N x",
+   "weld": "-1->0",
+   "u_measured": 0.010484,
+   "F_measured": [
+    -0.24488,
+    -0.0,
+    -0.34863
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -1.0019,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N x",
+   "weld": "-1->1",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.25512,
+    0.0,
+    0.38205
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -0.9821,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N x",
+   "weld": "0->2",
+   "u_measured": 0.011628,
+   "F_measured": [
+    -0.2456,
+    -0.0,
+    -0.35698
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    1.3487,
+    -0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N x",
+   "weld": "1->2",
+   "u_measured": 0.0,
+   "F_measured": [
+    -0.25512,
+    0.0,
+    0.37371
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    1.4674,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N y",
+   "weld": "-1->0",
+   "u_measured": 0.010457,
+   "F_measured": [
+    0.00484,
+    -0.24995,
+    0.01665
+   ],
+   "M_patch_measured_mNm": [
+    3.9145,
+    -0.0111,
+    -1.1341
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N y",
+   "weld": "-1->1",
+   "u_measured": 0.010456,
+   "F_measured": [
+    -0.00484,
+    -0.25005,
+    0.01676
+   ],
+   "M_patch_measured_mNm": [
+    3.915,
+    0.0119,
+    1.1349
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N y",
+   "weld": "0->2",
+   "u_measured": 0.004006,
+   "F_measured": [
+    0.00484,
+    -0.24995,
+    0.00831
+   ],
+   "M_patch_measured_mNm": [
+    1.515,
+    -0.0575,
+    -1.1341
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "0.5 N y",
+   "weld": "1->2",
+   "u_measured": 0.004002,
+   "F_measured": [
+    -0.00484,
+    -0.25005,
+    0.00841
+   ],
+   "M_patch_measured_mNm": [
+    1.5145,
+    0.0584,
+    1.1349
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "couple y 2 mN.m + 1 N z",
+   "weld": "-1->0",
+   "u_measured": 0.013872,
+   "F_measured": [
+    -0.28923,
+    0.0,
+    -0.57662
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    0.4031,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "couple y 2 mN.m + 1 N z",
+   "weld": "-1->1",
+   "u_measured": 0.011142,
+   "F_measured": [
+    0.28923,
+    0.0,
+    -0.38997
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    -0.9093,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "couple y 2 mN.m + 1 N z",
+   "weld": "0->2",
+   "u_measured": 0.021678,
+   "F_measured": [
+    -0.28803,
+    0.0,
+    -0.5837
+   ],
+   "M_patch_measured_mNm": [
+    -0.0,
+    3.1692,
+    0.0
+   ]
+  },
+  {
+   "scene": "bridge",
+   "load": "couple y 2 mN.m + 1 N z",
+   "weld": "1->2",
+   "u_measured": 0.019007,
+   "F_measured": [
+    0.28893,
+    0.0,
+    -0.39835
+   ],
+   "M_patch_measured_mNm": [
+    0.0,
+    -3.686,
+    -0.0
+   ]
+  }
+ ],
+ "jacobian": [
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "gravity",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01671
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01671
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "gravity",
+   "brick": 1,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "gravity",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "gravity",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "+1 N z",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "+1 N z",
+   "brick": 1,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "+1 N z",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01673
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01673
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "+1 N z",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    0.0,
+    -0.98328
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    -0.98328
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "-1 N z",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "-1 N z",
+   "brick": 1,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "-1 N z",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "-1 N z",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    0.0,
+    1.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    1.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N x",
+   "brick": 0,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00014,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00014,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    0.0002,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N x",
+   "brick": 1,
+   "F_weld": [
+    0.00353,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.00353,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    0.0339,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00023,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00023,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    0.0342,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N x",
+   "brick": 2,
+   "F_weld": [
+    -0.00565,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.00565,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0206,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00016,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00016,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0204,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N x",
+   "brick": 3,
+   "F_weld": [
+    -0.49787,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.49787,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -3.0296,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -3.0296,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N y",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    -0.00017,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.00017,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0021,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00014,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00014,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.002,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N y",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    1e-05,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    1e-05,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0021,
+    0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00023,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00023,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0019,
+    0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N y",
+   "brick": 2,
+   "F_weld": [
+    -0.0,
+    -0.00103,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.00103,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0118,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00015,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00015,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0116,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column",
+   "gated": true,
+   "load": "0.5 N y",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    -0.49881,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.49881,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    3.0296,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    3.0296,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "gravity",
+   "brick": 0,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "gravity",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "gravity",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "gravity",
+   "brick": 3,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 0,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 2,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 3,
+   "F_weld": [
+    -0.0,
+    0.0,
+    -0.98328
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    -0.98328
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0086
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    -0.0086
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 1,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0296
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0296
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0,
+    -0.0395
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    -0.0395
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    -0.0,
+    1.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    1.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0,
+    0.0184
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0,
+    0.0184
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0004,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00014,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00047,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0003,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 1,
+   "F_weld": [
+    7e-05,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    7e-05,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    0.0001,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00023,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00023,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    0.0004,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 2,
+   "F_weld": [
+    -7e-05,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -7e-05,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0005,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00016,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00016,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0003,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 3,
+   "F_weld": [
+    -0.5,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.5,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -3.0295,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -3.0295,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0001,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00014,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00014,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    0.00185,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.00185,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0174,
+    0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00023,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00023,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0177,
+    0.0,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 2,
+   "F_weld": [
+    0.0,
+    -0.00184,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.00184,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0002,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00015,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00015,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0001,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_yaw",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 3,
+   "F_weld": [
+    -0.0,
+    -0.5,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    3.0296,
+    -0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    3.0296,
+    -0.0,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "gravity",
+   "brick": 0,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "gravity",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "gravity",
+   "brick": 2,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0088,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0088,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "gravity",
+   "brick": 3,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0088,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 0,
+   "F_weld": [
+    -0.00605,
+    0.0,
+    0.01788
+   ],
+   "F_qfrc": [
+    -0.00605,
+    0.0,
+    0.01788
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0894,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00044,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00044,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0889,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 1,
+   "F_weld": [
+    0.01257,
+    0.0,
+    0.01556
+   ],
+   "F_qfrc": [
+    0.01257,
+    0.0,
+    0.01556
+   ],
+   "M_weld_mNm": [
+    0.0,
+    0.0623,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00111,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00111,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0634,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 2,
+   "F_weld": [
+    -0.00653,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.00653,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0174,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00155,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00155,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0158,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "+1 N z",
+   "brick": 3,
+   "F_weld": [
+    0.0,
+    0.0,
+    -0.98327
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    -0.98327
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    0.524,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    0.524,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0008,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00053,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00053,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.0003,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 1,
+   "F_weld": [
+    -0.01097,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.01097,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.1324,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00128,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00128,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.1311,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 2,
+   "F_weld": [
+    0.01015,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.01015,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0016,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00172,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00172,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    0.0001,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "-1 N z",
+   "brick": 3,
+   "F_weld": [
+    0.00081,
+    0.0,
+    1.01672
+   ],
+   "F_qfrc": [
+    0.00081,
+    0.0,
+    1.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.5461,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.5461,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 0,
+   "F_weld": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0089,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 2e-05,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 2e-05,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0089,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 1,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -0.0088,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 7e-05,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 7e-05,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -0.0089,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 2,
+   "F_weld": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0,
+    -0.0088,
+    -0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00026,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00026,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0,
+    -0.009,
+    -0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N x",
+   "brick": 3,
+   "F_weld": [
+    -0.5,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.5,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0,
+    -3.0265,
+    0.0
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0,
+    -3.0265,
+    0.0
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 0,
+   "F_weld": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    -0.0015,
+    -0.0088,
+    0.0001
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00014,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.0002,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    -0.0016,
+    -0.0088,
+    0.0002
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 1,
+   "F_weld": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "F_qfrc": [
+    0.0,
+    0.0,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.0007,
+    -0.0088,
+    -0.0001
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00023,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00023,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0004,
+    -0.0088,
+    -0.0001
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 2,
+   "F_weld": [
+    -0.0,
+    -0.00262,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.00262,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    0.025,
+    -0.0088,
+    -0.0021
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.00016,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.00219,
+   "M_ok_torque_world": true,
+   "M_qfrc_local_to_world_mNm": [
+    0.0248,
+    -0.0088,
+    -0.0021
+   ]
+  },
+  {
+   "scene": "column_tilt",
+   "gated": false,
+   "load": "0.5 N y",
+   "brick": 3,
+   "F_weld": [
+    -0.0,
+    -0.49738,
+    0.01672
+   ],
+   "F_qfrc": [
+    -0.0,
+    -0.49738,
+    0.01672
+   ],
+   "M_weld_mNm": [
+    3.019,
+    -0.0088,
+    -0.2642
+   ],
+   "F_err_mN": 0.0,
+   "F_ok": true,
+   "M_err_mNm_torque_local": 0.0,
+   "M_ok_torque_local": true,
+   "M_err_mNm_torque_world": 0.26438,
+   "M_ok_torque_world": false,
+   "M_qfrc_local_to_world_mNm": [
+    3.019,
+    -0.0088,
+    -0.2642
+   ]
+  }
+ ],
+ "bridge": [
+  {
+   "load": "gravity",
+   "F_sum": [
+    1e-05,
+    -0.0,
+    0.01672
+   ],
+   "F_analytic": [
+    -0.0,
+    -0.0,
+    0.01672
+   ],
+   "M_sum_mNm": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "M_analytic_mNm": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.0144,
+   "M_err_mNm": 0.0,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0001,
+    "M_err_mNm": 0.0,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      0.00481,
+      -0.0,
+      0.00836
+     ],
+     "M_mNm": [
+      0.0,
+      0.009,
+      -0.0
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      -0.0048,
+      0.0,
+      0.00836
+     ],
+     "M_mNm": [
+      0.0,
+      -0.009,
+      0.0
+     ]
+    }
+   ],
+   "split_u": [
+    0.0,
+    0.0
+   ],
+   "samples30": {
+    "F_err_mN_max": 0.3487,
+    "M_err_mNm_max": 0.0,
+    "samples_failing": 0
+   }
+  },
+  {
+   "load": "+1 N z",
+   "F_sum": [
+    -0.0,
+    -0.0,
+    -0.98328
+   ],
+   "F_analytic": [
+    -0.0,
+    -0.0,
+    -0.98328
+   ],
+   "M_sum_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "M_analytic_mNm": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.002,
+   "M_err_mNm": 2e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0029,
+    "M_err_mNm": 2e-05,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      -0.28912,
+      -0.0,
+      -0.4917
+     ],
+     "M_mNm": [
+      -0.0,
+      -0.5008,
+      -0.0
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      0.28912,
+      -0.0,
+      -0.49158
+     ],
+     "M_mNm": [
+      -0.0,
+      0.5008,
+      -0.0
+     ]
+    }
+   ],
+   "split_u": [
+    0.020355,
+    0.020554
+   ],
+   "samples30": {
+    "F_err_mN_max": 19.2891,
+    "M_err_mNm_max": 0.00977,
+    "samples_failing": 5
+   }
+  },
+  {
+   "load": "-1 N z",
+   "F_sum": [
+    -0.0,
+    -0.0,
+    1.0166
+   ],
+   "F_analytic": [
+    -0.0,
+    -0.0,
+    1.01672
+   ],
+   "M_sum_mNm": [
+    0.0,
+    -0.0,
+    0.0
+   ],
+   "M_analytic_mNm": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "F_err_mN": 0.1171,
+   "M_err_mNm": 2e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0004,
+    "M_err_mNm": 0.0,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      0.29923,
+      0.0,
+      0.5083
+     ],
+     "M_mNm": [
+      0.0,
+      0.5169,
+      -0.0
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      -0.29923,
+      -0.0,
+      0.5083
+     ],
+     "M_mNm": [
+      0.0,
+      -0.517,
+      0.0
+     ]
+    }
+   ],
+   "split_u": [
+    0.0,
+    0.0
+   ],
+   "samples30": {
+    "F_err_mN_max": 10.7154,
+    "M_err_mNm_max": 0.00335,
+    "samples_failing": 1
+   }
+  },
+  {
+   "load": "0.5 N x",
+   "F_sum": [
+    -0.49997,
+    -0.0,
+    0.01674
+   ],
+   "F_analytic": [
+    -0.5,
+    -0.0,
+    0.01672
+   ],
+   "M_sum_mNm": [
+    -0.0,
+    -3.0296,
+    -0.0
+   ],
+   "M_analytic_mNm": [
+    0.0,
+    -3.0295,
+    0.0
+   ],
+   "F_err_mN": 0.0393,
+   "M_err_mNm": 0.00011,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0006,
+    "M_err_mNm": 0.00035,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      -0.24491,
+      0.0,
+      -0.35695
+     ],
+     "M_mNm": [
+      -0.0,
+      -1.5071,
+      -0.0
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      -0.25505,
+      -0.0,
+      0.3737
+     ],
+     "M_mNm": [
+      -0.0,
+      -1.5225,
+      -0.0
+     ]
+    }
+   ],
+   "split_u": [
+    0.011628,
+    0.0
+   ],
+   "samples30": {
+    "F_err_mN_max": 4.058,
+    "M_err_mNm_max": 0.00014,
+    "samples_failing": 0
+   }
+  },
+  {
+   "load": "0.5 N y",
+   "F_sum": [
+    -0.0,
+    -0.5,
+    0.01672
+   ],
+   "F_analytic": [
+    -0.0,
+    -0.5,
+    0.01672
+   ],
+   "M_sum_mNm": [
+    3.0295,
+    0.0,
+    -0.0
+   ],
+   "M_analytic_mNm": [
+    3.0295,
+    0.0,
+    0.0
+   ],
+   "F_err_mN": 0.0001,
+   "M_err_mNm": 3e-05,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0001,
+    "M_err_mNm": 9e-05,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      0.00506,
+      -0.24995,
+      0.0084
+     ],
+     "M_mNm": [
+      1.515,
+      0.008,
+      0.8655
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      -0.00506,
+      -0.25005,
+      0.00832
+     ],
+     "M_mNm": [
+      1.5145,
+      -0.008,
+      -0.8655
+     ]
+    }
+   ],
+   "split_u": [
+    0.004006,
+    0.004002
+   ],
+   "samples30": {
+    "F_err_mN_max": 6.3122,
+    "M_err_mNm_max": 5e-05,
+    "samples_failing": 3
+   }
+  },
+  {
+   "load": "couple y 2 mN.m + 1 N z",
+   "F_sum": [
+    -0.00221,
+    0.0,
+    -0.98755
+   ],
+   "F_analytic": [
+    -0.0,
+    -0.0,
+    -0.98328
+   ],
+   "M_sum_mNm": [
+    -0.0,
+    -1.9995,
+    -0.0
+   ],
+   "M_analytic_mNm": [
+    -0.0,
+    -2.0,
+    -0.0
+   ],
+   "F_err_mN": 4.8073,
+   "M_err_mNm": 0.00049,
+   "F_ok": true,
+   "M_ok": true,
+   "piers_sum_vs_total": {
+    "F_err_mN": 0.0017,
+    "M_err_mNm": 0.00391,
+    "F_ok": true,
+    "M_ok": true
+   },
+   "split": [
+    {
+     "weld": "0->2",
+     "F": [
+      -0.28451,
+      0.0,
+      -0.58928
+     ],
+     "M_mNm": [
+      -0.0,
+      -1.495,
+      0.0
+     ]
+    },
+    {
+     "weld": "1->2",
+     "F": [
+      0.2823,
+      0.0,
+      -0.39827
+     ],
+     "M_mNm": [
+      -0.0,
+      -0.5045,
+      -0.0
+     ]
+    }
+   ],
+   "split_u": [
+    0.021678,
+    0.019007
+   ],
+   "samples30": {
+    "F_err_mN_max": 8.5238,
+    "M_err_mNm_max": 0.00078,
+    "samples_failing": 0
+   }
+  }
+ ],
+ "statics_pass": false,
+ "statics_pass_all_30_samples": false,
+ "statics_pass_30_frame_mean": true,
+ "statics_failing": [
+  [
+   "cantilever",
+   "0.5 N y",
+   "1->2"
+  ]
+ ],
+ "statics_failing_samples": 41,
+ "statics_worst_sample": {
+  "F_err_mN": 19.771,
+  "M_err_mNm": 0.10825
+ },
+ "statics_samples_total": 2250,
+ "jacobian_pass_local": true,
+ "jacobian_pass_world": true,
+ "jacobian_rotated_scenes_pass_local": true,
+ "jacobian_rotated_scenes_pass_world": false,
+ "bridge_pass": true,
+ "bridge_pass_all_30_samples": false,
+ "bridge_failing_samples": 9
+}
