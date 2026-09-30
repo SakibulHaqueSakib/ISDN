@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-175 entries. Later entries supersede earlier ones; retractions are marked.
+176 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -132,6 +132,10 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **deviated** `v4_milestone_order_r5`
     - rationale: U-r5-4 (J before WP1); M0, M0.5 and M1 slip about 4 agent-days (+ <= 1 day if the WP1 seating pull fires; pre-registered branch of J-pre). v3.1 frozen and not comparable; P0/P0' historical; P3 step 8 used P0' cube inserts and is re-run on P0'' before use; P3 steps 5/7 tracking/padding transfer only to cuRobo paths, steps 1-4 and 6 unaffected; P1(f) rows void, re-run under r5; P2 unaffected
+
+- **result** `v4_j_s0`
+    - result: plan v4 r5 step S0 (diagnostic: is there a crown-failure path that needs no brace?), three unbraced runs of scripts/13_brace_weld_probe.py part A with --strategy none, n = 1 per config (descriptive). (1) arch, none, default weld eq_solimp (0.95, 0.99, 0.001, 0.5, 2.0): placed 11/11, completed, error null, no divergence, 6134 frames, sim 102.23 s; crown b_010 seated: final_error 0.29 mm, dz -0.24 m…
+    - implication: the arch crown miss does not occur without the brace, so it is caused by the brace execution (consistent with F1, the B-arm to A-hand contact, v4_brace_overforce; F1 is not separately proven as the cause by S0). S3's unbraced b_015 loss (dz -72.06 mm, tilt 90.03 deg, matching P0' S3 grasp_lp r0's b_015 loss exactly and r1's dz; r2 lost it differently (-68.68 mm, 180 deg), per v4_p0_baseline_stiff_…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
