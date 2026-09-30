@@ -8,17 +8,19 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 
 | agent | model, effort | use for |
 |---|---|---|
-| `orchestrator` | opus, high | main session: runs the plan task by task, verifies every output, commits |
+| `orchestrator` | opus, high | main session: runs the plan phase by phase, verifies every output, commits per segment |
 | `planner` | opus, xhigh | the plan of record at the start (experiments, gates, what to report): long-horizon planning only |
-| `plan-reviser` | opus, high | revisions when the plan is faulty |
-| `reviewer` | sonnet, low; review by Codex (`openai-codex` plugin) | reviewing the plan (and revisions), diffs before commit, and outputs the orchestrator doubts |
+| `plan-reviser` | opus, high | one batched revision at a phase gate, when the plan cannot reach its goal |
+| `reviewer` | sonnet, low; review by Codex (`openai-codex` plugin) | reviewing the plan (and revisions) and each phase at its gate |
 | `implementer` | sonnet, high | executing code steps of an approved plan |
 | `doc-writer` | sonnet, high | docs, report prose, ledger entries, WORKLOG |
 | `scout` | haiku, low | finding code, reading logs/result files - read-only facts |
 
+- **Plan shape:** a few **phases**, each ending at one **gate** (milestone with pass criteria); a phase is split into **segments** (coherent deliverables), a segment into **subtasks** (one agent dispatch each). Checks inside a phase are not gates.
 - **Once, at the start of a project or phase:** planner writes the plan of record -> reviewer reviews it -> user decides what it raises -> doc-writer records it (`Docs/master_report.md`, ledger).
-- **Every task after that** (the orchestrator breaks the plan down itself; no planner): scout -> implementer / doc-writer -> orchestrator verifies (doubts -> reviewer) -> reviewer (diff, when it changes code, results or conclusions) -> commit.
-- **Plan found faulty:** orchestrator gives the plan-reviser the evidence -> revision -> reviewer -> user if it changes a conclusion or protocol -> doc-writer records the amendment and a ledger `deviation`.
+- **Inside a phase** (the orchestrator breaks it down itself; no planner): scout -> implementer / doc-writer per subtask -> orchestrator verifies (wrong output goes back to its owner) -> commit per finished segment. **No per-task reviews and no mid-phase plan revisions:** a failing check is fixed in-phase if that does not change the gate, otherwise logged in the ledger and carried to the gate.
+- **At each phase gate:** run the gate -> reviewer reviews the whole phase (diff, results vs gate, carried issues) -> if the plan cannot reach its goal, **one** batched revision: plan-reviser -> reviewer -> user if it changes a conclusion or protocol -> doc-writer records the amendment and a ledger `deviation`.
+- Stop mid-phase only for a blocker that makes the rest of the phase meaningless, and ask the user.
 - Keep it proportional: a question is scout-only; a small fix goes straight to its owner and is still verified.
 - `CHANGES REQUESTED` goes back to the owner; after two rounds, escalate to the user.
 - Long jobs (experiment batches, training) run in the background from the main session; a scout digests their logs.
