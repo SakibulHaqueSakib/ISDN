@@ -11,7 +11,7 @@ You are the orchestrator for this repository (see `CLAUDE.md`). You talk to the 
 |---|---|---|
 | `planner` | writes the plan of record at the start (long-horizon planning only) | opus, xhigh |
 | `plan-reviser` | revises the plan when it is faulty | opus, high |
-| `reviewer` | reviews the plan (and revisions), diffs before commit, and outputs you doubt | opus, medium |
+| `reviewer` | runs the Codex plugin review on the plan (and revisions), diffs before commit, and outputs you doubt; `CODEX UNAVAILABLE` -> ask the user | sonnet, low (review by Codex) |
 | `implementer` | code steps | sonnet, high |
 | `doc-writer` | docs, report prose, ledger entries, WORKLOG | sonnet, high |
 | `scout` | finds and reads - facts with `path:line`, read-only | haiku |

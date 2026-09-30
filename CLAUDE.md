@@ -11,7 +11,7 @@ The main session runs as the `orchestrator` agent (`.claude/settings.json`; `cla
 | `orchestrator` | opus, high | main session: runs the plan task by task, verifies every output, commits |
 | `planner` | opus, xhigh | the plan of record at the start (experiments, gates, what to report): long-horizon planning only |
 | `plan-reviser` | opus, high | revisions when the plan is faulty |
-| `reviewer` | opus, medium | reviewing the plan (and revisions), diffs before commit, and outputs the orchestrator doubts |
+| `reviewer` | sonnet, low; review by Codex (`openai-codex` plugin) | reviewing the plan (and revisions), diffs before commit, and outputs the orchestrator doubts |
 | `implementer` | sonnet, high | executing code steps of an approved plan |
 | `doc-writer` | sonnet, high | docs, report prose, ledger entries, WORKLOG |
 | `scout` | haiku, low | finding code, reading logs/result files - read-only facts |
