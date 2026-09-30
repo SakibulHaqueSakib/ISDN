@@ -10,7 +10,7 @@
 #   BrickSim/.venv   bricksim + Isaac Sim 5.1   BrickSim physics runs
 #   isdnenv          cuRobo + Viser             planner, viewer, force queries
 #   Issac            Isaac Sim 6.0 + Newton     dual_arm_sim, USD viewers, WP0
-#   mjenv            MuJoCo twin (v3.1; CPU     tests/test_{clutch,planner,control,env}.py,
+#   mjenv            MuJoCo twin (v3.1; CPU     tests/test_{clutch,planner,control,env,brace_bandit}.py,
 #                    physics, CUDA torch)
 #                                               orchestration/twin_executor.py, experiments/*,
 #                                               tasks/*, stability.py, bracing.py,
@@ -51,7 +51,7 @@ esac
 # imports (sim.mj, orchestration, tasks, experiments) resolve.
 twin=0
 case "$script" in
-    */tests/test_clutch.py|*/tests/test_planner.py|*/tests/test_control.py|*/tests/test_env.py) twin=2 ;;
+    */tests/test_clutch.py|*/tests/test_planner.py|*/tests/test_control.py|*/tests/test_env.py|*/tests/test_brace_bandit.py) twin=2 ;;
     */twin_executor.py|*/experiments/*.py|*/tasks/*.py|*/stability.py|*/bracing.py|*/sim/mj/*.py) twin=1 ;;
     */planner.py) case " $* " in *" --frame twin "*|*" --frame=twin "*) twin=1 ;; esac ;;
 esac
