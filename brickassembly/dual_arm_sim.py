@@ -1,8 +1,10 @@
 """Dual-arm LEGO assembly, live: images -> blueprint -> plan -> two Frankas.
 
 Arm B (the placer, at +x) picks every brick from a feeder and presses it onto
-the structure. Arm A (the stabilizer, at -x) presses down over the joint the
-planner predicts will pry open -- before B arrives, until B lets go. Physics is
+the structure. Arm A (the stabilizer, at -x) grips the bricks either side of the joint the
+planner predicts will pry open (the plan's grasp_lp brace: pad-centre TCP, open-finger approach,
+a contact-guarded last 10 mm, 1.5 mm squeeze, hold at the measured pose) -- after B has lifted
+its brick and before B carries it in, until B has retracted. Physics is
 Newton (MuJoCo-Warp solver) with studded, hollow brick meshes; the viewer runs
 live, in a window or a browser.
 
@@ -18,11 +20,15 @@ breaks a weld when its patch utilisation u >= 1 (capacity.Patch: axial and pryin
 on 2 consecutive end-of-frame samples, and the build ends at its first failure (gate miss,
 break, divergence): the arms open and park. So a brace can change an outcome through a break,
 or through a sub-critical displacement that changes the snap gate. Motion is still IK on
-interpolated waypoints with no collision-aware planning (the hand-off protocol and the
-clearance check arrive in Phase 2); the two arms work from opposite sides of the build.
+interpolated waypoints with no collision-aware planning; the two arms only take turns
+(hand-off protocol, Example.schedule: B stages, A braces, B places, A lets go; every wait
+times out after 30 s; the clearance check arrives later in Phase 2). --legacy-brace runs the
+pre-r5 brace (fingertips pressed into stud tops, no protocol) for comparison.
 --record-all PATH.npz saves a per-frame record (cell/record.py).
 """
 
+import functools
+import inspect
 import json
 import math
 import sys
@@ -60,7 +66,21 @@ GRASP_DZ = 0.013              # TCP above a brick's bottom face while gripping; 
 FINGER_KE = 1000.0            # N/m finger drive; squeeze = FINGER_KE * 1.5 mm per finger
 TIP_BELOW_TCP = 0.0089        # fingertips past the TCP (measured from the FR3 finger mesh)
 PRESS = 0.001                 # placer drives this far past seated
-BRACE_PRESS = 0.002           # stabilizer drives this far into what it braces
+BRACE_PRESS = 0.002           # stabilizer drives this far into what it braces (legacy brace only)
+
+# The grasp_lp brace (plan_v4 r5-4): pad-centre TCP, open-finger approach, guarded last 10 mm, 1.5 mm squeeze.
+A_FINGER_KE = 9500.0          # N/m, A's finger drive: 14.3 N nominal per finger at a 1.5 mm squeeze (r4 realised 13.2 N)
+BRACE_GRIP_N = 14.3           # the grip the planner's LP is given (per finger)
+BRACE_HALF_W = 0.008          # half-width of a brace brick (2 studs)
+BRACE_CLEAR = 0.002           # per side, fingers open
+BRACE_SQUEEZE = 0.0015        # per side, fingers closed
+BRACE_BACK = 0.05             # standoff along the tool axis
+BRACE_GUARD = 0.010           # last stretch, at GUARD_SPEED, fingers open, contact-guarded
+GUARD_SPEED = 0.005           # m/s
+GUARD_N, GUARD_FRAMES = 1.0, 2   # any A-shape contact normal force > GUARD_N for GUARD_FRAMES frames stops the move
+GRIP_SETTLE_S = 0.2           # realised grip is averaged from this long after "close" completes until "open" starts
+FORCE_EPS_N = 0.01            # a contact carries load (counts as contacted) above this normal force
+WAIT_TIMEOUT = 30.0           # s: an Arm wait longer than this fails the run (wait_timeout:<arm>:<phase>)
 
 # Finger contact stiffness (plan_v4 r4 sec 2.1): Newton maps ke/kd to a MuJoCo solref of
 # timeconst 2/kd, dampratio (kd/2)*sqrt(1/ke). Newton's default ShapeConfig (2500, 100) gave
@@ -84,6 +104,8 @@ WELD_ATTRS = {"mujoco:eq_solref": (0.002, 1.0), "mujoco:eq_solimp": (0.9999, 0.9
 # collides with everything except the same group, so the baseplate and every welded brick, all in
 # -2, ignore each other and still collide with arms, the held brick and the ground (group 1).
 STRUCT_GROUP = -2
+BRACE_PHASES_ALL = ("brace", "brace-guard", "close", "hold", "open")    # A's contact phases, both braces
+BRACE_PHASES = ("brace-guard", "close", "hold", "open")                 # the grasp_lp brace's
 TRAVEL = 0.08                 # clearance above the structure while moving
 ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 # BrickSim's default gate. §2.3.3 asks for 1.2 mm; position-controlled IK
@@ -260,20 +282,42 @@ class Arm:
         self.cmd = (np.array(pos, float), 0.0, 0.01, np.zeros(3))
         self.moves, self.cur, self.t, self.start = [], None, 0.0, self.cmd
         self.phase = "park"
+        self.ee = np.array(pos, float)         # the hand as last measured (update's argument)
+        self.waited = 0.0                      # s spent waiting in the current move
+        self.on_timeout = None                 # f(arm, phase), called once when a wait passes WAIT_TIMEOUT
 
     def push(self, phase, pos, yaw, grip, dur, wait=None, then=None, contact=False,
-             tilt=(0.0, 0.0, 0.0)):
+             tilt=(0.0, 0.0, 0.0), rel=None):
+        """`rel`: the move's target is the hand's measured pose + rel (see rebase); None = a fixed target."""
         self.moves.append(dict(phase=phase, pos=np.array(pos, float), yaw=yaw, grip=grip,
                                dur=dur, wait=wait, then=then, contact=contact,
-                               tilt=np.array(tilt, float)))
+                               tilt=np.array(tilt, float),
+                               rel=None if rel is None else np.array(rel, float)))
+
+    def rebase(self, ee):
+        """Hold at the measured pose: re-aim every queued move that has a `rel` at ee + rel, and command ee.
+        Setting cmd alone is not enough: update() interpolates cmd toward the next move's pos first."""
+        p, yaw, g, tilt = self.cmd
+        self.cmd = (np.array(ee, float), yaw, g, tilt)
+        for m in ([self.cur] if self.cur else []) + self.moves:
+            if m["rel"] is not None:
+                m["pos"] = np.array(ee, float) + m["rel"]
+
+    def stop_here(self, ee):
+        """End the current move where the hand is: command ee, drop the move, run its `then`."""
+        m, self.cur, self.ee = self.cur, None, np.array(ee, float)
+        self.rebase(ee)
+        if m and m["then"]:
+            m["then"]()
 
     def idle(self):
         return self.cur is None and not self.moves
 
     def update(self, dt, ee):
+        self.ee = ee
         if self.cur is None and self.moves:
             self.cur, self.t, self.start = self.moves.pop(0), 0.0, self.cmd
-            self.phase = self.cur["phase"]
+            self.phase, self.waited = self.cur["phase"], 0.0
         m = self.cur
         if m is None:
             return (self.cmd[0] + self.bias,) + self.cmd[1:]
@@ -285,6 +329,12 @@ class Arm:
                     g0 + s * (m["grip"] - g0), r0 + s * (m["tilt"] - r0))
         arrived = (m["contact"] or np.linalg.norm(ee - m["pos"] - self.bias) < 0.003
                    or self.t > m["dur"] + 2.0)
+        if x >= 1.0 and arrived and m["wait"] is not None and not m["wait"]():
+            self.waited += dt
+            if self.waited > WAIT_TIMEOUT:      # a deadlock: report it and go on (the caller aborts on failure)
+                if self.on_timeout:
+                    self.on_timeout(self, m["phase"])
+                m["wait"] = None
         if x >= 1.0 and arrived and (m["wait"] is None or m["wait"]()):
             self.cur = None
             if m["then"]:
@@ -418,6 +468,9 @@ class Example:
         for pos, yaw in (ARM_A, ARM_B):
             scene.add_builder(arm, xform=wp.transform(pos, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw)))
         n_arm_bodies = arm.body_count
+        if not getattr(args, "legacy_brace", False):     # A's grip: 14.3 N per finger at the 1.5 mm brace squeeze
+            scene.joint_target_ke[7:9] = [A_FINGER_KE] * 2
+            scene.joint_target_kd[7:9] = [2 * math.sqrt(A_FINGER_KE * 0.1)] * 2
 
         # --- baseplate: a studded slab, colliding only where the build stands --
         ox, oy, _ = self.plan["voxel_origin"]
@@ -526,7 +579,16 @@ class Example:
         self.A.push("park", park(ARM_A), 0.0, 0.0, 1.5)
         self.B.push("park", park(ARM_B), 0.0, 0.01, 1.5)
         self.next_step, self.b_step = 0, None
-        self.braced, self.placed = set(), set()
+        self.legacy = bool(getattr(args, "legacy_brace", False))
+        # hand-off protocol events (plan_v4 r5-5): B lifted its brick / A closed on the structure / B retracted
+        self.staged, self.braced, self.retracted, self.placed = set(), set(), set(), set()
+        self.queued = set()                   # steps whose brace is queued
+        self.brace_by_step = {}               # per braced step: what was asked, done and measured (see brace_info)
+        self.a_step, self.close_t, self.guard_n = None, None, 0
+        self.acontacts = None                 # A's own Contacts buffer, made on first use
+        self.sb = self.model.shape_body.numpy()
+        for arm in (self.A, self.B):
+            arm.on_timeout = lambda a, ph: self.fail("wait_timeout:%s:%s" % (a.name[0], ph))
         self.episodes, self.last_gate = [], {}
         self.hand_off, self.i_xy = None, np.zeros(2)
         self.done = False
@@ -564,7 +626,12 @@ class Example:
 
     # -- motion -----------------------------------------------------------------
     def schedule(self):
-        """Hand the next plan step to B; send A to brace when that step needs it."""
+        """Hand the next plan step to B; send A to brace when that step needs it.
+
+        Hand-off protocol (plan_v4 r5-5, acyclic; every Arm wait times out): B starts its next step only when
+        B and A are both idle; A's brace is queued once B has lifted its brick (n in staged); B's stage move
+        waits for A's close (braced); A's hold waits for B's retract (retracted). --legacy-brace keeps the old
+        rules: B starts when B is idle, A braces at step start."""
         steps = self.plan["sequence"]
         if self.failure and not getattr(self.args, "continue_", False):
             if not self.stopped:                   # end at the first failure: nothing more is queued
@@ -573,7 +640,7 @@ class Example:
                     self.abort(arm)
                 print("FAILURE %s at step %s: arms open and park" % (self.failure, self.failed_at_step))
             return
-        if self.B.idle() and not self.done:
+        if self.B.idle() and not self.done and (self.legacy or self.A.idle()):
             if self.next_step < len(steps):
                 self.b_step = self.next_step
                 self.queue_place(steps[self.next_step])
@@ -583,10 +650,15 @@ class Example:
                 self.B.push("park", self.parks[self.B], 0.0, 0.01, 1.5)
                 ok = sum(e["success"] for e in self.episodes)
                 print("done: %d / %d placed -> %s" % (ok, len(steps), self.log_path))
-        if self.b_step is not None and self.A.idle():
-            s = steps[self.b_step]
-            if s["requires_brace"] and self.b_step not in self.braced:
-                self.queue_brace(self.b_step, s["brace"])
+        n = self.b_step
+        if n is None:
+            return
+        if self.legacy:
+            if self.A.idle() and steps[n]["requires_brace"] and n not in self.braced:
+                self.queue_brace_legacy(n, steps[n]["brace"])
+        elif n in self.staged and n not in self.queued:
+            self.queued.add(n)
+            self.queue_brace(n, steps[n]["brace"])
 
     def abort(self, arm):
         """Drop the queue: open the fingers where the hand is, rise, park."""
@@ -619,21 +691,70 @@ class Example:
         n = s["step"]
         B = self.B
         self.place_t[bid] = self.sim_time
+        # braced: B lifts, stages over the feeder until A has closed, then transports and retracts before A opens.
+        # requires_brace with no feasible brace (planner U-r5-1): A stays parked, B places it unbraced, flagged.
+        staged = s["requires_brace"] and not self.legacy and s["brace"].get("feasible", True)
+        if s["requires_brace"]:
+            self.brace_info(n).update(infeasible=not s["brace"].get("feasible", True))
         B.push("to feeder", up(slot), yaw, g_open, 1.5)
         B.push("descend", slot + [0, 0, GRASP_DZ], yaw, g_open, 1.0)
         B.push("grasp", slot + [0, 0, GRASP_DZ], yaw, g_shut, 0.5, contact=True)
-        B.push("lift", up(slot), yaw, g_shut, 0.8)
+        B.push("lift", up(slot), yaw, g_shut, 0.8, then=(lambda: self.staged.add(n)) if staged else None)
+        if staged:
+            B.push("stage", up(slot), yaw, g_shut, 0.2, wait=lambda: n in self.braced)
         B.push("transport", up(tgt), yaw, g_shut, 1.5)
         B.push("pre-insert", tgt + [0, 0, 0.025 + GRASP_DZ], yaw, g_shut, 0.6,
-               wait=(lambda: n in self.braced) if s["requires_brace"] else None)
+               wait=(lambda: n in self.braced) if s["requires_brace"] and self.legacy else None)
         B.push("insert", tgt + [0, 0, GRASP_DZ - PRESS], yaw, g_shut, 1.2, contact=True,
                then=lambda: self.snap(s))
         B.push("release", tgt + [0, 0, GRASP_DZ - PRESS], yaw, g_open, 0.4, contact=True,
                then=lambda: self.placed.add(n))
-        B.push("retract", up(tgt), yaw, g_open, 0.8)
+        B.push("retract", up(tgt), yaw, g_open, 0.8, then=(lambda: self.retracted.add(n)) if staged else None)
+
+    def brace_info(self, n):
+        """The per-step brace record (row field brace_by_step): asked, done, measured."""
+        return self.brace_by_step.setdefault(n, dict(
+            requested=True, planned_feasible=self.plan["sequence"][n]["brace"].get("feasible", True),
+            infeasible=False, executed=False, guard_stop=False, grip_samples=[], contacted=set(),
+            max_F={}, max_M={}))
 
     def queue_brace(self, n, brace):
-        """Press closed fingertips on the brace spot, leaning away from the placer.
+        """grasp_lp brace (plan_v4 r5-4): the TCP goes to brace_pose, the pad centre, and grips there.
+
+        Fingers close along brace_axis (x: yaw pi/2), the hand tilted by brace_tilt_rotvec. Open-finger
+        approach; the last BRACE_GUARD at GUARD_SPEED with fingers 2 mm clear per side and a contact guard
+        (step()); close with a 1.5 mm squeeze; hold at the MEASURED pose (nothing is commanded into the
+        structure); open once B has retracted; retract. `braced` is set when the close completes."""
+        A, info = self.A, self.brace_info(n)
+        pose = np.array(brace["brace_pose"][:3], float)
+        tilt = np.array(brace["brace_tilt_rotvec"], float)
+        ax = brace.get("brace_axis") or [1, 0, 0]
+        yaw = math.atan2(ax[0], ax[1])                        # closing axis x -> pi/2
+        tool = rotate(qrot(tilt), np.array([0.0, 0.0, -1.0]))  # hand -> fingertips
+        back, near = pose - BRACE_BACK * tool, pose - BRACE_GUARD * tool
+        g_open, g_shut = BRACE_HALF_W + BRACE_CLEAR, BRACE_HALF_W - BRACE_SQUEEZE
+        self.a_step, self.close_t, self.guard_n = n, None, 0
+
+        def closed():
+            A.rebase(A.ee)                                    # hold where the hand is, not at pose
+            self.close_t = self.sim_time
+            info["executed"] = True
+            self.braced.add(n)
+
+        A.push("to brace", [back[0], back[1], max(back[2], self.z_travel)], yaw, g_open, 1.5, tilt=tilt)
+        A.push("approach", back, yaw, g_open, 0.8, tilt=tilt)
+        A.push("brace-in", near, yaw, g_open, 0.8, tilt=tilt)
+        A.push("brace-guard", pose, yaw, g_open, BRACE_GUARD / GUARD_SPEED, contact=True, tilt=tilt,
+               then=lambda: A.rebase(A.ee))                   # also the guard stop: close where it stopped
+        A.push("close", pose, yaw, g_shut, 0.5, contact=True, tilt=tilt, rel=(0, 0, 0), then=closed)
+        A.push("hold", pose, yaw, g_shut, 0.2, contact=True, tilt=tilt, rel=(0, 0, 0),
+               wait=lambda: n in self.retracted)
+        A.push("open", pose, yaw, g_open, 0.4, contact=True, tilt=tilt, rel=(0, 0, 0))
+        A.push("retract", back, yaw, g_open, 0.6, tilt=tilt, rel=back - pose)
+        A.push("park", self.parks[A], 0.0, 0.0, 1.5)
+
+    def queue_brace_legacy(self, n, brace):
+        """(--legacy-brace) Press closed fingertips on the brace spot, leaning away from the placer.
 
         Two vertical Franka hands need ~65 mm between them; a brace spot is
         typically 30-40 mm from the brick being placed. Tilting the stabilizer
@@ -657,6 +778,73 @@ class Example:
                wait=lambda: n in self.placed)
         A.push("retract", back, yaw, 0.0, 0.6, tilt=tilt)
         A.push("park", self.parks[A], 0.0, 0.0, 1.5)
+
+    def a_contacts(self):
+        """A's own Contacts buffer (with force), as cell/contacts.py does; the sim's ex.contacts is untouched."""
+        if self.acontacts is None:
+            self.model.request_contact_attributes("force")
+            self.acontacts = self.pipeline.contacts()
+            self.brick_of = {v: k for k, v in self.body.items()}
+        return self.acontacts
+
+    def brace_readout(self):
+        """A's contacts during its brace phases, read after simulate(): the guard (any A-shape contact normal
+        force > GUARD_N for GUARD_FRAMES consecutive frames during brace-guard stops A where it is) and the
+        per-step aggregates of brace_by_step: per-finger normal-force sum (the realised grip), the bricks A
+        touches, per brick the force sum on it and its moment about the brick origin (max norms)."""
+        n, A = self.a_step, self.A
+        if self.legacy or n is None or A.phase not in BRACE_PHASES:
+            self.guard_n = 0
+            return
+        info, na, c = self.brace_info(n), self.n_arm_bodies, self.a_contacts()
+        self.solver.update_contacts(c, self.state_0)
+        cnt = int(c.rigid_contact_count.numpy()[0])
+        grip, hit = [0.0, 0.0], False
+        if cnt:
+            s0, s1 = c.rigid_contact_shape0.numpy()[:cnt], c.rigid_contact_shape1.numpy()[:cnt]
+            ok = (s0 >= 0) & (s1 >= 0)
+            b0, b1 = np.where(ok, self.sb[np.maximum(s0, 0)], -9), np.where(ok, self.sb[np.maximum(s1, 0)], -9)
+            fv, nrm = c.force.numpy()[:cnt, :3], c.rigid_contact_normal.numpy()[:cnt]
+            fn = np.abs((fv * nrm).sum(1))                            # normal force per contact
+            a0, a1 = (b0 >= 0) & (b0 < na), (b1 >= 0) & (b1 < na)    # A's bodies are 0..na-1
+            hit = bool((fn[a0 | a1] > GUARD_N).any())
+            body_q, pos = self.state_0.body_q.numpy(), self.solver.mjw_data.contact.pos.numpy()[:cnt]
+            acc = {}                                                  # brick -> [force sum, moment sum about its origin]
+            for i in np.flatnonzero((a0 | a1) & (fn > FORCE_EPS_N)):
+                a, o = (b0[i], b1[i]) if a0[i] else (b1[i], b0[i])    # A's body, the other one
+                if o < 2 * na:
+                    continue                                          # arm-arm (the monitor counts those)
+                if a in (12, 13):
+                    grip[a - 12] += fn[i]
+                bid = self.brick_of[int(o)]
+                f = -fv[i] if a0[i] else fv[i]                        # force on the brick (fv acts on shape0)
+                info["contacted"].add(bid)
+                FM = acc.setdefault(bid, [np.zeros(3), np.zeros(3)])
+                FM[0] += f
+                FM[1] += np.cross(pos[i] - body_q[int(o)][:3], f)
+            for bid, (F, M) in acc.items():
+                info["max_F"][bid] = max(info["max_F"].get(bid, 0.0), float(np.linalg.norm(F)))
+                info["max_M"][bid] = max(info["max_M"].get(bid, 0.0), float(np.linalg.norm(M)))
+        if A.phase == "hold" and self.close_t is not None and self.sim_time - self.close_t >= GRIP_SETTLE_S - 1e-9:
+            info["grip_samples"].append(grip)
+        self.guard_n = self.guard_n + 1 if hit and A.phase == "brace-guard" and A.cur else 0
+        if self.guard_n >= GUARD_FRAMES:
+            A.stop_here(self.state_0.body_q.numpy()[EE][:3])
+            info.update(guard_stop=True, guard_frame=self.frame)
+            self.guard_n = 0
+            print("  GUARD STOP step %d: A stops at frame %d" % (n, self.frame))
+
+    def brace_row(self, n):
+        """brace_by_step[n] as JSON: requested / planned_feasible / executed, guard_stop, the realised grip per
+        finger (mean over the closed-hold interval), the contacted bricks vs gripped_bricks, per-brick max |F|, |M|."""
+        i, g = self.brace_by_step[n], self.plan["sequence"][n]["brace"]
+        smp = np.array(i["grip_samples"]).reshape(-1, 2)
+        return dict(requested=i["requested"], planned_feasible=i["planned_feasible"], executed=i["executed"],
+                    brace_infeasible=i["infeasible"], guard_stop=i["guard_stop"], guard_frame=i.get("guard_frame"),
+                    realised_grip_N=[round(float(x), 2) for x in smp.mean(0)] if len(smp) else None,
+                    grip_samples=len(smp), contacted=sorted(i["contacted"]), gripped_bricks=g.get("gripped_bricks"),
+                    max_F_N={b: round(v, 2) for b, v in i["max_F"].items()},
+                    max_M_Nm={b: round(v, 4) for b, v in i["max_M"].items()})
 
     def aim_brick(self, ee, body_q):
         """Put the held BRICK on target, not the hand (ground-truth poses, §WP4).
@@ -792,11 +980,12 @@ class Example:
         self.sim_time += self.frame_dt
         self.frame += 1
         self.breaker.update()
+        self.brace_readout()
         if self.monitor:
             self.monitor.step(self)
         if self.recorder:
             self.recorder.step(self)
-        if self.inserts is not None and (self.B.phase == "insert" or self.A.phase in ("brace", "hold")):
+        if self.inserts is not None and (self.B.phase == "insert" or self.A.phase in BRACE_PHASES_ALL):
             self.inserts.append((self.frame, self.state_0.joint_q.numpy()[:18].copy(), self.A.phase,
                                  self.B.phase, -1 if self.b_step is None else self.b_step))
         if ((self.done or self.stopped) and self.B.idle() and self.A.idle() and getattr(self.args, "viewer", None) == "null"):
@@ -883,6 +1072,8 @@ class Example:
                 "failed_at_step": self.failed_at_step,
                 "built": self.built() if self.failure is None else self.built_at_failure,
                 "breaks": self.breaker.breaks,
+                "legacy_brace": self.legacy,
+                "brace_by_step": {n: self.brace_row(n) for n in sorted(self.brace_by_step)},
                 "u_peak_by_step": {k: round(v, 4) for k, v in self.breaker.u_peak_by_step.items()},
                 "shear_torsion_peak_by_step": {k: [round(x, 5) for x in v] for k, v in
                                                self.breaker.shear_torsion_peak_by_step.items()}}
@@ -926,6 +1117,15 @@ def feeder_slots(n):
     return grid[:n]
 
 
+@functools.lru_cache(maxsize=1)
+def finger_mu():
+    """Friction coefficient of A's finger shapes (bodies 12/13), read from the arm builder."""
+    b = build_arm()
+    mus = {round(float(b.shape_material_mu[s]), 6) for s, body in enumerate(b.shape_body) if body in (12, 13)}
+    assert len(mus) == 1, mus
+    return mus.pop()
+
+
 def make_plan(args):
     """images/sample/authored structure -> assembly_plan dict in the sim's world frame."""
     if args.front:
@@ -941,7 +1141,15 @@ def make_plan(args):
     # centre the build between the arms
     P.VOXEL_ORIGIN = (-NI * P.PITCH / 2, -NJ * P.PITCH / 2, Z0)
     model = getattr(args, "brace_model", "grasp_lp")
-    plan = P.build_plan(name, args.strategy, brace_model=model)
+    kw = {}
+    if model == "grasp_lp" and not getattr(args, "legacy_brace", False):
+        mu = finger_mu()                       # the LP plans with the grip A's fingers deliver (A_FINGER_KE)
+        print("brace grip: %.1f N per finger, finger material mu %.3f" % (BRACE_GRIP_N, mu))
+        kw = dict(brace_grip_N=BRACE_GRIP_N, brace_mu=mu)
+        if "brace_grip_N" not in inspect.signature(P.build_plan).parameters:
+            print("planner.build_plan has no brace_grip_N yet: planning with its default grip")
+            kw = {}
+    plan = P.build_plan(name, args.strategy, brace_model=model, **kw)
     plan["frame"] = "dual_arm_sim world: arm A base (-0.45,0,0), arm B base (+0.45,0,0), z up"
     # a lever_press plan gets its own file: the grasp_lp one keeps the old name
     out = HERE / "plans" / ("sim_%s_%s%s.json" % (name, args.strategy,
@@ -967,6 +1175,9 @@ if __name__ == "__main__":
                         choices=["none", "nearest", "weakest_joint"])
     parser.add_argument("--brace-model", default="grasp_lp", choices=["grasp_lp", "lever_press"],
                         help="planner.build_plan brace model")
+    parser.add_argument("--legacy-brace", action="store_true",
+                        help="the pre-r5 brace: closed fingertips pressed 2 mm into stud tops, A braces at step start, "
+                             "no hand-off protocol, A's fingers at 1000 N/m")
     parser.add_argument("--continue", dest="continue_", action="store_true",
                         help="do not stop at the first failure; the break model is off after it, later rows are after_failure")
     parser.add_argument("--monitor", action="store_true", help="attach the sec 2.4 contact monitor")

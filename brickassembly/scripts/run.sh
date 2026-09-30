@@ -41,7 +41,7 @@ fi
 # v4 (plan_v4 §2.8): Newton + cuRobo overlay, all in the Isaac interpreter.
 # Matched before the twin's experiments/* rule.
 case "$script" in
-    */tests/test_vision.py|*/tests/test_cell.py|*/tests/test_motion.py)
+    */tests/test_vision.py|*/tests/test_cell.py|*/tests/test_motion.py|*/tests/test_arm_protocol.py)
         cd "$HERE"; exec "$ISAAC_PY" -m pytest "${script#$HERE/}" "$@" ;;
     */cell/*.py|*/motion/plan_curobo.py|*/vision.py|*/scripts/1[0-3]_*.py|*/experiments/v4*.py|*/experiments/analyze_v4.py)
         cd "$HERE"; exec "$ISAAC_PY" -u "$script" "$@" ;;

@@ -24,13 +24,14 @@ shape, always the last one added, so it is simply the highest shape index --
 never called again).
 
 Phase comes from dual_arm_sim's own state, never re-derived:
-  - B's Arm.phase: park/to feeder/descend/grasp/lift/transport/pre-insert/
-    insert/release/retract (Example.queue_place).
-  - A's Arm.phase: to brace/approach/brace/hold/retract/park
-    (Example.queue_brace); "brace" and "hold" are its two contact=True moves,
-    i.e. the brace contact segment through Unbrace (there is no separate
-    Unbrace phase in this prototype -- A leaves contact when it starts
-    "retract").
+  - B's Arm.phase: park/to feeder/descend/grasp/lift/stage/transport/pre-insert/
+    insert/release/retract (Example.queue_place; "stage" only on a braced step:
+    B holds its brick over the feeder until A has closed).
+  - A's Arm.phase: to brace/approach/brace-in/brace-guard/close/hold/open/
+    retract/park (Example.queue_brace, the r5 grasp_lp brace); BRACE_PHASES =
+    brace-guard, close, hold, open are its contact segment (A leaves contact when
+    "open" ends). With --legacy-brace (Example.queue_brace_legacy): to brace/
+    approach/brace/hold/retract/park, contact phases LEGACY_BRACE_PHASES.
 
 Permitted windows (plan_v4 r4 Sec 2.4): the held brick resting on the ground at
 its pick-up spot (descend/grasp/lift), and support/neighbour contact as
@@ -46,9 +47,10 @@ the `events` rows of results/v4/p0_baseline.jsonl (P0 stored raw fragments).
   - ex.b_step is the plan step B is currently working (Example.schedule); the
     brick B is holding is ex.plan["sequence"][ex.b_step]["brick_id"] whenever
     B.phase is at or past "descend" and not yet past "release" (HELD_PHASES).
-    A's brace/hold windows never outlive ex.b_step's own step (hold waits for
-    B's placed-flag, which fires before B is idle enough to advance b_step),
-    so reading ex.b_step during "brace"/"hold" is safe.
+    A's brace windows never outlive ex.b_step's own step (B starts its next step
+    only when A is idle; legacy: hold waits for B's placed-flag, which fires
+    before B is idle enough to advance b_step), so reading ex.b_step during A's
+    brace phases is safe.
 """
 
 import sys
@@ -62,8 +64,9 @@ import planner as P  # noqa: E402
 
 PENETRATION_MM = 1.0   # brick-brick d below -PENETRATION_MM*scale => penetration
 DISPLACED_MM = 1.0     # a resting brick moved more than this*scale => displaced
-HELD_PHASES = ("descend", "grasp", "lift", "transport", "pre-insert", "insert", "release")
-BRACE_PHASES = ("brace", "hold")            # A's two contact=True moves
+HELD_PHASES = ("descend", "grasp", "lift", "stage", "transport", "pre-insert", "insert", "release")
+BRACE_PHASES = ("brace-guard", "close", "hold", "open")   # A's contact moves in the grasp_lp brace
+LEGACY_BRACE_PHASES = ("brace", "hold")                   # A's two contact=True moves with --legacy-brace
 GAP_FRAMES = 30        # merge same-key fragments up to this many frames apart (0.5 s at 60 fps)
 
 
@@ -132,6 +135,7 @@ class ContactMonitor:
                          for s in ex.plan["sequence"]}
         self.neighbours = _same_course_neighbours(ex.plan["bricks"])
         self.scale = scale
+        self.brace_phases = LEGACY_BRACE_PHASES if getattr(ex.args, "legacy_brace", False) else BRACE_PHASES
         self.rest = {}                     # body -> last at-rest position (ground truth)
         self.counts = defaultdict(int)
         self.examples = defaultdict(list)  # class -> up to 5 dicts
@@ -162,7 +166,7 @@ class ContactMonitor:
     def _gripped(self, ex):
         """Bricks A's fingers may touch this frame (grasp_lp's gripped_bricks,
         or lever_press's single target_brick_id), else ()."""
-        if ex.b_step is None or ex.A.phase not in BRACE_PHASES:
+        if ex.b_step is None or ex.A.phase not in self.brace_phases:
             return ()
         brace = ex.plan["sequence"][ex.b_step]["brace"] or {}
         return brace.get("gripped_bricks") or (
@@ -321,6 +325,7 @@ if __name__ == "__main__":
     m.body_brick = {28: "b0", 29: "b1", 30: "b2"}
     m.supports = {"b2": ["b0"]}
     m.neighbours = nb
+    m.brace_phases = BRACE_PHASES
     m.events, m.counts, m.examples = [], defaultdict(int), defaultdict(list)
     m.raw, m._active, m.frame = [], {}, 3
     ex_ = type("E", (), {"A": _Phase("park"), "B": _Phase("park")})()
@@ -365,11 +370,26 @@ if __name__ == "__main__":
     assert m._cls(29, 0) == "brick:b1"
 
     plan_step = {"brick_id": "b1", "brace": {"gripped_bricks": ["b0"]}}
-    ex = _Ex("brace", "to feeder", 0)
+    ex = _Ex("close", "to feeder", 0)
     ex.plan = {"sequence": [plan_step]}
     assert m._held(ex) is None                          # before "descend": not yet held
     ex.B.phase = "grasp"
     assert m._held(ex) == "b1"
+    ex.B.phase = "stage"                                # braced step: B hovers over the feeder holding its brick
+    assert m._held(ex) == "b1"
+    assert m._classify(ex, "b1", [], "B_finger", "brick:b1") is None
+    ex.B.phase = "grasp"
+    for ph in BRACE_PHASES:                              # A's contact phases of the grasp_lp brace
+        ex.A.phase = ph
+        assert m._gripped(ex) == ["b0"], ph
+    for ph in ("to brace", "approach", "brace-in", "retract", "park", "brace"):
+        ex.A.phase = ph                                  # fingers may not touch anything outside them
+        assert m._gripped(ex) == (), ph
+    m.brace_phases = LEGACY_BRACE_PHASES                 # --legacy-brace: "brace", "hold"
+    for ph, want in (("brace", ["b0"]), ("hold", ["b0"]), ("close", ()), ("brace-guard", ())):
+        ex.A.phase = ph
+        assert m._gripped(ex) == want, ph
+    m.brace_phases, ex.A.phase = BRACE_PHASES, "close"
     assert m._gripped(ex) == ["b0"]
 
     # arm-arm always fires, regardless of phase
