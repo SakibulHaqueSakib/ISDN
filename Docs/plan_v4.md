@@ -104,6 +104,18 @@ User answers 2026-09-30: **U4 = yes now** (rigid and breakable); image → build
 
 **Ledger (r5 adoption):** `probe v4_p4_brace_weld`; `failure v4_brace_overforce`; `decision v4_joint_scope_r5`, `v4_pipeline_gt_now`, `v4_plan_r5`; `deviation v4_clutch_weld_stiffness`, `v4_structure_collision_group`, `v4_clutch_breakable` (2 end-of-frame samples, 0.1 s settle, axial + prying only; replaces the planned `v4_break_hold_33ms`), `v4_build_ends_at_first_failure`, `v4_brace_executor_r5`, `v4_handoff_protocol_r5`, `v4_milestone_order_r5`. After the runs: results `v4_j_s0`, `v4_j_weld_grouped`, `v4_j_break_rule`, `v4_j_pre`, `v4_j_hands_fit`, gate `v4_M0J`, `v4_p0pp_reference`, `v4_pipeline_<name>`, and one deviation per retune/branch.
 
+### Execution phases (2026-09-30, workflow change, no criteria changed)
+
+Under the phases > segments > subtasks workflow (commit 4c8cea7) reviews and plan revisions happen only at phase gates; in-phase check failures are logged and carried to the gate. Applied to r5 without changing any criterion:
+
+| phase | segments | gate |
+|---|---|---|
+| 1 Joint model | S1 stiff weld + grouping (done, commit a890b68); S2 break model; S4a recording | J-a + J-b + J-c together |
+| 2 Brace and build | J-pre one-pass build + margin measurement; S3 brace, hand-off protocol, hands-fit, grip plumbing; S4 metrics/preflight; J-e | M0-J (J-d) |
+| 3 Image pipeline | PL on the user's drawing(s) | PL |
+
+The J-a..J-e checks keep their pre-registered criteria but are reviewed together at their phase gate. The proposed J-b criterion revision "r5.1" was NOT adopted (withdrawn under the new workflow); J-b's result is carried to the Phase 1 gate.
+
 ---
 
 ## Revision r4 (P0 findings and P1 probe findings)

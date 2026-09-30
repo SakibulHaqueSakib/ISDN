@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-176 entries. Later entries supersede earlier ones; retractions are marked.
+180 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -136,6 +136,18 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `v4_j_s0`
     - result: plan v4 r5 step S0 (diagnostic: is there a crown-failure path that needs no brace?), three unbraced runs of scripts/13_brace_weld_probe.py part A with --strategy none, n = 1 per config (descriptive). (1) arch, none, default weld eq_solimp (0.95, 0.99, 0.001, 0.5, 2.0): placed 11/11, completed, error null, no divergence, 6134 frames, sim 102.23 s; crown b_010 seated: final_error 0.29 mm, dz -0.24 m…
     - implication: the arch crown miss does not occur without the brace, so it is caused by the brace execution (consistent with F1, the B-arm to A-hand contact, v4_brace_overforce; F1 is not separately proven as the cause by S0). S3's unbraced b_015 loss (dz -72.06 mm, tilt 90.03 deg, matching P0' S3 grasp_lp r0's b_015 loss exactly and r1's dz; r2 lost it differently (-68.68 mm, 180 deg), per v4_p0_baseline_stiff_…
+
+- **decided** `v4_r5_phase_gated_execution`
+    - outcome: plan v4 r5 is executed in phases > segments > subtasks; reviews and plan revisions only at phase gates, in-phase check failures logged and carried to the gate. No criterion changed. Phase 1 Joint model: S1 stiff weld + grouping (done, commit a890b68), S2 break model, S4a recording; gate J-a + J-b + J-c together. Phase 2 Brace and build: J-pre one-pass build + margin measurement, S3 brace / hand-of…
+
+- **result** `v4_j_a_weld_grouped`
+    - result: J-a PASS (plan v4 r5, segment S1; probe part B --group, weld solimp 0.9999, 16 substeps, plate + bricks in STRUCT_GROUP, torquescale null). Secant stiffness min over F = 1, 5, 10, 20, 50 N: column lateral (x) 23.128 N/mm (range 23.128-23.252; gate >= 20); column vertical up 560.408 and down 560.408 N/mm (ranges 560.408-561.346 up, 560.408-561.58 down; gate >= 300); cantilever down 32.303 N/mm (ran…
+
+- **result** `v4_j_b_readout_carried`
+    - result: J-b (grouped readout, solimp 0.9999, 16 substeps; tolerance 1 % or 1 mN (F) / 0.1 mN.m (M_patch) absolute, u 1 %): statics_pass true on the pre-registered single end-of-frame reading (statics_failing empty; jacobian_pass_local and jacobian_pass_world true; bridge_pass true), but statics_pass_all_30_samples false: 22 of 2250 sample readings over 30 frames fail (worst sample F error 19.5841 mN, M er…
+
+- **result** `v4_j_b_chatter_diagnosis`
+    - result: Diagnosis of the per-frame weld-force error in J-b (question: A micro-vibration or B readout defect, pre- vs post-integration pose). Not physical vibration: static and dynamic force balance residuals are equal (max per brick, mN: column 10.974 static / 10.9739 dyn on brick2; cantilever 22.3988 / 22.3972 on brick2; bridge 24.6456 / 24.6493 on brick2), m*a_com is at most 0.0106 mN; brick motion is a…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
