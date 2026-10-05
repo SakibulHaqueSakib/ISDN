@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-198 entries. Later entries supersede earlier ones; retractions are marked.
+201 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -210,6 +210,16 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `v4_session_2026_09_30_handoff`
     - outcome: End-of-day state on branch v4-newton-vision (HEAD after this entry; work commits fd000b7..3ce7d90). DONE: plan v4 r5 adopted (fd000b7); S0 (f227fd4); workflow changed to phases > segments > subtasks with reviews and revisions only at phase gates (4c8cea7); Phase 1 Joint model closed: stiff grouped clutch welds (a890b68), breakable joints with build-ends-at-first-failure (4ad91a7), --record-all (0d…
     - rationale: The user ended the session ('pack up the current progress and log everything and thats all for today'); two background agents were stopped mid-work (the placer planner, by the user; the S0.1 implementer, by the orchestrator).
+
+- **result** `v4_rl_r0_s01_done`
+    - result: RL bracing R0 segment S0.1 (task library) finished and verified, commit cf2b27c. Bug fixed: the no-brace feature vector had 38 numbers vs NF 37 (hand-counted zero padding in tasks/brace_bandit.py _candidate_features); it is now derived from the FEATURES list. Added test_hidden_job_order_and_workers (A6: identical hidden() draws under shuffled job order and a 3-worker pool). tests/test_brace_bandit…
+
+- **result** `v4_phase2_preflight_pinch_blocked`
+    - result: Phase 2 close-out (commit 3fe7a44), the pending small fix of v4_session_2026_09_30_handoff item 4. planner.pinch_blocked(brick, placed, grasp) counts same-layer placed cells flush against the two pinched faces under the finger window (FINGER_W 17.5 mm about the grasp centre, tcp_offset_m included); dual_arm_sim.make_plan prints a preflight WARNING listing those steps and stores them in preflight.i…
+
+- **decided** `v4_place_plan_draft`
+    - outcome: The placer RL plan (user decision v4_placer_rl_primitives) is drafted by the orchestrator as the user asked ("dont do planner just write yourself"): Docs/plan_v4_rl_place.md. Feasibility phase P0 first: a drop_press primitive (release above the flush neighbours' studs, then press the brick down with closed fingertips) behind a --place-json flag; a 16-setting screen of grasp height, release margin,…
+    - status: draft, not reviewed, not adopted; shown to the user before review.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
