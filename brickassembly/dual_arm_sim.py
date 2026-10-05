@@ -36,7 +36,8 @@ RL-bracing hooks (plan_v4_rl_brace S0.2, all off by default): --start-step N [--
 from a nominal start (steps < N at their targets, welded); --brace-json null | [y, z, lean_deg] | {"sham_s": T}
 sets that step's brace; --exe E0|E1 picks A's gains and grip; --plan caches the plan; --spec PATH.json holds all of
 them as one episode (no plans/ or results/proto_episodes.jsonl writes; the row, with an "episode" block, goes to its
-"out"). --press-scale / --press-lateral are recorded only (the fixture comes later).
+"out"). --press-scale L [--press-lateral FX FY] adds the design-press fixture on that step's supports (below).
+--fixture-hold: debug, the full-amplitude fixture from t = 0.5 s with both arms parked (scripts/fixture_check.py).
     bash scripts/run.sh dual_arm_sim.py --spec ep.json --viewer null --test --num-frames 40000
 """
 
@@ -127,6 +128,8 @@ STRUCT_GROUP = -2
 BRACE_PHASES_ALL = ("brace", "brace-guard", "close", "hold", "open")    # A's contact phases, both braces
 BRACE_PHASES = ("brace-guard", "close", "hold", "open")                 # the grasp_lp brace's
 TRAVEL = 0.08                 # clearance above the structure while moving
+FX_RAMP_S = 0.3               # design-press fixture (plan_v4_rl_brace 2.2): smoothstep up, hold (the plateau), smoothstep down, each this long
+FX_HOLD_FROM_S = 0.5          # --fixture-hold: full amplitude from here
 ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 # BrickSim's default gate. §2.3.3 asks for 1.2 mm; position-controlled IK
 # without a force loop does not reliably get there yet.
@@ -182,6 +185,13 @@ def wrap(a, period=2 * math.pi):
 
 
 Q_DOWN = np.array([1.0, 0.0, 0.0, 0.0])  # gripper pointing down
+
+
+@wp.kernel
+def add_fixture_wrench(body: wp.array[wp.int32], w: wp.array[wp.spatial_vector], body_f: wp.array[wp.spatial_vector]):
+    """body_f += the design-press wrench (force, torque about the COM; both world), after clear_forces()."""
+    i = wp.tid()
+    body_f[body[i]] = body_f[body[i]] + w[i]
 
 
 # --- weld wrench from the solver (plan_v4 r5, S2; validated by probe 13 parts C/J-b) ------
@@ -483,7 +493,7 @@ class Example:
         steps = self.plan["sequence"]
         top = max(s["target_pose"][2] for s in steps) + P.BRICK_H
         self.z_travel = top + TRAVEL          # the full plan's, also for a nominal start
-        exe = EXE[getattr(args, "exe", None) or "E0"]
+        exe = self.exe = EXE[getattr(args, "exe", None) or "E0"]
         # nominal start (plan_v4_rl_brace 2.1): steps < start_step stand at their targets, welded; step start_step runs
         n0 = self.start_step = getattr(args, "start_step", None)
         if n0 is None and getattr(args, "only_step", False):
@@ -654,6 +664,7 @@ class Example:
 
         self.viewer.set_model(self.model)
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
+        self.fixture_setup(steps, n0)
         self.capture()
         self.wall0 = time.perf_counter()      # for the row's rtf
         self.startup_s = self.wall0 - _T0     # process start to here: plan, IK park, scene build, graph capture
@@ -677,6 +688,77 @@ class Example:
             solver.step(q, q, iterations=24)
         return q.numpy()[0].tolist()
 
+    # -- design-press fixture (plan_v4_rl_brace 2.2) --------------------------------------
+    def fixture_setup(self, steps, n0):
+        """--press-scale L: on each support i of step n0's brick, the force F_i of stability.insertion_loads(press =
+        L * supported studs * F_INSERT_PER_STUD, lateral = --press-lateral) at the support-patch centre p_i, applied as
+        the wrench (F_i, (p_i - COM_i) x F_i) -- Newton's body_f is (force, torque about the COM), both world, body_com
+        in the body frame (checked: a free body, force at the COM does not spin it; and fixture_check.py's eccentric
+        weld). p_i is body-fixed (the nominal patch centre in the support's frame), F_i keeps its world direction.
+        A brick on the baseplate has no support: no fixture. fixture_update() fills the persistent wrench array once per
+        frame; add_fixture_wrench in simulate() adds it after every clear_forces()."""
+        self.fx, self.fx_on, self.fx_k, self.fx_end, self.fx_peak, self.fx_react = None, None, None, None, [0.0, 0.0], []
+        lam = getattr(self.args, "press_scale", None)
+        if lam is None:
+            return
+        if self.start_step is None:
+            raise SystemExit("--press-scale needs --start-step: the fixture loads that step's supports")
+        order = P.sequence(P.STRUCTURES[self.name])
+        assert order[n0][0] == steps[n0]["brick_id"], "plan order differs from planner.sequence"
+        brick, placed = order[n0], order[:n0]
+        lat = tuple(getattr(self.args, "press_lateral", None) or (0.0, 0.0))
+        loads = ST.insertion_loads(brick, placed, lateral=lat,
+                                   press=lam * sum(P.supports(brick, placed).values()) * ST.F_INSERT_PER_STUD)
+        if not loads:
+            return
+        com = self.model.body_com.numpy()
+        self.fx = dict(lam=lam, lateral=lat, ids=[l[0] for l in loads], F=np.array([l[1] for l in loads]),
+                       p=np.array([l[2] for l in loads]), bodies=[self.body[l[0]] for l in loads])
+        self.fx["p_body"] = np.array([rotate(qz(-self.target[i][1]), p - self.target[i][0])
+                                      for i, p in zip(self.fx["ids"], self.fx["p"])])
+        self.fx["com"] = com[self.fx["bodies"]]
+        self.fx_body = wp.array(self.fx["bodies"], dtype=wp.int32)
+        self.fx_w = wp.zeros(len(loads), dtype=wp.spatial_vector)
+
+    def fixture_update(self, body_q):
+        """Once per frame, from the start-of-frame poses: the pulse amplitude and the wrench array (host side; the
+        captured graph only adds it). The pulse starts with B's insert phase of the episode step: FX_RAMP_S smoothstep
+        up, the same hold (the plateau), the same down, then 0. --fixture-hold: 1 from FX_HOLD_FROM_S, B not moving.
+        The first failure ends it (like the arms: a load left on a freed 1 g brick diverges the solver)."""
+        fx, R = self.fx, round(FX_RAMP_S * self.fps)
+        if getattr(self.args, "fixture_hold", False):
+            amp = float(self.sim_time >= FX_HOLD_FROM_S - 1e-9)
+        else:
+            if self.fx_on is None and self.b_step == self.start_step and self.B.phase == "insert":
+                self.fx_on = self.frame
+            self.fx_k = k = None if self.fx_on is None else self.frame - self.fx_on
+            sm = lambda x: x * x * (3 - 2 * x)
+            amp = 0.0 if k is None or k >= 3 * R else sm((k + 0.5) / R) if k < R else 1.0 if k < 2 * R \
+                else sm(1 - (k - 2 * R + 0.5) / R)
+        if self.failure:
+            amp, self.fx_end = 0.0, self.fx_end or self.frame
+        w = np.zeros((len(fx["bodies"]), 6), np.float32)
+        for j, b in enumerate(fx["bodies"]):
+            x, q = body_q[b][:3], body_q[b][3:]
+            F = amp * fx["F"][j]
+            w[j] = [*F, *np.cross(x + rotate(q, fx["p_body"][j]) - (x + rotate(q, fx["com"][j])), F)]
+        self.fx_w.assign(w)
+        self.fx_peak = [max(self.fx_peak[0], float(np.abs(amp * fx["F"]).max())),
+                        max(self.fx_peak[1], float(np.linalg.norm(amp * fx["F"].sum(0))))]
+
+    def lp_reaction(self, n):
+        """The LP's brace reaction force on the structure for the SAME load case as the fixture's nominal one (lambda = 1,
+        zero lateral; not expected_reaction_wrench, which is the worst of five lateral cases): stability.analyze's
+        Result.brace_wrench[0][:3] (world force on the structure, the least-brace-effort stage-2 wrench), the brace
+        rebuilt with bracing._brace_obj at the plan's brace pad centre and this run's grip. None if infeasible."""
+        order = P.sequence(P.STRUCTURES[self.name])
+        brick, placed = order[n], order[:n]
+        y, z = self.plan["sequence"][n]["brace"]["brace_pose"][1:3]
+        br = bracing._brace_obj(placed, y, z, self.exe["grip_N"], finger_mu())
+        r = ST.analyze(placed, loads=ST.insertion_loads(brick, placed, (0.0, 0.0),
+                       sum(P.supports(brick, placed).values()) * ST.F_INSERT_PER_STUD), braces=[br])
+        return np.array(r.brace_wrench[0][:3]) if r.feasible and r.brace_wrench else None
+
     # -- motion -----------------------------------------------------------------
     def schedule(self):
         """Hand the next plan step to B; send A to brace when that step needs it.
@@ -686,6 +768,8 @@ class Example:
         waits for A's close (braced); A's hold waits for B's retract (retracted). --legacy-brace keeps the old
         rules: B starts when B is idle, A braces at step start."""
         steps = self.plan["sequence"]
+        if getattr(self.args, "fixture_hold", False):
+            return                                 # debug: both arms stay parked
         if self.failure and not getattr(self.args, "continue_", False):
             if not self.stopped:                   # end at the first failure: nothing more is queued
                 self.stopped = True
@@ -860,7 +944,9 @@ class Example:
         """A's contacts during its brace phases, read after simulate(): the guard (any A-shape contact normal
         force > GUARD_N for GUARD_FRAMES consecutive frames during brace-guard stops A where it is) and the
         per-step aggregates of brace_by_step: per-finger normal-force sum (the realised grip), the bricks A
-        touches, per brick the force sum on it and its moment about the brick origin (max norms)."""
+        touches, per brick the force sum on it and its moment about the brick origin (max norms). On the
+        fixture's plateau frames also the signed total force on the bricks and its moment about the brace point
+        (plan_v4_rl_brace 2.5, A5), appended to fx_react."""
         n, A = self.a_step, self.A
         if self.legacy or n is None or A.phase not in BRACE_PHASES:
             self.guard_n = 0
@@ -869,6 +955,9 @@ class Example:
         self.solver.update_contacts(c, self.state_0)
         cnt = int(c.rigid_contact_count.numpy()[0])
         grip, hit = [0.0, 0.0], False
+        R = round(FX_RAMP_S * self.fps)
+        plateau = self.fx is not None and self.fx_k is not None and R <= self.fx_k < 2 * R
+        Ftot, Mtot = np.zeros(3), np.zeros(3)
         if cnt:
             s0, s1 = c.rigid_contact_shape0.numpy()[:cnt], c.rigid_contact_shape1.numpy()[:cnt]
             ok = (s0 >= 0) & (s1 >= 0)
@@ -891,9 +980,13 @@ class Example:
                 FM = acc.setdefault(bid, [np.zeros(3), np.zeros(3)])
                 FM[0] += f
                 FM[1] += np.cross(pos[i] - body_q[int(o)][:3], f)
+                Ftot += f
+                Mtot += np.cross(pos[i] - self.plan["sequence"][n]["brace"]["brace_pose"][:3], f)
             for bid, (F, M) in acc.items():
                 info["max_F"][bid] = max(info["max_F"].get(bid, 0.0), float(np.linalg.norm(F)))
                 info["max_M"][bid] = max(info["max_M"].get(bid, 0.0), float(np.linalg.norm(M)))
+        if plateau:
+            self.fx_react.append((Ftot, Mtot))
         if A.phase == "hold" and self.close_t is not None and self.sim_time - self.close_t >= GRIP_SETTLE_S - 1e-9:
             info["grip_samples"].append(grip)
         self.guard_n = self.guard_n + 1 if hit and A.phase == "brace-guard" and A.cur else 0
@@ -1008,6 +1101,8 @@ class Example:
         for _ in range(self.substeps):
             self.state_0.clear_forces()
             self.viewer.apply_forces(self.state_0)
+            if self.fx:                    # clear_forces() erased body_f: re-add the fixture every substep (in the graph)
+                wp.launch(add_fixture_wrench, dim=len(self.fx_body), inputs=[self.fx_body, self.fx_w, self.state_0.body_f])
             self.solver.step(self.state_0, self.state_1, self.control, self.contacts, self.sim_dt)
             self.state_0, self.state_1 = self.state_1, self.state_0
 
@@ -1034,6 +1129,8 @@ class Example:
         if self.B.phase != self.b_phase:
             self.b_phase = self.B.phase
             self.b_phase_t.setdefault((self.b_step, self.b_phase), self.sim_time)
+        if self.fx:
+            self.fixture_update(body_q)
         self.ik_pos.assign(np.array(pos, dtype=np.float32))
         self.ik_rot.assign(np.array(rot, dtype=np.float32))
         if self.graph_ik:
@@ -1171,10 +1268,42 @@ class Example:
                 "startup_s": round(self.startup_s, 2),
                 "arm_arm_events": len(aa), "arm_arm_peak_N": max((e.get("peak_force_n", 0.0) for e in aa), default=0.0),
                 "brace_row": self.brace_row(n) if n in self.brace_by_step else None,
+                "fixture": self.fixture_row(), **self.reaction_row(n),
                 "spec": {"step": n, "only_step": bool(getattr(a, "only_step", False)),
                          "brace": json.loads(a.brace_json) if getattr(a, "brace_json", None) is not None else "plan",
                          "press_scale": getattr(a, "press_scale", None), "press_lateral": getattr(a, "press_lateral", None),
-                         "exe": getattr(a, "exe", None) or "E0", "tag": getattr(a, "tag", None)}}
+                         "exe": getattr(a, "exe", None) or "E0", "tag": getattr(a, "tag", None),
+                         "fixture_hold": bool(getattr(a, "fixture_hold", False))}}
+
+    def fixture_row(self):
+        """The press fixture as applied: lambda, lateral, per-support F_i and p_i, peak applied |F| (per support, and the
+        total), B's insert onset (t_fixture_on) and the plateau frame window [first, last]; None if there is none."""
+        fx, R = self.fx, round(FX_RAMP_S * self.fps)
+        if fx is None:
+            return None
+        lst = lambda v: [round(float(x), 6) for x in v]
+        on = self.b_phase_t.get((self.start_step, "insert"))
+        return {"lambda": fx["lam"], "lateral": list(fx["lateral"]), "hold": bool(getattr(self.args, "fixture_hold", False)),
+                "loads": [{"support": i, "F_N": lst(f), "p_m": lst(p)} for i, f, p in zip(fx["ids"], fx["F"], fx["p"])],
+                "peak_F_N": round(self.fx_peak[0], 4), "peak_F_total_N": round(self.fx_peak[1], 4),
+                "t_fixture_on": on and round(on, 4), "ended_by_failure_frame": self.fx_end,
+                "plateau_frames": None if self.fx_on is None else [self.fx_on + R, self.fx_on + 2 * R - 1]}
+
+    def reaction_row(self, n):
+        """{"reaction": ...} when a brace ran under the fixture, else {}: A's mean plateau force on the structure (signed,
+        summed over contacts, averaged over the plateau frames), its moment about the brace point, the frames seen and
+        whether all of them were (A5), the LP's force for the same load case (lp_reaction) and
+        scalar = F_mean . lp_F / |lp_F| / max(|lp_F|, 0.5 N)."""
+        if self.fx is None or self.a_step != n:
+            return {}
+        r, lst = self.fx_react, lambda v: [round(float(x), 4) for x in v]
+        F, M = (np.mean([x[0] for x in r], 0), np.mean([x[1] for x in r], 0)) if r else (None, None)
+        lp = self.lp_reaction(n)
+        nlp = None if lp is None else float(np.linalg.norm(lp))
+        sc = None if F is None or not nlp else round(float(F @ lp) / nlp / max(nlp, 0.5), 4)
+        return {"reaction": {"F_mean": F if F is None else lst(F), "M_mean_about_brace": M if M is None else lst(M),
+                             "plateau_frames": len(r), "complete": len(r) == round(FX_RAMP_S * self.fps),
+                             "lp_F": lp if lp is None else lst(lp), "scalar": sc}}
 
     def finish(self, error=None):
         """After the run (also after a failed one): write --p0-out and --record-inserts."""
@@ -1355,9 +1484,13 @@ if __name__ == "__main__":
     parser.add_argument("--brace-json", metavar="JSON",
                         help="with --start-step, the brace of step N: null (none), [y, z, lean_deg], or "
                              '{"sham_s": T} (A parked, B stages for T s); default: the plan\'s')
-    parser.add_argument("--press-scale", type=float, help="design-press fixture scale (recorded; the fixture is not built yet)")
+    parser.add_argument("--press-scale", type=float, metavar="L",
+                        help="with --start-step: the design-press fixture at L x the step's design press (stud-proportional force "
+                             "on each support of the new brick, from B's insert for 0.3 s up / 0.3 s hold / 0.3 s down); default: none")
     parser.add_argument("--press-lateral", type=float, nargs=2, metavar=("FX", "FY"),
-                        help="design-press fixture lateral load, N (recorded; the fixture is not built yet)")
+                        help="with --press-scale: the fixture's lateral load, N (split over the supports by studs); default 0 0")
+    parser.add_argument("--fixture-hold", action="store_true",
+                        help="debug (scripts/fixture_check.py): with --press-scale, full amplitude from t = 0.5 s and both arms parked")
     parser.add_argument("--exe", choices=list(EXE), default="E0",
                         help="A's executor setting (tasks/brace_bandit.EXE): E0 committed, E1 stiff hold")
     parser.set_defaults(shape="arch", bricks=None)
