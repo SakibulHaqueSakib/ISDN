@@ -282,3 +282,24 @@ def test_single_arm_fails_in_twin(plans, sid):
         "weakest_joint": {k: br[k] for k in ("breaks", "structure_intact", "success")}}
     assert un["breaks"] > 0
     assert br["breaks"] == 0 and br["success"]
+
+
+def _blocked_steps(bricks, name):
+    import blueprint  # noqa: F401
+    P.STRUCTURES[name] = bricks
+    seq = P.build_plan(name, "none")["sequence"]
+    by_id = {b[0]: b for b in bricks}
+    return [s["step"] for n, s in enumerate(seq) if P.pinch_blocked(
+        by_id[s["brick_id"]], [by_id[q["brick_id"]] for q in seq[:n]], s["grasp"])]
+
+
+def test_pinch_blocked():
+    """v4_pipeline_pyramid_inaccessible_grasp: cube, arch, hollow_box and S3 have a free pinch face on every step;
+    the user's pyramid has a same-layer neighbour flush against a pinch face on steps 2,3,4,6,7,8,9."""
+    import blueprint as B
+    for shape in ("cube", "arch", "hollow_box"):
+        assert _blocked_steps(B.load(shape), shape) == []
+    assert _blocked_steps(P.STRUCTURES["S3"], "S3") == []
+    bl = Path(__file__).parent.parent / "blueprints" / "user"
+    pyr = B.tile(B.carve(bl / "pyramid_front.png", bl / "pyramid_side.png", None, 5, None))
+    assert _blocked_steps(pyr, "pyramid_test") == [2, 3, 4, 6, 7, 8, 9]

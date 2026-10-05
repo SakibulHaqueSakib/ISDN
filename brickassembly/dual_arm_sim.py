@@ -1189,6 +1189,19 @@ def make_plan(args):
             print("planner.build_plan has no brace_grip_N yet: planning with its default grip")
             kw = {}
     plan = P.build_plan(name, args.strategy, brace_model=model, **kw)
+    by_id, bad = {b[0]: b for b in bricks}, []
+    for n, st in enumerate(plan["sequence"]):
+        blk = P.pinch_blocked(by_id[st["brick_id"]], [by_id[q["brick_id"]] for q in plan["sequence"][:n]],
+                              st["grasp"])
+        if blk:
+            bad.append({"step": st["step"], "brick": st["brick_id"], "type": pre["types"][st["brick_id"]],
+                        "flush_cells": blk})
+    pre["inaccessible_steps"] = bad
+    if bad:                                # warn only: the placer RL track addresses these shapes
+        print("preflight WARNING: %d of %d bricks have no free grasp face (a neighbour sits flush against a "
+              "pinch face; the placer's fingertips land on its studs): %s -- the build will likely stop at "
+              "step %d" % (len(bad), len(bricks), ", ".join("%d (%s %s)" % (x["step"], x["brick"], x["type"])
+                                                          for x in bad), bad[0]["step"]))
     plan["frame"] = "dual_arm_sim world: arm A base (-0.45,0,0), arm B base (+0.45,0,0), z up"
     # a lever_press plan gets its own file: the grasp_lp one keeps the old name
     out = HERE / "plans" / ("sim_%s_%s%s.json" % (name, args.strategy,

@@ -300,6 +300,30 @@ def grasp_for(brick, placed):
             "accessible": touched(axis) == 0}
 
 
+def pinch_blocked(brick, placed, grasp):
+    """Same-layer placed cells flush against the two pinched faces, within the brick's span: the
+    fingers cannot go down there (v4_pipeline_pyramid_inaccessible_grasp). Unlike `accessible`,
+    in-line and diagonal neighbours under the finger overhang are not counted (the cube builds with those),
+    and only cells under the finger window (FINGER_W about the grasp centre, tcp_offset_m included) count:
+    a long face's far end is free."""
+    _, k = cells(brick)
+    beside = set()
+    for p in placed:
+        if p[4] == k:
+            beside |= cells(p)[0]
+    _, _, i0, j0, _, _ = brick
+    nx, ny = footprint(brick[1], brick[5])
+    half = FINGER_W / 2 - 0.0001
+    ox, oy = grasp["tcp_offset_m"]
+    if grasp["yaw_offset_deg"] == 90:     # fingers on the +-x faces, window along y
+        mid = (j0 + ny / 2) * PITCH + oy
+        span = range(max(j0, math.floor((mid - half) / PITCH)), min(j0 + ny, math.ceil((mid + half) / PITCH)))
+        return sum((s, t) in beside for s in (i0 - 1, i0 + nx) for t in span)
+    mid = (i0 + nx / 2) * PITCH + ox
+    span = range(max(i0, math.floor((mid - half) / PITCH)), min(i0 + nx, math.ceil((mid + half) / PITCH)))
+    return sum((t, s) in beside for s in (j0 - 1, j0 + ny) for t in span)
+
+
 def brace_for(brick, placed, strategy):
     """§3.6 -- brace field for one step, or None. Strategies: none/nearest/weakest_joint."""
     if strategy == "none" or not placed:
