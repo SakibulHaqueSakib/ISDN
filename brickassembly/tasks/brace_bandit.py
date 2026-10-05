@@ -316,7 +316,7 @@ def _candidate_features(bricks, n, action, grip_N, mu):
     brick, placed = bricks[n], list(bricks[:n])
     px, py, pz = P.brick_pose(brick)
     if action is None:
-        return [1.0] + [0.0] * 6 + [0.0] * 6 + [0.0] * 5 + [0.0] * 4 + [0.0]
+        return [1.0] + [0.0] * (NF - FEATURE_NAMES.index("is_none") - 1)
     y, z, lean = action
     area = bracing.pad_contact(placed, y, z)
     tot = sum(area.values())

@@ -135,6 +135,20 @@ def test_hidden():
     assert "arm" not in inspect.signature(BB.hidden).parameters
 
 
+def test_hidden_job_order_and_workers():
+    """A6: draws do not depend on job order or on the worker count."""
+    from concurrent.futures import ProcessPoolExecutor
+    key = BB.unique_structures(1)[0]["key"]
+    jobs = [(st, n, r) for st in ("a", "b") for n in (3, 7) for r in range(6)]
+    ref = {j: BB.hidden(j[0], key, j[1], j[2], 6) for j in jobs}
+    shuffled = list(jobs)
+    np.random.default_rng(1).shuffle(shuffled)
+    assert {j: BB.hidden(j[0], key, j[1], j[2], 6) for j in shuffled} == ref
+    with ProcessPoolExecutor(3) as ex:
+        futs = {j: ex.submit(BB.hidden, j[0], key, j[1], j[2], 6) for j in shuffled}
+        assert {j: f.result() for j, f in futs.items()} == ref
+
+
 def test_pickers_and_screen(critical):
     c = critical
     assert BB.pick_none(c) is None
