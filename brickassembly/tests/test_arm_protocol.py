@@ -56,6 +56,7 @@ def stub(plan, legacy=False):
     e.args, e.plan, e.legacy = SimpleNamespace(legacy_brace=legacy, continue_=False), plan, legacy
     e.failure = e.failed_at_step = e.built_at_failure = None
     e.stopped = e.done = False
+    e.start_step, e.end_step, e.sham_s = None, len(steps), None      # no nominal start, no sham
     e.z_travel = max(s["target_pose"][2] for s in steps) + D.P.BRICK_H + D.TRAVEL
     slots = D.feeder_slots(len(steps))
     e.feeder = {s["brick_id"]: np.array([*slots[n], 0.0]) for n, s in enumerate(steps)}

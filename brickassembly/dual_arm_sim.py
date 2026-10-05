@@ -31,14 +31,24 @@ interpolated waypoints with no collision-aware planning; the two arms only take 
 times out after 30 s; the clearance check arrives later in Phase 2). --legacy-brace runs the
 pre-r5 brace (fingertips pressed into stud tops, no protocol) for comparison.
 --record-all PATH.npz saves a per-frame record (cell/record.py).
+
+RL-bracing hooks (plan_v4_rl_brace S0.2, all off by default): --start-step N [--only-step] runs one step-episode
+from a nominal start (steps < N at their targets, welded); --brace-json null | [y, z, lean_deg] | {"sham_s": T}
+sets that step's brace; --exe E0|E1 picks A's gains and grip; --plan caches the plan; --spec PATH.json holds all of
+them as one episode (no plans/ or results/proto_episodes.jsonl writes; the row, with an "episode" block, goes to its
+"out"). --press-scale / --press-lateral are recorded only (the fixture comes later).
+    bash scripts/run.sh dual_arm_sim.py --spec ep.json --viewer null --test --num-frames 40000
 """
 
+import time
+_T0 = time.perf_counter()     # process start, for the row's startup_s
+
+import argparse
 import functools
 import inspect
 import json
 import math
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
@@ -54,8 +64,10 @@ from newton.examples.contacts import example_brick_stacking as ex
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import blueprint as B  # noqa: E402
+import bracing  # noqa: E402
 import planner as P  # noqa: E402
 import stability as ST  # noqa: E402
+from tasks.brace_bandit import EXE  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EE = 11                       # fr3_hand_tcp, in a single-arm builder
@@ -78,6 +90,7 @@ BRACE_PRESS = 0.002           # stabilizer drives this far into what it braces (
 # The grasp_lp brace (plan_v4 r5-4): pad-centre TCP, open-finger approach, guarded last 10 mm, 1.5 mm squeeze.
 A_FINGER_KE = 9500.0          # N/m, A's finger drive: 14.3 N nominal per finger at a 1.5 mm squeeze (r4 realised 13.2 N)
 BRACE_GRIP_N = 14.3           # the grip the planner's LP is given (per finger)
+assert EXE["E0"]["grip_N"] == BRACE_GRIP_N and EXE["E0"]["finger_ke"] == A_FINGER_KE   # E0 is the committed hold
 BRACE_HALF_W = 0.008          # half-width of a brace brick (2 studs)
 BRACE_CLEAR = 0.002           # per side, fingers open
 BRACE_SQUEEZE = 0.0015        # per side, fingers closed
@@ -378,6 +391,8 @@ class JointBreaker:
         self.count = {k: 0 for k in self.weld}
         self.enabled = True
         self.breaks, self.u_peak_by_step, self.shear_torsion_peak_by_step = [], {}, {}
+        self.u_prev = {}                   # weld -> last eligible u (past its settle time), for the two-sample records
+        self.u2_by_weld, self.u2_series = {}, []   # plan_v4_rl_brace 2.5: max over frames of min(u_t, u_{t-1}); per-frame max
 
     def fire(self, bid):
         self.fired[bid] = self.ex.sim_time
@@ -413,17 +428,24 @@ class JointBreaker:
         if not self.enabled or ex.failure or not any(w[3] for w in self.weld.values()):
             return                         # off once anything has failed (also under --continue)
         step = -1 if ex.b_step is None else ex.b_step
-        broke = []
+        broke, u2_max = [], 0.0
         for pair, r in self.sample().items():
             pk = self.u_peak_by_step
             pk[step] = max(pk.get(step, 0.0), r["u"])
             st = self.shear_torsion_peak_by_step.setdefault(step, [0.0, 0.0])
             st[0], st[1] = max(st[0], r["shear"]), max(st[1], abs(r["torsion"]))
             if ex.sim_time - self.fired[pair[0]] < BREAK_SETTLE_S - 1e-9:
+                self.u_prev.pop(pair, None)
                 continue
+            if pair in self.u_prev:
+                u2 = min(r["u"], self.u_prev[pair])
+                self.u2_by_weld[pair] = max(self.u2_by_weld.get(pair, 0.0), u2)
+                u2_max = max(u2_max, u2)
+            self.u_prev[pair] = r["u"]
             self.count[pair] = self.count[pair] + 1 if r["u"] >= U_BREAK else 0
             if self.count[pair] >= BREAK_SAMPLES:
                 broke.append((pair, r))
+        self.u2_series.append(round(u2_max, 4))
         for pair, r in broke:
             self.break_weld(pair, r)
         if broke:
@@ -460,7 +482,19 @@ class Example:
         bricks = {b["id"]: b for b in self.plan["bricks"]}
         steps = self.plan["sequence"]
         top = max(s["target_pose"][2] for s in steps) + P.BRICK_H
-        self.z_travel = top + TRAVEL
+        self.z_travel = top + TRAVEL          # the full plan's, also for a nominal start
+        exe = EXE[getattr(args, "exe", None) or "E0"]
+        # nominal start (plan_v4_rl_brace 2.1): steps < start_step stand at their targets, welded; step start_step runs
+        n0 = self.start_step = getattr(args, "start_step", None)
+        if n0 is None and getattr(args, "only_step", False):
+            raise SystemExit("--only-step needs --start-step")
+        self.end_step = n0 + 1 if n0 is not None and getattr(args, "only_step", False) else len(steps)
+        n0 = n0 or 0
+        self.sham_s = None                    # --brace-json {"sham_s": T}: B stages for T s, A stays parked
+        if getattr(args, "brace_json", None) is not None:
+            if self.start_step is None:
+                raise SystemExit("--brace-json needs --start-step: it overrides the brace of that step")
+            self.sham_s = self.set_brace(steps[n0], json.loads(args.brace_json), exe)
 
         # --- arms ---------------------------------------------------------
         arm = build_arm(self.substeps)
@@ -475,9 +509,11 @@ class Example:
         for pos, yaw in (ARM_A, ARM_B):
             scene.add_builder(arm, xform=wp.transform(pos, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw)))
         n_arm_bodies = arm.body_count
-        if not getattr(args, "legacy_brace", False):     # A's grip: 14.3 N per finger at the 1.5 mm brace squeeze
-            scene.joint_target_ke[7:9] = [A_FINGER_KE] * 2
-            scene.joint_target_kd[7:9] = [2 * math.sqrt(A_FINGER_KE * 0.1)] * 2
+        if exe["name"] != "E0":               # E1: A's arm joints only (E0 is build_arm's 400 / 40)
+            scene.joint_target_ke[:7], scene.joint_target_kd[:7] = [exe["arm_ke"]] * 7, [exe["arm_kd"]] * 7
+        if not getattr(args, "legacy_brace", False):     # A's grip: 14.3 N per finger at the 1.5 mm brace squeeze (E0)
+            scene.joint_target_ke[7:9] = [exe["finger_ke"]] * 2
+            scene.joint_target_kd[7:9] = [2 * math.sqrt(exe["finger_ke"] * 0.1)] * 2
 
         # --- baseplate: a studded slab, colliding only where the build stands --
         ox, oy, _ = self.plan["voxel_origin"]
@@ -511,7 +547,8 @@ class Example:
             if (L, W) not in meshes:
                 mv, mf = ex._make_brick_mesh(L, W)
                 meshes[(L, W)] = ex._build_mesh_with_sdf(mv, mf, color=COLORS[0])
-            xform = wp.transform((*slots[n], 0.0005), wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw))
+            at = tuple(s["target_pose"][:3]) if n < n0 else (*slots[n], 0.0005)
+            xform = wp.transform(at, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw))
             body = scene.add_body(xform=xform, label=b["id"])
             shape = scene.add_shape_mesh(body, mesh=meshes[(L, W)], cfg=BRICK_CFG,
                                          color=COLORS[n % len(COLORS)])
@@ -525,7 +562,7 @@ class Example:
 
         # --- clutch pool: one disabled weld per (brick, support) (§3.3) -------
         self.welds = {}
-        for s in steps:
+        for n, s in enumerate(steps):
             bid = s["brick_id"]
             p2, y2, _ = self.target[bid]
             parents = [m[0] for m in s["mating_studs"]] or [None]   # None = baseplate
@@ -537,9 +574,9 @@ class Example:
                     rel = wp.transform(rotate(qz(-y1), p2 - p1), qz(y2 - y1))
                 eq = scene.add_equality_constraint_weld(
                     body1=-1 if sid is None else self.body[sid], body2=self.body[bid],
-                    relpose=rel, enabled=False, label="clutch_%s_%s" % (sid or "plate", bid),
+                    relpose=rel, enabled=n < n0, label="clutch_%s_%s" % (sid or "plate", bid),
                     custom_attributes=WELD_ATTRS)
-                self.welds.setdefault(bid, []).append([eq, sid, rel, False])
+                self.welds.setdefault(bid, []).append([eq, sid, rel, n < n0])
 
         scene.add_ground_plane(cfg=newton.ModelBuilder.ShapeConfig(mu=0.75))
         self.model = scene.finalize()
@@ -547,6 +584,8 @@ class Example:
         sb = self.model.shape_body.numpy()
         self.shapes_of = {bid: np.flatnonzero(sb == b) for bid, b in self.body.items()}
         self.set_group(self.plate_shapes)
+        for s in steps[:n0]:
+            self.set_group(self.shapes_of[s["brick_id"]])
 
         contact_max = 32768
         self.model.rigid_contact_max = contact_max
@@ -585,7 +624,7 @@ class Example:
         self.parks = {self.A: park(ARM_A), self.B: park(ARM_B)}
         self.A.push("park", park(ARM_A), 0.0, 0.0, 1.5)
         self.B.push("park", park(ARM_B), 0.0, 0.01, 1.5)
-        self.next_step, self.b_step = 0, None
+        self.next_step, self.b_step = n0, None
         self.legacy = bool(getattr(args, "legacy_brace", False))
         # hand-off protocol events (plan_v4 r5-5): B lifted its brick / A closed on the structure / B retracted
         self.staged, self.braced, self.retracted, self.placed = set(), set(), set(), set()
@@ -597,10 +636,15 @@ class Example:
         for arm in (self.A, self.B):
             arm.on_timeout = lambda a, ph: self.fail("wait_timeout:%s:%s" % (a.name[0], ph))
         self.episodes, self.last_gate = [], {}
+        for s in steps[:n0]:                  # pre-placed: counted as placed, not as snaps
+            self.breaker.fire(s["brick_id"])
+            self.episodes.append({"brick_id": s["brick_id"], "step": s["step"], "success": True, "pre_placed": True})
+        self.b_phase_t, self.b_phase = {}, None   # sim time each (step, phase) of B started (row: episode onsets)
         self.hand_off, self.i_xy = None, np.zeros(2)
         self.done = False
         self.log_path = HERE / "results" / "proto_episodes.jsonl"
         self.log_path.parent.mkdir(exist_ok=True)
+        self.spec = getattr(args, "spec", None)
         # P0 instrumentation, all off by default (attached from __main__)
         self.monitor = None                   # cell.contacts.ContactMonitor, read-only
         self.inserts = None                   # --record-inserts: per-frame rows
@@ -612,6 +656,7 @@ class Example:
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
         self.capture()
         self.wall0 = time.perf_counter()      # for the row's rtf
+        self.startup_s = self.wall0 - _T0     # process start to here: plan, IK park, scene build, graph capture
         print("%s: %d bricks, %d braced (%s), %d clutch welds" % (
             self.name, len(steps), self.plan["validation"]["brace_required_count"],
             self.plan["validation"]["bracing_strategy"], sum(len(w) for w in self.welds.values())))
@@ -649,7 +694,7 @@ class Example:
                 print("FAILURE %s at step %s: arms open and park" % (self.failure, self.failed_at_step))
             return
         if self.B.idle() and not self.done and (self.legacy or self.A.idle()):
-            if self.next_step < len(steps):
+            if self.next_step < self.end_step:
                 self.b_step = self.next_step
                 self.queue_place(steps[self.next_step])
                 self.next_step += 1
@@ -704,12 +749,15 @@ class Example:
         staged = s["requires_brace"] and not self.legacy and s["brace"].get("feasible", True)
         if s["requires_brace"]:
             self.brace_info(n).update(infeasible=not s["brace"].get("feasible", True))
+        sham = self.sham_s if n == self.start_step else None      # --brace-json {"sham_s": T}: stage for T s, no A
         B.push("to feeder", up(slot), yaw, g_open, 1.5)
         B.push("descend", slot + [0, 0, GRASP_DZ], yaw, g_open, 1.0)
         B.push("grasp", slot + [0, 0, GRASP_DZ], yaw, g_shut, 0.5, contact=True)
         B.push("lift", up(slot), yaw, g_shut, 0.8, then=(lambda: self.staged.add(n)) if staged else None)
         if staged:
             B.push("stage", up(slot), yaw, g_shut, 0.2, wait=lambda: n in self.braced)
+        elif sham is not None:
+            B.push("stage", up(slot), yaw, g_shut, sham)
         B.push("transport", up(tgt), yaw, g_shut, 1.5)
         B.push("pre-insert", tgt + [0, 0, 0.025 + GRASP_DZ], yaw, g_shut, 0.6,
                wait=(lambda: n in self.braced) if s["requires_brace"] and self.legacy else None)
@@ -718,6 +766,19 @@ class Example:
         B.push("release", tgt + [0, 0, GRASP_DZ - PRESS], yaw, g_open, 0.4, contact=True,
                then=lambda: self.placed.add(n))
         B.push("retract", up(tgt), yaw, g_open, 0.8, then=(lambda: self.retracted.add(n)) if staged else None)
+
+    def set_brace(self, s, brace, exe):
+        """--brace-json for plan step s: None = no brace; [y, z, lean_deg] = bracing.brace_at (the planner's frame,
+        exe's grip); {"sham_s": T} = no brace, B stages for T s. Returns T or None."""
+        sham = None
+        if isinstance(brace, dict):
+            sham, brace = float(brace["sham_s"]), None
+        elif brace is not None:
+            order = P.sequence(P.STRUCTURES[self.name])
+            assert order[s["step"]][0] == s["brick_id"], "plan order differs from planner.sequence"
+            brace = bracing.brace_at(order[s["step"]], order[:s["step"]], *brace, grip_N=exe["grip_N"], mu=finger_mu())
+        s["brace"], s["requires_brace"] = brace, brace is not None and brace.get("feasible", True)
+        return sham
 
     def brace_info(self, n):
         """The per-step brace record (row field brace_by_step): asked, done, measured."""
@@ -926,8 +987,9 @@ class Example:
                "failure_mode": None if ok else "gate", "after_failure": after}
         self.episodes.append(row)
         self.snap_gates.append(dict(self.last_gate, ok=ok, sim_time_s=round(self.sim_time, 3)))
-        with self.log_path.open("a") as f:
-            f.write(json.dumps(row) + "\n")
+        if not self.spec:
+            with self.log_path.open("a") as f:
+                f.write(json.dumps(row) + "\n")
         print("  step %d %s %s  %s" % (s["step"], bid, "SNAP" if ok else "MISS", self.last_gate))
 
     # -- loop ---------------------------------------------------------------------
@@ -969,6 +1031,9 @@ class Example:
             world = qmul(qrot(tilt), qmul(qz(yaw), Q_DOWN))
             rot.append(qmul(qz(-byaw), world))
             grip.append(g)
+        if self.B.phase != self.b_phase:
+            self.b_phase = self.B.phase
+            self.b_phase_t.setdefault((self.b_step, self.b_phase), self.sim_time)
         self.ik_pos.assign(np.array(pos, dtype=np.float32))
         self.ik_rot.assign(np.array(rot, dtype=np.float32))
         if self.graph_ik:
@@ -1046,7 +1111,7 @@ class Example:
             ui.text("DONE")
 
     def test_final(self):
-        n = len(self.plan["sequence"])
+        n = self.end_step
         ok = sum(e["success"] for e in self.episodes)
         assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
                                                                    self.built_at_failure)
@@ -1054,7 +1119,7 @@ class Example:
         assert ok == n, "%d / %d snapped: %s" % (ok, n, [e for e in self.episodes if not e["success"]])
         body_q = self.state_0.body_q.numpy()
         drift = {bid: np.linalg.norm(body_q[self.body[bid]][:3] - tgt) * 1000     # and they stayed there
-                 for bid, (tgt, _, _) in self.target.items()}
+                 for bid, (tgt, _, _) in self.target.items() if bid in {s["brick_id"] for s in self.plan["sequence"][:n]}}
         worst = max(drift, key=drift.get)
         print("max brick drift %.3f mm (%s)" % (drift[worst], worst))
         assert drift[worst] <= 1.0, "%s drifted %.2f mm after assembly" % (worst, drift[worst])
@@ -1067,7 +1132,7 @@ class Example:
         ends = starts[1:] + [self.done_t if self.done_t is not None else self.sim_time]
         mon = self.monitor.summary() if self.monitor else {}
         events = self.monitor.events if self.monitor else []
-        return {"tag": getattr(a, "tag", None) or "%s_%s_r%d" % (self.name, model, a.repeat),
+        row = {"tag": getattr(a, "tag", None) or "%s_%s_r%d" % (self.name, model, a.repeat),
                 "structure": self.name, "brace_model": model, "strategy": a.strategy,
                 "repeat": a.repeat, "error": error, "done": self.done,
                 "placed": sum(e["success"] for e in self.episodes), "total": len(steps),
@@ -1089,6 +1154,27 @@ class Example:
                 "u_peak_by_step": {k: round(v, 4) for k, v in self.breaker.u_peak_by_step.items()},
                 "shear_torsion_peak_by_step": {k: [round(x, 5) for x in v] for k, v in
                                                self.breaker.shear_torsion_peak_by_step.items()}}
+        if self.start_step is not None:
+            row["episode"] = self.episode_row(events)
+        return row
+
+    def episode_row(self, events):
+        """The step-episode records (plan_v4_rl_brace 2.5, A2): outcome, two-sample u, B's onsets, start-up, spec echo."""
+        a, n, t, br = self.args, self.start_step, self.b_phase_t, self.breaker
+        aa = [e for e in events if e["class"] == "arm_arm"]
+        stage, transport = t.get((n, "stage")), t.get((n, "transport"))
+        u2 = {"%s/%s" % pair: round(v, 4) for pair, v in br.u2_by_weld.items()}
+        return {"success": self.failure is None and self.done and not aa,   # done: the step ran to its end
+                "u2_peak": max(u2.values(), default=0.0), "u2_peak_by_weld": u2, "u2_series": br.u2_series,
+                "t_transport_onset": transport and round(transport, 4), "t_insert_onset": t.get((n, "insert")) and round(t[(n, "insert")], 4),
+                "t_stage_s": 0.0 if stage is None else None if transport is None else round(transport - stage, 3),
+                "startup_s": round(self.startup_s, 2),
+                "arm_arm_events": len(aa), "arm_arm_peak_N": max((e.get("peak_force_n", 0.0) for e in aa), default=0.0),
+                "brace_row": self.brace_row(n) if n in self.brace_by_step else None,
+                "spec": {"step": n, "only_step": bool(getattr(a, "only_step", False)),
+                         "brace": json.loads(a.brace_json) if getattr(a, "brace_json", None) is not None else "plan",
+                         "press_scale": getattr(a, "press_scale", None), "press_lateral": getattr(a, "press_lateral", None),
+                         "exe": getattr(a, "exe", None) or "E0", "tag": getattr(a, "tag", None)}}
 
     def finish(self, error=None):
         """After the run (also after a failed one): write --p0-out and --record-inserts."""
@@ -1160,6 +1246,10 @@ def make_plan(args):
             bricks = B.tile(B.carve(args.front, args.side, args.top, args.width, args.depth))
         except ValueError as e:
             raise SystemExit("preflight: %s -- redraw with support under the overhang" % e)
+    elif getattr(args, "bricks", None):                     # --spec: the structure inline
+        if not args.name:
+            raise SystemExit("preflight: a spec with bricks needs a name")
+        name, bricks = args.name, [tuple(b) for b in args.bricks]
     elif args.shape:
         name, bricks = args.shape, B.load(args.shape)
     else:
@@ -1183,12 +1273,18 @@ def make_plan(args):
     kw = {}
     if model == "grasp_lp" and not getattr(args, "legacy_brace", False):
         mu = finger_mu()                       # the LP plans with the grip A's fingers deliver (A_FINGER_KE)
-        print("brace grip: %.1f N per finger, finger material mu %.3f" % (BRACE_GRIP_N, mu))
-        kw = dict(brace_grip_N=BRACE_GRIP_N, brace_mu=mu)
+        grip = EXE[getattr(args, "exe", None) or "E0"]["grip_N"]
+        print("brace grip: %.1f N per finger, finger material mu %.3f" % (grip, mu))
+        kw = dict(brace_grip_N=grip, brace_mu=mu)
         if "brace_grip_N" not in inspect.signature(P.build_plan).parameters:
             print("planner.build_plan has no brace_grip_N yet: planning with its default grip")
             kw = {}
-    plan = P.build_plan(name, args.strategy, brace_model=model, **kw)
+    cache = Path(args.plan) if getattr(args, "plan", None) else None    # --plan: a cached plan is loaded, else built and saved there
+    if cache and cache.exists():
+        plan = json.loads(cache.read_text())
+        print("plan <- %s" % cache)
+    else:
+        plan = P.build_plan(name, args.strategy, brace_model=model, **kw)
     by_id, bad = {b[0]: b for b in bricks}, []
     for n, st in enumerate(plan["sequence"]):
         blk = P.pinch_blocked(by_id[st["brick_id"]], [by_id[q["brick_id"]] for q in plan["sequence"][:n]],
@@ -1206,8 +1302,13 @@ def make_plan(args):
     # a lever_press plan gets its own file: the grasp_lp one keeps the old name
     out = HERE / "plans" / ("sim_%s_%s%s.json" % (name, args.strategy,
                                                   "" if model == "grasp_lp" else "_" + model))
-    out.write_text(json.dumps(plan, indent=1))
-    print("plan -> %s" % out.relative_to(HERE))
+    if cache and not cache.exists():
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(plan, indent=1))
+        print("plan -> %s" % cache)
+    elif not cache and not getattr(args, "spec", None):           # --spec runs leave plans/ alone
+        out.write_text(json.dumps(plan, indent=1))
+        print("plan -> %s" % out.relative_to(HERE))
     plan["preflight"] = pre                # in memory only, for the run row
     return plan, name
 
@@ -1241,12 +1342,41 @@ if __name__ == "__main__":
                              "weld events, raw contact flags)")
     parser.add_argument("--record-inserts", type=Path, metavar="PATH.npz",
                         help="save both arms' joint q every frame B inserts or A braces")
-    parser.set_defaults(shape="arch")
+    parser.add_argument("--spec", type=Path, metavar="PATH.json",
+                        help="an episode spec: JSON whose keys are these flags' names (start_step, brace_json, exe, ...; "
+                             "brace_json as a JSON value) plus structure | shape | bricks (+ name), out, tag; CLI flags "
+                             "override it. Writes no plans/sim_*.json and no results/proto_episodes.jsonl rows; "
+                             "the row goes to out; the monitor is on")
+    parser.add_argument("--plan", type=Path, metavar="PATH.json",
+                        help="load this cached plan instead of building it; if absent, build it and save it there")
+    parser.add_argument("--start-step", type=int, metavar="N",
+                        help="nominal start: bricks of steps < N start at their targets, welded; the run begins at step N")
+    parser.add_argument("--only-step", action="store_true", help="with --start-step: run step N alone, then finish")
+    parser.add_argument("--brace-json", metavar="JSON",
+                        help="with --start-step, the brace of step N: null (none), [y, z, lean_deg], or "
+                             '{"sham_s": T} (A parked, B stages for T s); default: the plan\'s')
+    parser.add_argument("--press-scale", type=float, help="design-press fixture scale (recorded; the fixture is not built yet)")
+    parser.add_argument("--press-lateral", type=float, nargs=2, metavar=("FX", "FY"),
+                        help="design-press fixture lateral load, N (recorded; the fixture is not built yet)")
+    parser.add_argument("--exe", choices=list(EXE), default="E0",
+                        help="A's executor setting (tasks/brace_bandit.EXE): E0 committed, E1 stiff hold")
+    parser.set_defaults(shape="arch", bricks=None)
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--spec", type=Path)
+    if pre.parse_known_args()[0].spec:                 # spec keys become the parser's defaults: CLI flags win
+        spec = json.loads(pre.parse_known_args()[0].spec.read_text())
+        spec = {"p0_out" if k == "out" else k.replace("-", "_"): v for k, v in spec.items()}
+        bad = set(spec) - {a.dest for a in parser._actions} - {"bricks"}
+        if bad:
+            raise SystemExit("spec: unknown keys %s" % sorted(bad))
+        if "brace_json" in spec:
+            spec["brace_json"] = json.dumps(spec["brace_json"])
+        parser.set_defaults(**spec)
     viewer, args = newton.examples.init(parser)
-    if args.front or args.structure:
+    if args.front or args.structure or args.bricks:
         args.shape = None
     example = Example(viewer, args)
-    if args.monitor or args.p0_out:
+    if args.monitor or args.p0_out or args.spec or args.start_step is not None:
         from cell.contacts import ContactMonitor
         example.monitor = ContactMonitor(example)
     if args.record_all:

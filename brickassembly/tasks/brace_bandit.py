@@ -42,8 +42,9 @@ SCALES = (0.5, 1.0, 1.3)          # x design press, the LP screen
 CRITICAL_U = 0.8                  # pool "critical": LP u0(1.3 x design) >= this
 BRACE_COST = 0.05                 # reward = success - BRACE_COST * brace
 U_CAP = 10.0                      # LP utilisations are clipped here (infeasible = inf) before they are features
-EXE = {"E0": {"name": "E0", "grip_N": 14.3, "mu": 0.7},     # committed hold (dual_arm_sim.BRACE_GRIP_N)
-       "E1": {"name": "E1", "grip_N": 28.6, "mu": 0.7}}     # stiff hold; mu 0.7 is the plan's probe value [A]
+# Executor settings (plan_v4_rl_brace 2.7); dual_arm_sim applies arm_ke/arm_kd (A's 7 arm joints) and finger_ke (A's fingers).
+EXE = {"E0": {"name": "E0", "grip_N": 14.3, "mu": 0.7, "arm_ke": 400.0, "arm_kd": 40.0, "finger_ke": 9500.0},    # committed hold
+       "E1": {"name": "E1", "grip_N": 28.6, "mu": 0.7, "arm_ke": 4000.0, "arm_kd": 126.0, "finger_ke": 19000.0}}  # stiff hold; mu 0.7 is the plan's probe value [A]
 LEAN_DEG = round(math.degrees(bracing.TILT))                 # 45: lean_for's magnitude
 
 
