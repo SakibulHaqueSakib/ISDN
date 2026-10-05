@@ -43,8 +43,9 @@ CRITICAL_U = 0.8                  # pool "critical": LP u0(1.3 x design) >= this
 BRACE_COST = 0.05                 # reward = success - BRACE_COST * brace
 U_CAP = 10.0                      # LP utilisations are clipped here (infeasible = inf) before they are features
 # Executor settings (plan_v4_rl_brace 2.7); dual_arm_sim applies arm_ke/arm_kd (A's 7 arm joints) and finger_ke (A's fingers).
-EXE = {"E0": {"name": "E0", "grip_N": 14.3, "mu": 0.7, "arm_ke": 400.0, "arm_kd": 40.0, "finger_ke": 9500.0},    # committed hold
-       "E1": {"name": "E1", "grip_N": 28.6, "mu": 0.7, "arm_ke": 4000.0, "arm_kd": 126.0, "finger_ke": 19000.0}}  # stiff hold; mu 0.7 is the plan's probe value [A]
+# mu is the cell's finger material friction (dual_arm_sim.finger_mu() = 1.000), which its own planner uses.
+EXE = {"E0": {"name": "E0", "grip_N": 14.3, "mu": 1.0, "arm_ke": 400.0, "arm_kd": 40.0, "finger_ke": 9500.0},    # committed hold
+       "E1": {"name": "E1", "grip_N": 28.6, "mu": 1.0, "arm_ke": 4000.0, "arm_kd": 126.0, "finger_ke": 19000.0}}  # stiff hold
 LEAN_DEG = round(math.degrees(bracing.TILT))                 # 45: lean_for's magnitude
 
 
@@ -214,6 +215,8 @@ def contexts(bricks):
     """Steps 1..N-1 as dicts: bricks, step, brick, placed, key, design_press (N), u0 {0.5, 1.0, 1.3 x
     design press: unbraced LP utilisation}, pool ('critical' iff u0[1.3] >= 0.8, else 'easy')."""
     bricks = tuple(bricks)
+    assert bricks == tuple(P.sequence(list(bricks))), \
+        "contexts() needs the bricks in planner.sequence order (the cell runs that order); pass tuple(P.sequence(list(bricks)))"
     key = canonical_key(bricks)
     out = []
     with cell_frame(bricks):
@@ -491,12 +494,13 @@ def _quantiles(v):
 def self_check():
     """Reproduce the [P] numbers of plan_v4_rl_brace section 0 (facts 2, 7, 8), print them beside the
     plan's values, and write results/v4/rl/r0/lp_probe.json. Nothing is tuned to match."""
-    exe = EXE["E0"]
+    exe = dict(EXE["E0"], mu=0.7)                             # the planner probe's friction [P]; the cell's is EXE's 1.0
     rows, out = [], {"exe": exe, "notes": []}
 
-    def row(name, plan, *mine, note=""):
+    def row(name, plan, *mine, note="", rng=None):
         best = min((abs(m - plan) for m in mine if m == m), default=float("nan"))
-        rows.append((name, plan, mine, "" if best <= 0.05 else "DIFF", note))
+        ok = (rng[0] <= mine[0] <= rng[1]) if rng else best <= 0.05
+        rows.append((name, plan, mine, "" if ok else "DIFF", note))
 
     s3 = tuple(P.sequence(P.STRUCTURES["S3"]))
     arch = tuple(BP.load("arch"))
@@ -533,7 +537,7 @@ def self_check():
             ST.analyze(s3[:13], loads=ST.insertion_loads(s3[13], list(s3[:13])), braces=[br])
         ms = (time.perf_counter() - t) / 40 * 1e3
     out["lp_solve_ms"] = ms
-    row("LP solve, ms (S3 step 13, braced)", 3.0, ms, note="plan: 2-4 ms; 5 solves per utilisation")
+    row("LP solve, ms (S3 step 13, braced)", 3.0, ms, note="plan: 2-4 ms; 5 solves per utilisation", rng=(2.0, 4.0))
 
     counts = {}
     for name, bricks in (("S3", s3), ("S5", tuple(P.sequence(P.STRUCTURES["S5"]))), ("arch", arch)):

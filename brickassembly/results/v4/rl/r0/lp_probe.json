@@ -2,7 +2,10 @@
  "exe": {
   "name": "E0",
   "grip_N": 14.3,
-  "mu": 0.7
+  "mu": 0.7,
+  "arm_ke": 400.0,
+  "arm_kd": 40.0,
+  "finger_ke": 9500.0
  },
  "notes": [],
  "lp": {
@@ -38,7 +41,7 @@
   "arch@relaxed": 0.9458174778761056,
   "arch@u0": 0.9458174778761066
  },
- "lp_solve_ms": 3.655241950036725,
+ "lp_solve_ms": 3.6486747005255893,
  "candidate_counts": {
   "S3": {
    "critical_steps": [
@@ -216,9 +219,9 @@
    "item": "LP solve, ms (S3 step 13, braced)",
    "plan": 3.0,
    "reproduced": [
-    3.655241950036725
+    3.6486747005255893
    ],
-   "flag": "DIFF",
+   "flag": "",
    "note": "plan: 2-4 ms; 5 solves per utilisation"
   },
   {

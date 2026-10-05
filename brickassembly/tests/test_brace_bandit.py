@@ -186,3 +186,68 @@ def test_learned_dispatch_precedes_threshold():
     # defaults unchanged: the scripted lean and the committed strategies' records are what they were
     r = bracing.assign(s3[13], list(s3[:13]), "weakest_joint")
     assert r["brace_tilt_rotvec"] == [round(v, 4) for v in bracing.lean_for(s3[13], r["brace_pose"][1])]
+
+
+def test_contexts_need_sequence_order():
+    s3 = tuple(P.STRUCTURES["S3"])                                             # raw tuples are not in sequence order
+    assert s3 != tuple(P.sequence(list(s3)))
+    with pytest.raises(AssertionError, match="sequence order"):
+        BB.contexts(s3)
+
+
+# --- the R0 runner (experiments/v4_brace.py): job ids, de-duplication, the pool; no newton, no cell ---------------
+
+def test_job_ids_stable_and_order_independent():
+    from experiments import v4_brace as V
+    sid, act = next(iter(V.registry())), (0.0125, 0.0192, 45)
+    a = V.job("signal", sid, 7, "none", None, 0.8123456789, [1.0, -2.0], "E0", 0, "signal", 2, {"pool": "critical"})
+    b = V.job("harm", sid, 7, "lp_shared", None, 0.8123456789, [1.0, -2.0], "E0", 0, "other", 9, {})     # other labels, same run
+    assert a["id"] == b["id"] and len(a["id"]) == 16
+    assert a["id"] == V.core_id(dict(reversed(list(a["core"].items()))))                            # key order is irrelevant
+    assert V.job("x", sid, 7, "a", act, exe="E0")["id"] != V.job("x", sid, 7, "a", act, exe="E1")["id"]
+    assert V.job("x", sid, 7, "a", act, rep=0)["id"] != V.job("x", sid, 7, "a", act, rep=1)["id"]
+    assert V.job("x", sid, 7, "a", act, 1.0, V.NO_LATERAL)["id"] != V.job("x", sid, 7, "a", act)["id"]   # fixture on / off
+    assert V.job("x", sid, 7, "a", act + (), 1.0)["id"] == V.job("x", sid, 7, "a", list(act), 1.0)["id"]
+    assert V.job("x", sid, 7, "a", ("sham", None))["id"] is None                                   # staging time not known yet
+    assert V.job("x", sid, 7, "a", ("sham", 5.6))["id"] != V.job("x", sid, 7, "a", ("sham", 5.7))["id"]
+    ids = [V.job("x", sid, n, "a", None, 1.0, V.NO_LATERAL)["id"] for n in range(30)]
+    assert len(set(ids)) == 30
+    spec = V.cell_spec(a, V.ROOT)                                                                  # keys the cell's spec parser accepts
+    assert {"bricks", "name", "plan", "start_step", "only_step", "brace_json", "press_scale", "press_lateral", "exe", "out", "tag", "repeat"} == set(spec)
+    assert V.cell_spec(V.job("x", "shape:cube", 7, "a", None), V.ROOT)["shape"] == "cube"
+
+
+def test_run_jobs_dedupes_and_builds_each_plan_once(tmp_path, monkeypatch):
+    import json
+    import threading
+    import time
+    from experiments import v4_brace as V
+    started, lock, running = [], threading.Lock(), {}
+
+    def fake(j, root, timeout):
+        sid = j["core"]["s"]
+        with lock:
+            started.append((sid, V.plan_path(root, sid).exists()))
+            running[sid] = running.get(sid, 0) + 1
+            assert running[sid] == 1 or V.plan_path(root, sid).exists(), "two jobs built one plan at once"
+        time.sleep(0.1)
+        V.plan_path(root, sid).parent.mkdir(parents=True, exist_ok=True)
+        V.plan_path(root, sid).write_text("{}")
+        V.rows_dir(root).mkdir(parents=True, exist_ok=True)
+        rec = {"id": j["id"], "core": j["core"], "meta": {}, "wall_s": 0.1, "row": {"episode": {"success": True}}}
+        (V.rows_dir(root) / (j["id"] + ".json")).write_text(json.dumps(rec))
+        with lock:
+            running[sid] -= 1
+        return rec
+
+    monkeypatch.setattr(V, "run_one", fake)
+    jobs = [V.job("e1", s, n, "none", None) for s in ("a", "b") for n in range(1, 4)]
+    jobs += [V.job("e2", "a", 1, "other_label", None)]                                             # a duplicate of e1's first job
+    st = V.run_jobs(jobs, tmp_path, 4)
+    assert st["unique"] == 6 and st["ran"] == 6 and not st["errors"]
+    first = {}
+    for sid, had in started:
+        first.setdefault(sid, had)
+    assert first == {"a": False, "b": False}                                                       # each plan built by exactly one job
+    assert V.run_jobs(jobs, tmp_path, 4)["ran"] == 0                                               # resume: rows exist, nothing runs
+    assert V.merge("e2", jobs[-1:], tmp_path)["with_record"] == 1
