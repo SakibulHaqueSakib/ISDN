@@ -40,6 +40,7 @@ from tasks import brace_bandit as BB  # noqa: E402
 
 ROOT = HERE / "results" / "v4" / "rl"
 NO_LATERAL = [0.0, 0.0]
+FULL_BUILD_FRAMES = 40000          # a full build (core n None; scripts/j_acceptance.sh's budget); the null viewer stops it when done
 NUM_FRAMES = 6000                  # 100 s of sim: a step-episode is ~12-20 s; the null viewer stops it when done
 ONSET_TOL_S = 0.1                  # A2: sham valid iff its insert onset is within this of the braced run's
 EXPERIMENTS = ["harness", "throughput", "placer", "signal", "reaction", "screen", "validate", "harm"]
@@ -104,8 +105,13 @@ def registry():
     return _REG
 
 
+EXTRA_SPECS = {}                   # {sid: cell-spec keys naming the structure}: registered by experiments/v4_vision.py
+
+
 def structure_spec(sid):
     """The cell-spec keys naming the structure: a blueprint sample ('shape:cube') or the inline bricks."""
+    if sid in EXTRA_SPECS:
+        return EXTRA_SPECS[sid]
     if sid.startswith("shape:"):
         return {"shape": sid[6:]}
     return {"bricks": [list(b) for b in registry()[sid]["bricks"]], "name": "rl_" + sid}
@@ -149,19 +155,24 @@ def _act(a):
     return [round(float(a[0]), 6), round(float(a[1]), 6), int(a[2])]
 
 
-def core_of(sid, step, action, lam, lateral, exe, rep):
-    return {"s": sid, "n": int(step), "a": _act(action), "lam": None if lam is None else round(float(lam), 6),
+def core_of(sid, step, action, lam, lateral, exe, rep, v=None):
+    """v (perception phase, experiments/v4_vision.py): extra cell-spec keys (look, aim, seed, ...; a key starting with '_' is a
+    runner directive, not a spec key); step None = a full build. Part of the core only when given: existing job ids are unchanged."""
+    core = {"s": sid, "n": None if step is None else int(step), "a": _act(action), "lam": None if lam is None else round(float(lam), 6),
             "lat": None if lateral is None else [round(float(x), 6) for x in lateral], "exe": exe, "rep": int(rep)}
+    if v:
+        core["v"] = v
+    return core
 
 
 def core_id(core):
     return hashlib.sha256(json.dumps(core, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
 
 
-def job(exp, sid, step, arm, action, lam=None, lateral=None, exe="E0", rep=0, stage=None, r=None, meta=None):
+def job(exp, sid, step, arm, action, lam=None, lateral=None, exe="E0", rep=0, stage=None, r=None, meta=None, v=None):
     """A job: the core (hashed) plus labels (experiment, arm, stage, replicate, meta). A sham whose duration is
     not known yet has id None (pending)."""
-    core = core_of(sid, step, action, lam, lateral, exe, rep)
+    core = core_of(sid, step, action, lam, lateral, exe, rep, v)
     pending = core["a"] is not None and core["a"][0] == "sham" and core["a"][1] is None
     return {"exp": exp, "arm": arm, "stage": stage, "r": r, "meta": meta or {}, "core": core,
             "id": None if pending else core_id(core)}
@@ -191,14 +202,24 @@ def cell_spec(j, root):
     c, jid = j["core"], j["id"]
     a = c["a"]
     brace = None if a is None else {"sham_s": a[1]} if a[0] == "sham" else a
-    return {**structure_spec(c["s"]), "plan": str(plan_path(root, c["s"])), "start_step": c["n"], "only_step": True,
+    spec = {**structure_spec(c["s"]), "plan": str(plan_path(root, c["s"])), "start_step": c["n"], "only_step": True,
             "brace_json": brace, "press_scale": c["lam"], "press_lateral": c["lat"], "exe": c["exe"],
             "out": str(rows_dir(root) / (jid + ".part")), "tag": jid, "repeat": c["rep"]}
+    v = c.get("v")
+    if v:
+        spec.update({k: x for k, x in v.items() if not k.startswith("_")})
+        if c["n"] is None:                                          # a full build: no step-episode keys
+            for k in ("start_step", "only_step", "brace_json", "press_scale", "press_lateral"):
+                del spec[k]
+        if v.get("_record"):
+            spec["record_all"] = str(Path(root) / "recordings" / (jid + ".npz"))
+    return spec
 
 
 def run_one(j, root, timeout, num_frames=NUM_FRAMES):
     """Run the cell on one job; one retry if no row came out. Writes rows/<id>.json (row None = job error)."""
     root, jid = Path(root), j["id"]
+    num_frames = FULL_BUILD_FRAMES if j["core"]["n"] is None else num_frames
     for d in ("rows", "specs", "logs", "plans"):
         (root / d).mkdir(parents=True, exist_ok=True)
     spec = root / "specs" / (jid + ".json")
@@ -266,9 +287,10 @@ def run_jobs(jobs, root, workers, timeout=300, retry_errors=False, limit=None, l
                 stats["ran"] += 1
                 stats["errors"] += rec["row"] is None
                 ep = (rec["row"] or {}).get("episode") or {}
+                ok = ep.get("success") if ep else rec["row"] is not None and rec["row"].get("failure") is None     # a full build has no episode block
                 log("[%d/%d] %s %s %s step %s %s -> %s (%.0fs)" % (stats["ran"], stats["to_run"], j["id"], j["exp"], j["core"]["s"][:12],
                                                                    j["core"]["n"], j["arm"], "ERROR" if rec["row"] is None else
-                                                                   "success" if ep.get("success") else "fail:%s" % (rec["row"].get("failure") or "other"),
+                                                                   "success" if ok else "fail:%s" % (rec["row"].get("failure") or "other"),
                                                                    rec["wall_s"]))
     stats["wall_s"] = round(time.time() - t0, 1)
     return stats
@@ -293,8 +315,10 @@ def flatten(j, rec):
     return out
 
 
-def merge(exp, jobs, root):
-    """episodes.jsonl for the experiment from the rows of its job list; <exp>/merge.json says how complete it is."""
+def merge(exp, jobs, root, flat=None):
+    """episodes.jsonl for the experiment from the rows of its job list; <exp>/merge.json says how complete it is.
+    flat(job, record) -> the line (default: flatten)."""
+    flat = flat or flatten
     d = Path(root) / exp
     d.mkdir(parents=True, exist_ok=True)
     n = lost = missing = 0
@@ -306,7 +330,7 @@ def merge(exp, jobs, root):
                 continue
             lost += rec["row"] is None
             n += 1
-            f.write(json.dumps(flatten(j, rec)) + "\n")
+            f.write(json.dumps(flat(j, rec)) + "\n")
     st = {"entries": len(jobs), "with_record": n, "lost": lost, "missing": missing, "unique_ids": len({j["id"] for j in jobs if j["id"]})}
     (d / "merge.json").write_text(json.dumps(st))
     return st
