@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-201 entries. Later entries supersede earlier ones; retractions are marked.
+209 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -220,6 +220,31 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **decided** `v4_place_plan_draft`
     - outcome: The placer RL plan (user decision v4_placer_rl_primitives) is drafted by the orchestrator as the user asked ("dont do planner just write yourself"): Docs/plan_v4_rl_place.md. Feasibility phase P0 first: a drop_press primitive (release above the flush neighbours' studs, then press the brick down with closed fingertips) behind a --place-json flag; a 16-setting screen of grasp height, release margin,…
     - status: draft, not reviewed, not adopted; shown to the user before review.
+
+- **result** `v4_p2_cameras`
+    - result: P2 camera gate, 1x unless stated (plan §0 fact 1). (a) PASS at 1x and 2x: top 8.8 ms, wrist 3.3 ms per capture. (b) PASS: 600 tray bricks, 100 %, minimum 144 px. (c) PASS at 1x, 48/50 (single footprint 9/10; misses S5 step 12 and S3L step 4); FAIL at 2x, 44/50. Look pose: h_look 45 mm, offset 60 mm. (d) at 1x: yield 45/50; relative error rms 0.114 / 0.090 mm, yaw 0.057 deg, radial p95 0.234 mm, ma…
+    - finding: The cameras carry the information at 1x and not at 2x. The run was made before 2026-10-06 but never recorded; this entry records it. The orchestrator recomputed gate (c) and the V5 numbers from v5.jsonl.
+
+- **decided** `v4_perception_priority`
+    - outcome: The perception pipeline is built first, before the placer track and the remaining RL-bracing R0 runs; both wait until G-V3 (U-P6).
+
+- **decided** `v4_perception_plan`
+    - outcome: Phase 4 Perception plan (Docs/plan_v4_perception.md, revision r2): V1 (feasibility) is ADOPTED; V2 (vision-only executor) and V3 (RL observation) stay a DRAFT, revised once at G-V1. Review history: r0 -> Codex round 1 CHANGES REQUESTED (10 findings) -> r1 -> Codex round 2 CHANGES REQUESTED (1 blocker, 4 major) -> escalated to the user, who chose "Adopt with 5 fixes"; there is no third Codex round …
+
+- **deviated** `v4_scale_1x_matched_injection`
+    - rationale: P2 passed at 1x and failed (c) at 2x (44/50), P1(b) was never run and no capture tolerance has been measured, so the tolerance that matters is tested directly against measured V5 errors (plan §0 facts 1 and 4)
+
+- **deviated** `v4_perception_executor`
+    - rationale: Smallest executor change that replaces the GT servo (plan §0 fact 2); the 9.75 agent-day total assumes no tree or cuRobo
+
+- **deviated** `v4_preweld_screen`
+    - rationale: snap() runs at insert end with the hand still gripping and welds at once to the nominal relpose, so a screen after release would read the weld's pull, not the seat. The relative speed at snap, median 18.04 / p95 18.46 mm/s, is Codex-reported [R] and not recomputed. Two at-rest rules were a Codex round 2 major finding
+
+- **deviated** `v4_asbuilt_plan_anchored`
+    - rationale: RL inputs are plan-pure (plan §0 fact 5), so a plan-anchored model with verified, inferred and raised/missing statuses is enough; U-P1 recommended default taken
+
+- **deviated** `v4_b1_drift_measured`
+    - rationale: B1 was open in plan_v4 (U-r5-3); E5 measures it before the margin test uses it
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
