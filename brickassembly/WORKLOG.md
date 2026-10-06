@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-216 entries. Later entries supersede earlier ones; retractions are marked.
+220 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -269,6 +269,19 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **problem** `v4_arch_step10_nominal_start_break`
     - finding: Arch step 10 with weakest_joint bracing, run as a nominal-start step-episode, breaks at frame 779 with all perception flags off [implementer-reported]. Not caused by the perception hooks. Relevant to RL bracing R0 (paused, U-P6).
+
+- **result** `v4_v1_e1_e1b_first_pass`
+    - result: E1 (36 builds) and E1b (54 step-episodes) ran on commit 488415c into results/v4/vision/v1/ (0 lost, 0 errors). Builds built-all of 3 (results/v4/vision/v1/tables.json): gt: cube 3, arch 3, hollow_box 3, S3 0; fk_oracle: cube 3, arch 3, hollow_box 3, S3 0; fk_vision: cube 2, arch 1, hollow_box 0 (perception_v5 at step 7 in all three), S3 0. fk_oracle passed the D6 screen on all 93 gated snaps. V5 (…
+    - finding: First pass, kept as the record. SUPERSEDED by the re-run after the yaw fix into results/v4/vision/v1_r1/ (E1, E1b, pool, E2, E2b, E4); the fk_vision build failures and the screen outcomes here are pre-fix and must not be quoted as V1 results.
+
+- **problem** `v4_v1_turned_look_yaw`
+    - finding: E1 rows: on two-look steps estimated from the turned look, the realised yaw at the end of pre-insert has median -0.333 deg (fk_oracle, n 36) and -0.335 deg (fk_vision, n 27) versus +-0.005 deg on one-look steps; the turned hand's FK yaw is 90.37 deg versus commanded 90.00. Cause: look_done added dpsi measured at the hand's actual yaw onto commanded waypoint yaws. Fixed in 77b551d: dpsi = wrap(T_ya…
+
+- **problem** `v4_contacts_look_not_held`
+    - finding: cell/contacts.py HELD_PHASES omitted "look", so finger contact with the held brick during a look was classed unintended and the brick displaced (HELD_PHASES is also used by cell/record.py flag_arm_welded). Fixed in 77b551d by adding "look". Affects the contact counts of the first-pass --look rows only (results/v4/vision/v1/).
+
+- **problem** `v4_s3_pick_marginal_2x2`
+    - finding: S3 fails at step 1 in every E1 arm including gt with --look (Phase 2 acceptance without --look reached 15/16). Cause [implementer-reported, frames from a diagnostic run]: at the pick of b_001 (2x2, feeder slot (100, -220) mm) the hand touches down about (+2.2, +1.5) mm off the command against about 2.1 mm finger-pad clearance; the fingers land on the brick top (finger joints pushed to 0.0113/0.010…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
