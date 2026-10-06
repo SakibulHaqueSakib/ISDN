@@ -666,6 +666,12 @@ class Example:
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
         self.fixture_setup(steps, n0)
         self.capture()
+        self.cams = None                      # --save-captures: cell.cameras.Cameras, rendered outside the captured graphs
+        if getattr(args, "save_captures", None):
+            from cell.cameras import Cameras
+            self.cap_dir, self.cap_step, self.cap_retract_step, self.fk_state = Path(args.save_captures), None, None, None
+            self.cap_dir.mkdir(parents=True, exist_ok=True)
+            self.cams = Cameras(self.model, seed=0)
         self.wall0 = time.perf_counter()      # for the row's rtf
         self.startup_s = self.wall0 - _T0     # process start to here: plan, IK park, scene build, graph capture
         print("%s: %d bricks, %d braced (%s), %d clutch welds" % (
@@ -1085,6 +1091,33 @@ class Example:
                 f.write(json.dumps(row) + "\n")
         print("  step %d %s %s  %s" % (s["step"], bid, "SNAP" if ok else "MISS", self.last_gate))
 
+    # -- captures (--save-captures; read-only on the sim) ---------------------------------
+    def hand_fk(self, k):
+        """Arm k's TCP pose [x y z qx qy qz qw] in the world, from its joint angles alone (FK on the IK model)."""
+        if self.fk_state is None:
+            self.fk_state = self.model_ik.state()
+        base, yaw = (ARM_A, ARM_B)[k]
+        q = self.state_0.joint_q.numpy()[9 * k:9 * k + 9]
+        newton.eval_fk(self.model_ik, wp.array(q, dtype=wp.float32), wp.zeros(9, dtype=wp.float32), self.fk_state)
+        t = self.fk_state.body_q.numpy()[EE]
+        return np.r_[rotate(qz(yaw), t[:3]) + base, qmul(qz(yaw), t[3:])]
+
+    def shoot(self, cam, step):
+        """One capture of `cam` of the current state, saved as step<N>_<cam>.npz (rgb, depth, nominal camera pose, frame,
+        step, intrinsics K) with the scoring labels in step<N>_<cam>_gt.npz. The top camera shoots when B starts a step,
+        wrist_B (from B's FK pose) when B's retract ends."""
+        ee = self.hand_fk(1) if cam == "wrist_B" else None
+        c = self.cams.capture(cam, ee, state=self.state_0, frame=self.frame, sim_time=self.sim_time)
+        gt = self.cams.ground_truth(cam, ee, state=self.state_0)
+        I = c["intrinsics"]
+        base = str(self.cap_dir / ("step%02d_%s" % (step, cam)))
+        np.savez_compressed(base + ".npz", rgb=c["rgb"], depth=c["depth"], pos=c["pos"], quat_xyzw=c["quat_xyzw"],
+                            K=np.array([I["fx"], I["fy"], I["cx"], I["cy"]]), frame=self.frame, sim_time=self.sim_time,
+                            step=step, ee_pose=-np.ones(7) if ee is None else ee)
+        np.savez_compressed(base + "_gt.npz", shape_index=gt["shape_index"], depth=gt["depth"], pos=gt["pos"],
+                            quat_xyzw=gt["quat_xyzw"], light_gain=gt["light_gain"], shape_body=self.cams.shape_body,
+                            brick_ids=np.array(list(self.body)), brick_bodies=np.array(list(self.body.values())))
+
     # -- loop ---------------------------------------------------------------------
     def capture(self):
         self.graph = self.graph_ik = None
@@ -1127,8 +1160,16 @@ class Example:
             rot.append(qmul(qz(-byaw), world))
             grip.append(g)
         if self.B.phase != self.b_phase:
+            if self.cams and self.b_phase == "retract":
+                self.shoot("wrist_B", self.cap_retract_step)
             self.b_phase = self.B.phase
             self.b_phase_t.setdefault((self.b_step, self.b_phase), self.sim_time)
+            if self.cams and self.b_phase == "retract":
+                self.cap_retract_step = self.b_step
+        if self.cams and self.b_step != self.cap_step:
+            self.cap_step = self.b_step
+            if self.b_step is not None:
+                self.shoot("top", self.b_step)
         if self.fx:
             self.fixture_update(body_q)
         self.ik_pos.assign(np.array(pos, dtype=np.float32))
@@ -1316,6 +1357,8 @@ class Example:
                 f.write(json.dumps(self.p0_row(error)) + "\n")
         if self.recorder:
             self.recorder.save(self.args.record_all, self)
+        if self.cams:
+            (self.cap_dir / "timing.json").write_text(json.dumps(self.cams.timing))
         if self.inserts is not None:
             r = self.inserts
             Path(self.args.record_inserts).parent.mkdir(parents=True, exist_ok=True)
@@ -1491,6 +1534,9 @@ if __name__ == "__main__":
                         help="with --press-scale: the fixture's lateral load, N (split over the supports by studs); default 0 0")
     parser.add_argument("--fixture-hold", action="store_true",
                         help="debug (scripts/fixture_check.py): with --press-scale, full amplitude from t = 0.5 s and both arms parked")
+    parser.add_argument("--save-captures", type=Path, metavar="DIR",
+                        help="render the cameras (cell/cameras.py) and save a top capture at each step start and a wrist_B "
+                             "capture after B's retract, with GT labels, in DIR; default: off, the physics is unchanged")
     parser.add_argument("--exe", choices=list(EXE), default="E0",
                         help="A's executor setting (tasks/brace_bandit.EXE): E0 committed, E1 stiff hold")
     parser.set_defaults(shape="arch", bricks=None)

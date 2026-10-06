@@ -19,7 +19,6 @@ import json
 import math
 import sys
 import time
-import warnings
 from pathlib import Path
 
 import cv2
@@ -36,26 +35,18 @@ HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 import dual_arm_sim as D  # noqa: E402  (arm builder, IK conventions, park/brace constants; not edited)
 import planner as P  # noqa: E402
+from cell.cameras import (CAMS, cam_pose, fr3_spheres, intrinsics, make_cams, mask_A, project, render, sense,  # noqa: E402,F401
+                          set_lights, sigma_depth, sphere_model, to_points)
 
 ex = D.ex
 OUT = HERE / "results" / "v4" / "p2"
 MM = 1e-3
 PLATE_N = 16                      # baseplate studs per side (plan: (NI+4)x(NJ+4), fixed here so one mesh serves all)
 POOL = ["2x2"] * 14 + ["2x4"] * 11 + ["2x6"] * 5      # the 30 pre-allocated bricks (S5 needs 13 / 10 / 3)
-CAMS = {"top": dict(w=1280, h=960, vfov=60.0), "wrist_B": dict(w=640, h=480, vfov=55.0)}
-TOP_POS = np.array([0.10, -0.20, 1.10])
-TILT = math.radians(25.0)         # wrist camera tilt toward the tool axis
-MOUNT_DZ = 0.060                  # camera above the TCP
-DEPTH_C = 2e-3                    # sigma_depth = C r^2  (plan §2.5.2)
-EXT_ERR = {"top": (1 * MM, 0.2), "wrist_B": (0.2 * MM, 0.1)}   # hidden extrinsic error, 1 sigma (m, deg)
 H_LOOK_MM = (25, 35, 45, 60)      # x s
 OFFSETS_MM = (45, 60, 75)         # camera offset along hand x, not scaled
 Rz = lambda a: Rot.from_euler("z", a)
 RX_PI = Rot.from_euler("x", math.pi)
-
-
-def sigma_depth(r):
-    return DEPTH_C * r * r
 
 
 # --- rig: arms + plate + 30 bricks, one Newton model per scale, one camera sensor ------------------
@@ -95,21 +86,14 @@ class Rig:
         newton.eval_fk(self.model, self.model.joint_q, self.model.joint_qd, self.state)
         newton.geometry.build_bvh_shape(self.model, self.state)
         self.sensor = SensorTiledCamera(self.model, config=SensorTiledCamera.RenderConfig(enable_shadows=shadows))
-        self.cams = {}
-        for name, c in CAMS.items():
-            u = self.sensor.utils
-            rays = u.compute_pinhole_camera_rays(c["w"], c["h"], math.radians(c["vfov"]))
-            self.cams[name] = dict(c, rays=rays, rays_np=rays.numpy()[0, :, :, 1], depth=u.create_depth_image_output(c["w"], c["h"]),
-                                   hdr=u.create_hdr_color_image_output(c["w"], c["h"]),
-                                   sidx=u.create_shape_index_image_output(c["w"], c["h"]),
-                                   nrm=u.create_normal_image_output(c["w"], c["h"]))
+        self.cams = make_cams(self.sensor)
         self.ik = {k: self._ik() for k in "AB"}
         park = lambda base: np.array(base[0]) + D.rotate(D.qz(base[1]), D.PARK)
         self.park_q = {k: self.solve(self.ik[k], base, park(base), Rot.from_quat(D.Q_DOWN))[0]
                        for k, base in (("A", D.ARM_A), ("B", D.ARM_B))}
         # A's link spheres in link frames: 'mesh' = bisected visual-mesh vertices (<= 2 cm radius); 'fr3' = P3's
         # motion/fr3.yml, fitted to the collision meshes (arms within 2 mm, fingers 0.5 mm)
-        self.spheres = {"mesh": self._sphere_model(range(self.nb)), "fr3": self._fr3_spheres()}
+        self.spheres = {"mesh": sphere_model(self.model, self.nb, range(self.nb)), "fr3": fr3_spheres(self.model, self.nb)}
         self.mask_model = "fr3"
 
     # -- kinematics -------------------------------------------------------------------------------
@@ -161,30 +145,6 @@ class Rig:
         t = self.state.body_q.numpy()[k * self.nb + D.EE]
         return t[:3].copy(), Rot.from_quat(t[3:])
 
-    def _sphere_model(self, bodies, rmax=0.02):
-        def split(V):
-            c = (V.min(0) + V.max(0)) / 2
-            r = np.linalg.norm(V - c, axis=1).max()
-            if r <= rmax or len(V) < 20:
-                return [(c, r)]
-            ax = int(np.ptp(V, 0).argmax())
-            V = V[np.argsort(V[:, ax])]
-            return split(V[:len(V) // 2]) + split(V[len(V) // 2:])
-        out, scale, xf = [], self.model.shape_scale.numpy(), self.model.shape_transform.numpy()
-        vis = self.model.shape_flags.numpy() & int(newton.ShapeFlags.VISIBLE)
-        for b in bodies:
-            V = [Rot.from_quat(xf[s, 3:]).apply(self.model.shape_source[s].vertices[::4] * scale[s]) + xf[s, :3]
-                 for s in range(self.model.shape_count) if self.shape_body[s] == b and vis[s]
-                 and self.model.shape_source[s] is not None]
-            out += [(b, c, r) for c, r in split(np.concatenate(V))] if V else []
-        return out
-
-    def _fr3_spheres(self):
-        import yaml
-        cs = yaml.safe_load((HERE / "motion" / "fr3.yml").read_text())["robot_cfg"]["kinematics"]["collision_spheres"]
-        names = [str(l).split("/")[-1] for l in self.model.body_label[:self.nb]]
-        return [(names.index(l), np.array(sp["center"]), sp["radius"]) for l, v in cs.items() if l in names for sp in v]
-
     def fk_world(self, k, base, q, g):
         """Link poses of arm k in the world from its joint angles alone (proprioception): (positions, rotations)."""
         st = self.ik[k]["st"]
@@ -194,103 +154,19 @@ class Rig:
         return Rz(yaw).apply(t[:, :3]) + [bx, by, bz], Rz(yaw) * Rot.from_quat(t[:, 3:])
 
     def mask_A(self, cam, pos, R, depth, links, pad=0.005):
-        """A's padded link spheres, moved by A's FK (`links` from fk_world) and projected into the camera at its
-        nominal pose: bool image. Uses nothing but proprioception, the calibrated camera and the depth image."""
-        lp, lR = links
-        rays = self.cams[cam]["rays_np"] @ R.as_matrix().T
-        hit = np.zeros(rays.shape[:2], bool)
-        for b, c, r in self.spheres[self.mask_model]:
-            oc = lR[b].apply(c) + lp[b] - pos
-            if np.linalg.norm(oc) - r > 0.45:         # farther than any surface in a look image: cannot occlude
-                continue
-            bb = rays @ oc
-            disc = bb * bb - oc @ oc + (r + pad) ** 2
-            with np.errstate(invalid="ignore"):
-                hit |= (disc > 0) & (bb > 0) & (bb - np.sqrt(np.maximum(disc, 0)) < depth + 0.01)
-        return hit
+        return mask_A(self.spheres[self.mask_model], self.cams[cam]["rays_np"], pos, R, depth, links, pad)
 
     # -- rendering ----------------------------------------------------------------------------------
     def set_lights(self, key_dir, ring=None):
-        """Key: a directional light (random per seed). Ring: co-located spot at the camera, along its axis (the
-        renderer's only point-like light: fixed 18-32 deg cone, no intensity parameter)."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            rc = self.sensor.render_context
-        L = [(1, key_dir, (0, 0, 0))] + ([(0, ring[1], ring[0])] if ring else [])
-        d = self.model.device
-        rc.lights_active = wp.array([True] * len(L), dtype=wp.bool, device=d)
-        rc.lights_type = wp.array([x[0] for x in L], dtype=wp.int32, device=d)
-        rc.lights_cast_shadow = wp.array([True] * len(L), dtype=wp.bool, device=d)
-        rc.lights_position = wp.array([x[2] for x in L], dtype=wp.vec3f, device=d)
-        rc.lights_orientation = wp.array([x[1] for x in L], dtype=wp.vec3f, device=d)
+        set_lights(self.sensor, self.model.device, key_dir, ring)
 
     def render(self, cam, pos, R, labels=False, download=True):
         """One capture at the (true) camera pose. Depth is ray distance [m], 0 = no hit; labels adds shape_index/normals."""
-        c = self.cams[cam]
-        newton.geometry.refit_bvh_shape(self.model, self.state)
-        xf = wp.array([[wp.transformf(wp.vec3f(*pos), wp.quatf(*R.as_quat()))]], dtype=wp.transformf)
-        self.sensor.update(self.state, xf, c["rays"], depth_image=c["depth"], hdr_color_image=c["hdr"],
-                           shape_index_image=c["sidx"] if labels else None, normal_image=c["nrm"] if labels else None)
-        if not download:
-            wp.synchronize()
-            return None
-        out = dict(depth=c["depth"].numpy()[0, 0], hdr=c["hdr"].numpy()[0, 0])
-        if labels:
-            si = c["sidx"].numpy()[0, 0]
+        out = render(self.sensor, self.model, self.state, self.cams[cam], pos, R, labels=labels, download=download)
+        if out is not None and labels:
+            si = out.pop("sidx")
             out["brick"] = self.lut[np.where(si == 0xFFFFFFFF, self.model.shape_count, si)]   # see the label codes in __init__
-            out["normal"] = c["nrm"].numpy()[0, 0]
         return out
-
-
-def cam_pose(name, hand=None, dx=0.045, rng=None, hidden=True):
-    """(true_pos, true_R, nominal_pos, nominal_R). Hidden extrinsic error per seed (plan §2.5.2)."""
-    if name == "top":
-        pos, R = TOP_POS, Rot.identity()                    # looks along -z, image up = +y
-    else:
-        hp, hR = hand
-        f = np.array([-math.sin(TILT), 0, math.cos(TILT)])   # hand frame: z along the tool, tilted toward the axis
-        up = np.array([math.cos(TILT), 0, math.sin(TILT)])
-        Rm = np.stack([[0, 1, 0], up, -f], 1)                # columns: right, up, back (OpenGL camera)
-        pos, R = hp + hR.apply([dx, 0, -MOUNT_DZ]), hR * Rot.from_matrix(Rm)
-    st, sr = EXT_ERR[name]
-    if hidden and rng is not None:
-        return pos + rng.normal(0, st, 3), R * Rot.from_rotvec(np.radians(rng.normal(0, sr, 3))), pos, R
-    return pos, R, pos, R
-
-
-def project(cam, pos, R, P_w):
-    """World points -> (px, py, ray distance) in a camera's image (px, py float pixel coordinates)."""
-    c = CAMS[cam]
-    q = R.inv().apply(np.atleast_2d(P_w) - pos)
-    h = math.tan(math.radians(c["vfov"]) / 2)
-    z = np.maximum(-q[:, 2], 1e-9)
-    return ((q[:, 0] / z / (2 * h * c["w"] / c["h"]) + 0.5) * c["w"] - 0.5,
-            (-q[:, 1] / z / (2 * h) + 0.5) * c["h"] - 0.5, np.linalg.norm(q, axis=1))
-
-
-def sense(out, rng, gain=1.0, dropout=0.01, s=1.0):
-    """Sensor noise (plan §2.5.2): depth sigma 2e-3 r^2 on the ray distance, dropout at depth edges (a jump of more
-    than 3 s mm in the clean depth, i.e. about a stud height at either scale; read literally: 1 % of edge pixels),
-    RGB sigma 2/255 after `gain` (the per-seed light
-    intensity, applied to the linear HDR image because the renderer has no intensity parameter) and a soft clip."""
-    d = out["depth"].astype(np.float64)
-    edge = np.zeros(d.shape, bool)
-    jv, jh = np.abs(np.diff(d, axis=0)) > 3 * MM * s, np.abs(np.diff(d, axis=1)) > 3 * MM * s
-    edge[:-1] |= jv
-    edge[1:] |= jv
-    edge[:, :-1] |= jh
-    edge[:, 1:] |= jh
-    noisy = np.where(d > 0, d + rng.normal(0, 1, d.shape) * sigma_depth(d), 0.0)
-    noisy[edge & (rng.random(d.shape) < dropout)] = 0.0
-    rgb = np.clip(1 - np.exp(-out["hdr"] * gain) + rng.normal(0, 2 / 255, out["hdr"].shape), 0, 1)   # soft-clip exposure
-    return noisy.astype(np.float32), (rgb * 255 + 0.5).astype(np.uint8)
-
-
-def to_points(depth, rays, pos, R):
-    """Depth (ray distance) -> world points through the per-pixel camera rays; depth 0 -> nan."""
-    return np.where((depth > 0)[..., None], pos + (depth[..., None] * rays) @ R.as_matrix().T, np.nan)
-
-
 
 
 # --- scenes: a structure on a randomly posed plate, the step's target, a tray, a held brick -----------------
@@ -694,14 +570,6 @@ def selfcheck():
 # --- parts -------------------------------------------------------------------------------------------------
 dump = lambda o: json.dumps(o, default=lambda x: x.tolist() if hasattr(x, "tolist") else float(x))
 scalars = lambda r: {k: v for k, v in r.items() if isinstance(v, (int, float, bool, str, list)) and not k.startswith("_")}
-
-
-def intrinsics(name):
-    c = CAMS[name]
-    f = c["h"] / (2 * math.tan(math.radians(c["vfov"]) / 2))
-    return dict(width=c["w"], height=c["h"], vfov_deg=c["vfov"], fx=f, fy=f, cx=c["w"] / 2, cy=c["h"] / 2,
-                convention="OpenGL camera (x right, y up, looks -z); pixel (px,py) ray = normalize(((px+.5)/W-.5)*2h*W/H, "
-                           "-((py+.5)/H-.5)*2h, -1), h = tan(vfov/2); depth = distance along that ray [m], 0 = invalid")
 
 
 def png_depth(d, lo, hi):
