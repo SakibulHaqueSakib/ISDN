@@ -243,7 +243,8 @@ def test_regression_vs_probe():
         # error of (target - held) in the hand frame against the truth; the held reference is the actual brick's stud centroid
         # shifted like the nominal origin is from the nominal stud centroid (B_hat's convention)
         ax = hR.as_matrix()[:2, :2]
-        act_c = pr.brick_studs(rig, bt, *r["held_act"]).mean(0)[:2] - (pr.brick_studs(rig, bt, *r["held_nom"]).mean(0)[:2] - r["held_nom"][0][:2])
+        bs = lambda pose: V.brick_studs(V._geom(rig.s), V._dims(bt), *pose).mean(0)[:2]
+        act_c = bs(r["held_act"]) - (bs(r["held_nom"]) - r["held_nom"][0][:2])
         e = ((res.T_hat[:2] - res.B_hat[:2]) - (np.array(tp[:2]) - act_c)) @ ax / pr.MM
         errs.append(e)
         diffs.append(np.abs(e - np.array(old["rel_err"])).max())

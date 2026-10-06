@@ -23,7 +23,6 @@ import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
-# ponytail: scripts/11_camera_probe.py still has its own copy of these helpers until the probe is switched to import them.
 MM = 1e-3
 PARAMS = dict(                       # every threshold the estimator uses; frozen before any V1 run (PARAMS_HASH goes in the rows)
     depth_c=2e-3,                    # sigma_depth = depth_c r^2 (plan §2.5.2), sets the wall-point cut in top_disc

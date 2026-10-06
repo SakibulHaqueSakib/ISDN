@@ -35,6 +35,8 @@ HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 import dual_arm_sim as D  # noqa: E402  (arm builder, IK conventions, park/brace constants; not edited)
 import planner as P  # noqa: E402
+import vision as V  # noqa: E402
+from vision import face_pts, fit_rigid, held_height, plane_fit, stud_blobs  # noqa: E402
 from cell.cameras import (CAMS, cam_pose, fr3_spheres, intrinsics, make_cams, mask_A, project, render, sense,  # noqa: E402,F401
                           set_lights, sigma_depth, sphere_model, to_points)
 
@@ -266,25 +268,6 @@ def look_hand(rig, sc, h_look, grasp, flip, rng):
     return tcp, Rz(psi) * RX_PI, act, nom, across
 
 
-def brick_studs(rig, btype, pos, R):
-    nx, ny = sorted(P.BRICKS[btype], reverse=True)
-    loc = np.array([[(i - (nx - 1) / 2) * rig.p, (j - (ny - 1) / 2) * rig.p, rig.H + rig.sh]
-                    for i in range(nx) for j in range(ny)])
-    return R.apply(loc) + pos                             # stud tops, world xyz
-
-
-def face_pts(rig, btype, pose, f, n=8):
-    """Grid on vertical face f (0 +x, 1 -x, 2 +y, 3 -y of the mesh) of a brick at `pose`, world."""
-    L, W = sorted(P.BRICKS[btype], reverse=True)
-    u = np.linspace(-0.9, 0.9, n)
-    a, z = np.meshgrid(u, np.linspace(0.1, 0.9, n))
-    a, z = a.ravel(), z.ravel() * rig.H
-    sg = 1 if f % 2 == 0 else -1
-    loc = np.c_[sg * L * rig.p / 2 * np.ones_like(a), a * W * rig.p / 2, z] if f < 2 else \
-        np.c_[a * L * rig.p / 2, sg * W * rig.p / 2 * np.ones_like(a), z]
-    return pose[1].apply(loc) + pose[0]
-
-
 # --- one look render: the full V5 input, plus ground-truth scoring --------------------------------------------
 def look_render(rig, sc, h_look, dx, grasp, braced, flip, rng):
     """B at the look pose over sc.target with the brick in hand; A braced on the brace spot or parked. None-like dict
@@ -350,7 +333,7 @@ def gt_visibility(rig, sc, row):
     hp, hR = row["hand"]
     face = (lab["brick"] == row["held"]) & (lab["normal"] @ hR.apply([1, 0, 0]) > 0.9)
     r_t = np.linalg.norm(studs.mean(0) - pos) if len(studs) else 1.0
-    hs = brick_studs(rig, sc.target[1], *row["held_act"])           # the held brick's studs: in frame and unoccluded
+    hs = V.brick_studs(V._geom(rig.s), V._dims(sc.target[1]), *row["held_act"])           # the held brick's studs: in frame and unoccluded
     a_px = lab["brick"] == -3                                      # A's own pixels: how much of them the mask covers
     return dict(held_studs_visible=int(visible(hs).sum()), held_studs=len(hs), mask_px=int(mask.sum()), a_px=int(a_px.sum()), a_px_unmasked=int((a_px & ~mask).sum()),
                 n_studs_visible=int(visible(studs).sum()) if len(studs) else 0, n_studs_expected=len(cells),
@@ -364,109 +347,7 @@ def gate_c(r):
     return bool(ok and r["bump_sigma"] >= 10 and r["face_px"] >= 500 and r["held_studs_visible"] >= min(4, r["held_studs"]))
 
 
-# --- V5 prototype (the seed of vision.py): depth stud blobs, lattice fit, held-brick face fit -----------------
-def top_disc(q, sh, pos, k=3.5):
-    """Centre of a stud's top disc from its points q. A plane is fitted to the points near the top (it follows a tilted
-    brick), points farther than k sigma_depth from it (the visible side wall) are dropped, and the rest are averaged
-    with surface-area weights r^2/cos(theta): a plain pixel mean is pulled toward the camera (near side is denser)."""
-    sig = sigma_depth(np.linalg.norm(q.mean(0) - pos))
-    sel = q[q[:, 2] >= np.percentile(q[:, 2], 95) - 0.3 * sh]
-    c0 = sel.mean(0)
-    for _ in range(3):
-        if len(sel) < 10:
-            return q.mean(0)
-        co = np.linalg.lstsq(np.c_[np.ones(len(sel)), sel[:, :2] - c0[:2]], sel[:, 2], rcond=None)[0]
-        sel = q[np.abs(q[:, 2] - np.c_[np.ones(len(q)), q[:, :2] - c0[:2]] @ co) < k * sig]
-    d = sel - pos
-    w = np.linalg.norm(d, axis=1) ** 3 / np.maximum(np.abs(d[:, 2]), 1e-9)
-    return (sel * w[:, None]).sum(0) / w.sum()
-
-
-def stud_blobs(P3, h, mask, lo, hi, sh, pos, min_px=40):
-    """Connected components of stud pixels (height h above the top face in [lo, hi]) -> the top-disc centre
-    (`top_disc`) of each. Dropped:
-    blobs touching A's mask or the image border (a partial stud biases the centroid), blobs that are not compact
-    (wall strips at stud height), and blobs under 0.7 x the median area (partly hidden). `pos`: the camera
-    (nominal). Isolated dropout pixels are tolerated."""
-    bad = ~np.isfinite(P3[..., 2])
-    cap = ~bad & (h > lo) & (h < hi) & ~mask
-    n, lab, st, _ = cv2.connectedComponentsWithStats(cap.astype(np.uint8), connectivity=8)
-    near_bad = cv2.dilate(mask.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
-    L = lab[cap]
-    order = np.argsort(L, kind="stable")
-    pts, edges = P3[cap][order], np.searchsorted(L[order], np.arange(n + 1))
-    nb = np.bincount(lab[near_bad & cap], minlength=n)
-    keep = []
-    for i in range(1, n):
-        x, y, w, h, a = st[i]
-        if (a >= min_px and x > 0 and y > 0 and x + w < lab.shape[1] and y + h < lab.shape[0] and nb[i] == 0
-                and max(w, h) < 2.5 * min(w, h) and a > 0.5 * w * h):      # compact, disc-like: not a wall strip
-            keep.append((top_disc(pts[edges[i]:edges[i + 1]], sh, pos), a))
-    if not keep:
-        return np.zeros((0, 3))
-    med = np.median([a for _, a in keep])
-    return np.array([c for c, a in keep if a >= 0.7 * med]).reshape(-1, 3)
-
-
-def held_height(P3, pose, btype, rig):
-    """Height of each pixel above the held brick's top face, for pixels over its nominal footprint (nan elsewhere):
-    the face is the dominant level there (a plane fitted from the height histogram's mode, so it follows the in-hand
-    tilt); the studs stand out of it. Uses only the nominal in-hand pose and the depth."""
-    L, W = sorted(P.BRICKS[btype], reverse=True)
-    lb = pose[1].inv().apply(np.nan_to_num(P3.reshape(-1, 3), nan=9.0) - pose[0])      # brick frame, z up from its bottom
-    m = 1.5 * MM
-    reg = (np.abs(lb[:, 0]) < L * rig.p / 2 + m) & (np.abs(lb[:, 1]) < W * rig.p / 2 + m) & (np.abs(lb[:, 2] - rig.H) < 2 * MM * rig.s + rig.sh)
-    q = lb[reg]
-    out = np.full(len(lb), np.nan)
-    if len(q) < 100:
-        return out.reshape(P3.shape[:2])
-    hst, e = np.histogram(q[:, 2], bins=np.arange(q[:, 2].min(), q[:, 2].max() + 2e-4, 2e-4))
-    f = q[np.abs(q[:, 2] - e[hst.argmax()] - 1e-4) < 0.35 * MM * rig.s]
-    for _ in range(3):
-        co = np.linalg.lstsq(np.c_[np.ones(len(f)), f[:, :2]], f[:, 2], rcond=None)[0]
-        res = q[:, 2] - np.c_[np.ones(len(q)), q[:, :2]] @ co
-        f = q[np.abs(res) < max(3 * res[np.abs(res) < 0.3 * rig.sh].std(), 0.06 * MM)]
-    out[reg] = q[:, 2] - np.c_[np.ones(len(q)), q[:, :2]] @ co
-    return out.reshape(P3.shape[:2])
-
-
-def fit_rigid(nodes, obs, gate, iters=3):
-    """obs ~ R(dpsi)(node - c0) + c0 + t, obs matched to the nearest prior node within `gate` (the prior fixes the
-    lattice indices, plan §2.5.3 V5(a)). Needs >= 2 matches. dict(dpsi, t, rms, n, apply) or None."""
-    c0, R, t = nodes.mean(0), np.eye(2), np.zeros(2)
-    for _ in range(iters):
-        pred = (nodes - c0) @ R.T + c0 + t
-        d = np.linalg.norm(obs[:, None] - pred[None], axis=2)
-        j = d.argmin(1)
-        ok = d[np.arange(len(obs)), j] < (gate if _ == 0 else gate / 3)     # after the first pass the prior error is gone
-        if ok.sum() < 2 or len(set(j[ok])) < 2:
-            return None
-        A, B = nodes[j[ok]], obs[ok]
-        U, _, Vt = np.linalg.svd((A - A.mean(0)).T @ (B - B.mean(0)))
-        R = Vt.T @ np.diag([1, np.sign(np.linalg.det(Vt.T @ U.T))]) @ U.T
-        t = B.mean(0) - c0 - R @ (A.mean(0) - c0)
-    res = np.linalg.norm(B - ((A - c0) @ R.T + c0 + t), axis=1)
-    return dict(dpsi=math.atan2(R[1, 0], R[0, 0]), t=t, rms=float(np.sqrt((res ** 2).mean())), n=int(ok.sum()),
-                apply=lambda x: (np.atleast_2d(x) - c0) @ R.T + c0 + t)
-
-
-def plane_fit(Q, tol0=None):
-    """x = a + b y + c z through hand-frame points Q. With tol0, the fit starts from the points within tol0 of the
-    densest 0.2 mm slice of x (contamination from the brick's top face or the fingers cannot capture it); then 3
-    rounds of 3-sigma trimming. -> (a, b, c) or None."""
-    if tol0 is not None and len(Q):
-        h, e = np.histogram(Q[:, 0], bins=np.arange(Q[:, 0].min(), Q[:, 0].max() + 2e-4, 2e-4))
-        Q = Q[np.abs(Q[:, 0] - e[h.argmax()] - 1e-4) < tol0]
-    for _ in range(3):
-        if len(Q) < 30:
-            return None
-        A = np.c_[np.ones(len(Q)), Q[:, 1], Q[:, 2]]
-        co = np.linalg.lstsq(A, Q[:, 0], rcond=None)[0]
-        res = Q[:, 0] - A @ co
-        Q = Q[np.abs(res) < max(3 * res.std(), 0.05 * MM)]
-    return co
-
-
+# --- V5 prototype: the estimation helpers are vision.py's (stud blobs, lattice fit, held-brick face); this scores them ----
 def v5(rig, sc, row, seed, prior_sig=(0.4 * MM, 0.25), true_cam=False):
     """One look image -> target lattice pose, held-brick pose, held face plane; each scored against ground truth in
     the hand frame (the frame the TCP correction is applied in). Inputs: the depth image, the nominal camera pose
@@ -479,6 +360,8 @@ def v5(rig, sc, row, seed, prior_sig=(0.4 * MM, 0.25), true_cam=False):
     P3 = to_points(row["depth"], rig.cams["wrist_B"]["rays_np"], pos, R)
     cells, single, _ = sc.exposed()
     k = sc.target[4]
+    g, bt = V._geom(rig.s), sc.target[1]
+    dims = V._dims(bt)
     ax = hR.as_matrix()[:2, :2]                                     # columns: hand x, y in world xy
     hand_mm = lambda e: [float(e @ ax[:, 0]) / MM, float(e @ ax[:, 1]) / MM]
     out = {}
@@ -495,9 +378,8 @@ def v5(rig, sc, row, seed, prior_sig=(0.4 * MM, 0.25), true_cam=False):
         out.update(t_n=ft["n"], t_rms_um=ft["rms"] * 1e6, t_err=hand_mm(ft["apply"](prior).mean(0) - nodes.mean(0)),
                    t_yaw_deg=math.degrees(ft["dpsi"] + dpsi_p))
     # (b) held brick: its top studs (nominal in-hand pose as prior) and its camera-side face
-    bt = sc.target[1]
-    nom, act = brick_studs(rig, bt, *row["held_nom"]), brick_studs(rig, bt, *row["held_act"])
-    bh = stud_blobs(P3, held_height(P3, row["held_nom"], bt, rig), mask, 0.5 * rig.sh, 1.4 * rig.sh, rig.sh, pos, min_px=25)
+    nom, act = V.brick_studs(g, dims, *row["held_nom"]), V.brick_studs(g, dims, *row["held_act"])
+    bh = stud_blobs(P3, held_height(P3, row["held_nom"], dims, g)[0], mask, 0.5 * rig.sh, 1.4 * rig.sh, rig.sh, pos, min_px=25)
     fh = fit_rigid(nom[:, :2], bh[:, :2], 0.45 * rig.p) if len(bh) >= 2 else None
     gt = fit_rigid(nom[:, :2], act[:, :2], 0.45 * rig.p)            # exact studs: ground-truth in-hand displacement
     out["h_n"] = fh["n"] if fh else 0
@@ -508,11 +390,11 @@ def v5(rig, sc, row, seed, prior_sig=(0.4 * MM, 0.25), true_cam=False):
             out.update(rel_err=[x - y for x, y in zip(out["t_err"], out["h_err"])], rel_yaw_deg=out["t_yaw_deg"] - out["h_yaw_deg"])
     Rn = row["held_nom"][1]
     f = max(range(4), key=lambda f: (hR.inv() * Rn).apply([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0)][f])[0])
-    Qn = hR.inv().apply(face_pts(rig, bt, row["held_nom"], f) - hp)
-    Qa = hR.inv().apply(face_pts(rig, bt, row["held_act"], f) - hp)
+    Qn = hR.inv().apply(face_pts(g, dims, row["held_nom"], f) - hp)
+    Qa = hR.inv().apply(face_pts(g, dims, row["held_act"], f) - hp)
     n_h = (hR.inv() * Rn).apply([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0)][f])
     Q = hR.inv().apply(P3.reshape(-1, 3)[np.isfinite(P3[..., 2]).ravel()] - hp)
-    L, W = sorted(P.BRICKS[bt], reverse=True)
+    L, W = dims
     half = (W if f < 2 else L) * rig.p / 2 - 2 * MM * rig.s
     sel = ((np.abs((Q - Qn.mean(0)) @ n_h) < 2.5 * MM) & (np.abs(Q[:, 1] - Qn[:, 1].mean()) < half)
            & (Q[:, 2] > Qn[:, 2].min() + 0.1 * rig.H) & (Q[:, 2] < Qn[:, 2].max() + 0.3 * MM))   # not the top face

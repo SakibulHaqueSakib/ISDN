@@ -73,6 +73,9 @@ def summary(rows):
             continue
         print("  %-4s  %-22s %s" % (gate, g.get("result", "?"),
                                     g.get("status", "")))
+    v4 = {r.get("id"): r for r in rows if r.get("type") == "gate" and r.get("phase") == "v4"}   # latest per id
+    for gid, g in v4.items():
+        print("  %s  %s  %s" % (gid, g.get("result", "?"), (g.get("status") or g.get("outcome") or "")[:100]))
 
     print("\nWORK PACKAGES  (activity recorded in the ledger)")
     for wp, label in PACKAGES:
