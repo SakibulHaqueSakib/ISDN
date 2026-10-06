@@ -12,6 +12,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 9.784503453709147e-05,
   "rtf": 1.442,
+  "welded": 8,
+  "measured": 8,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -91,6 +94,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 8.521561970661963e-05,
   "rtf": 1.446,
+  "welded": 8,
+  "measured": 8,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -170,6 +176,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 9.728930766112724e-05,
   "rtf": 1.446,
+  "welded": 8,
+  "measured": 8,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -249,6 +258,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 0.0013054384306323554,
   "rtf": 1.325,
+  "welded": 11,
+  "measured": 11,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -349,6 +361,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 0.0013086811771826931,
   "rtf": 1.323,
+  "welded": 11,
+  "measured": 11,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -449,6 +464,9 @@
   "m2_b_phase": "release",
   "m3_max_mm": 0.0013051904577361336,
   "rtf": 1.319,
+  "welded": 11,
+  "measured": 11,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -549,6 +567,9 @@
   "m2_b_phase": "insert",
   "m3_max_mm": 3.383298796587865e-05,
   "rtf": 1.277,
+  "welded": 12,
+  "measured": 12,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -656,6 +677,9 @@
   "m2_b_phase": "insert",
   "m3_max_mm": 2.981216057016309e-05,
   "rtf": 1.278,
+  "welded": 12,
+  "measured": 12,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -763,6 +787,9 @@
   "m2_b_phase": "insert",
   "m3_max_mm": 3.0763944576570806e-05,
   "rtf": 1.281,
+  "welded": 12,
+  "measured": 12,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
@@ -870,11 +897,14 @@
   "m2_b_phase": "release",
   "m3_max_mm": 0.032631817365377916,
   "rtf": 1.042,
+  "welded": 15,
+  "measured": 15,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
    "G4": true,
-   "G6": false,
+   "G6": true,
    "G7": false
   },
   "bricks": {
@@ -998,11 +1028,14 @@
   "m2_b_phase": "release",
   "m3_max_mm": 0.0326298556241199,
   "rtf": 1.036,
+  "welded": 15,
+  "measured": 15,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": true,
    "G4": true,
-   "G6": false,
+   "G6": true,
    "G7": false
   },
   "bricks": {
@@ -1126,11 +1159,14 @@
   "m2_b_phase": "abort",
   "m3_max_mm": 0.032627970939316873,
   "rtf": 1.008,
+  "welded": 15,
+  "measured": 15,
+  "unmeasured": [],
   "gates": {
    "G2": true,
    "G3": false,
    "G4": true,
-   "G6": false,
+   "G6": true,
    "G7": false
   },
   "bricks": {

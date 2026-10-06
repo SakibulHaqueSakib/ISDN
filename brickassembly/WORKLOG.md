@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-209 entries. Later entries supersede earlier ones; retractions are marked.
+211 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -245,6 +245,13 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **deviated** `v4_b1_drift_measured`
     - rationale: B1 was open in plan_v4 (U-r5-3); E5 measures it before the margin test uses it
+
+- **result** `v4_phase2_gate_review`
+    - result: Phase 2 gate review by Codex (2026-10-06, base 215499a): verdict CHANGES REQUESTED, 3 findings. (1) [high] the preflight finds the pinch-blocked grasps of the user's pyramid (steps 2, 3, 4, 6, 7, 8, 9 with 2, 4, 4, 1, 1, 1, 1 blocked cells) but only warns; queue_place still side-pinches and fails (step 2 dz +7.84 mm; the fingertips sit 5.5 mm below the seated brick's top). The gate wording is corr…
+
+- **GATE** `v4_phase2_gate` → **pass_with_recorded_exceptions**
+    - result: pass_with_recorded_exceptions
+    - status: Phase 2 'Unbraced build and image pipeline' gate, closed on the user's decision after the Codex review (v4_phase2_gate_review, CHANGES REQUESTED, 3 findings; the two scoring fixes in j_tables.py are in, the high finding is the exception). PASS on the three acceptance shapes (v4_phase2_acceptance, recomputed by Codex): cube 8/8, arch 11/11, hollow_box 12/12, 3 repeats each, unbraced, 0 breaks in al…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
@@ -657,6 +664,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **G6**: fail — 0/15 planned full-loop assemblies (RL-first inserter R1, scripted fallback); full system on S1-S3 x 5 seeds: 1/15; RL seats 54% of its attempts, the fallback 10…
 - **G7**: pass_with_recorded_exceptions — S5's A6 exception removed (20 seeds per cell, a6_s5_20seeds); remaining exception: G6 has one planned seed plus 4 extra on S1-S3
 - **v4_phase1_joint_model**: changes_requested (J-b); J-a pass, J-c pass — Phase 1 'Joint model' gate (plan v4 r5; phase commits a890b68, 4ad91a7, 0dd4f8b; base f227fd4), reviewed once by Codex (adversarial review of f227fd4..HEAD). Co…
+- **v4_phase2_gate**: pass_with_recorded_exceptions — Phase 2 'Unbraced build and image pipeline' gate, closed on the user's decision after the Codex review (v4_phase2_gate_review, CHANGES REQUESTED, 3 findings; th…
 
 ## Open — needs a decision
 

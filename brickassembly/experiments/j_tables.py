@@ -10,6 +10,8 @@ M1 snap correction: fire pose -> reference.  M2: peak excursion over frames >= f
 M3: unloaded residual vs the reference at every later unloaded window and at build end (each: mean over its
 last 10 frames).  A brick's series ends at its first weld break (the break itself is G2).
 Gates: G2 0 breaks, G3 M2 <= 1.0 mm, G4 M3 <= 0.1 mm, G6 no divergence/timeout, G7 built == n.
+A welded brick with no post-settle samples (no unloaded window after its fire) is "unmeasured": G3/G4 are None (?).
+G6 tolerates the end-at-first-failure `AssertionError: <failure>` of a recorded failure mode; any other error fails it.
 """
 
 import argparse
@@ -86,6 +88,18 @@ def run_metrics(d, types):
     return bricks, m2, m3
 
 
+def gates(r, m2, m3, bricks):
+    fail = r["failure"] or ""
+    unmeasured = [b for b, v in bricks.items() if v.get("m2_mm") is None]
+    ok = None if unmeasured else True                         # None = inconclusive: a welded brick was not measured
+    err = r["error"]
+    return {"G2": r["breaks"] == 0 if isinstance(r["breaks"], int) else not r["breaks"],
+            "G3": ok and bool(m2[0] <= 1.0), "G4": ok and bool(m3 <= 0.1),
+            "G6": not fail.startswith(("divergence", "wait_timeout"))
+                  and (not err or bool(fail) and err.startswith("AssertionError: " + fail)),
+            "G7": r["built"] == r["total"]}, unmeasured
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("rows", type=Path)
@@ -110,18 +124,16 @@ def main():
         bricks, m2, m3 = run_metrics(d, types)
         u = max(r["u_peak_by_step"].values(), default=0.0)
         fail = r["failure"]
-        g = {"G2": r["breaks"] == 0 if isinstance(r["breaks"], int) else not r["breaks"],
-             "G3": bool(m2[0] <= 1.0), "G4": bool(m3 <= 0.1),
-             "G6": not r["error"] and not (fail or "").startswith(("divergence", "wait_timeout")),
-             "G7": r["built"] == r["total"]}
+        g, unmeasured = gates(r, m2, m3, bricks)
         res = {"run": tag, "built": r["built"], "n": r["total"], "failure": fail, "breaks": r["breaks"],
                "u_peak_max": u, "m2_max_mm": m2[0], "m2_brick": m2[1], "m2_frame": m2[2], "m2_b_phase": m2[3],
-               "m3_max_mm": float(m3), "rtf": r.get("rtf"), "gates": g, "bricks": bricks}
+               "m3_max_mm": float(m3), "rtf": r.get("rtf"), "welded": len(bricks),
+               "measured": len(bricks) - len(unmeasured), "unmeasured": unmeasured, "gates": g, "bricks": bricks}
         out.append(res)
         print("%-14s %d/%-4d %-14s %-6s %-9.3f %-26s %-8.4f %-5s  %s" % (
             tag, r["built"], r["total"], fail, r["breaks"] if isinstance(r["breaks"], int) else len(r["breaks"]), u,
             "%.3f (%s, %s, %s)" % (m2[0], m2[1], m2[2], m2[3]), m3, r.get("rtf"),
-            " ".join("pass" if v else "FAIL" for v in g.values())))
+            " ".join("?" if v is None else "pass" if v else "FAIL" for v in g.values())))
     path = a.out or a.rows.with_name(a.rows.stem + "_j_tables.json")
     path.write_text(json.dumps(out, indent=1))
     print("-> %s" % path)
@@ -136,6 +148,20 @@ def _self_check():
     q[1, 3:7] = [0, 0, np.sin(0.005), np.cos(0.005)]            # 0.01 rad yaw: corner at (16, 8) mm moves ~ 0.01*17.9 mm
     assert abs(dev(c[0], corners(q, 4, 2)[1]) - 0.01 * np.hypot(16, 8)) < 0.01
     assert windows(np.array([1] * 40 + [0] + [1] * 30, bool), 5) == [(5, 40), (41, 71)]
+    r = {"failure": None, "error": None, "breaks": 0, "built": 8, "total": 8}
+    ok = {"a": {"m2_mm": 0.5}, "b": {"m2_mm": 0.2}}
+    g, u = gates(r, (0.5, "a", 9, "p"), 0.05, ok)
+    assert u == [] and g == {"G2": True, "G3": True, "G4": True, "G6": True, "G7": True}
+    g, u = gates(r, (1.5, "a", 9, "p"), 0.2, ok)
+    assert g["G3"] is False and g["G4"] is False
+    bad = dict(ok, c={"fire_frame": 3, "note": "no unloaded window after the fire"})
+    g, u = gates(r, (0.5, "a", 9, "p"), 0.05, bad)
+    assert u == ["c"] and g["G3"] is None and g["G4"] is None
+    miss = dict(r, failure="gate_miss", error="AssertionError: gate_miss at step 15 (15 built)", built=15, total=20)
+    assert gates(miss, m2 := (0.5, "a", 9, "p"), 0.05, ok)[0]["G6"] is True
+    assert gates(dict(miss, error="RuntimeError: boom"), m2, 0.05, ok)[0]["G6"] is False
+    assert gates(dict(r, error="ValueError: x"), m2, 0.05, ok)[0]["G6"] is False
+    assert gates(dict(r, failure="divergence_x", error="AssertionError: divergence_x"), m2, 0.05, ok)[0]["G6"] is False
 
 
 if __name__ == "__main__":
