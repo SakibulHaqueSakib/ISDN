@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-211 entries. Later entries supersede earlier ones; retractions are marked.
+216 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -252,6 +252,23 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **GATE** `v4_phase2_gate` → **pass_with_recorded_exceptions**
     - result: pass_with_recorded_exceptions
     - status: Phase 2 'Unbraced build and image pipeline' gate, closed on the user's decision after the Codex review (v4_phase2_gate_review, CHANGES REQUESTED, 3 findings; the two scoring fixes in j_tables.py are in, the high finding is the exception). PASS on the three acceptance shapes (v4_phase2_acceptance, recomputed by Codex): cube 8/8, arch 11/11, hollow_box 12/12, 3 repeats each, unbraced, 0 breaks in al…
+
+- **result** `v4_v1_s1_cameras_vision`
+    - result: Perception V1 S1 (commits 4616b16, a7db1b8). cell/cameras.py: the camera half moved out of scripts/11_camera_probe.py; Cameras(model, seed) on the cell model, the wrist mount from B's FK (joint angles only). dual_arm_sim.py --save-captures (off by default; the render runs outside captured graphs). The probe --summary is byte-identical and --selfcheck is unchanged (49 blobs, fit max err 2.8 um, yaw…
+    - finding: The V5 estimator behind the acceptance rule reproduces the P2 camera numbers (45 of 50, radial p95 0.230 mm vs P2's 0.234 mm); the rule rejects the 5 renders with fewer than 4 studs on the held or target brick. The orchestrator recomputed the P2(d) numbers from scratch output; timings and the noise-model cost are implementer-reported.
+
+- **result** `v4_v1_s13a_executor_hooks`
+    - result: Perception V1 S1.3a (commit 565eaa8). dual_arm_sim.py flags, all off by default: --seed, --look (plan-scheduled looks; the second look yawed 180 deg on single-footprint targets), --aim gt|fk_oracle|fk_vision (plan §2.2a: the full hand-frame d_h from FK, dpsi added once to the remaining waypoints), --aim-inject, --shadow-vision, the D6 pre-weld screen in snap(), row["vision"]. Flags off: cube --tes…
+    - finding: The executor hooks are in and inert when off (cube 8/8, u_peak 0.0354). The smoke runs are single repeats and are not experiment results; the E1/E2 experiments are not yet run.
+
+- **deviated** `v4_v1_e2_manipulation_matched_control`
+    - rationale: The realised offset at the end of pre-insert is 1.0-1.2 mm with no injection in every aim mode including gt (the swing from the 22 mm descent after the look decays during insert) [implementer-reported]. On the cube a 0.4 mm injection gave realised minus control 0.39-0.49 mm; on S1 step 1 {0.4, -0.3 mm, 1.0 deg} gave 0.403 / -0.295 mm / 0.93 deg [implementer-reported]. In-phase change; the gate cri…
+
+- **problem** `v4_v1_braced_second_look_collision`
+    - finding: On braced single-footprint steps the 180 deg second look collides B's hand with A's: S3 step 11 with weakest_joint bracing and --look gave 7-9 arm_arm events (peak 270-956 N), a joint break and the second look rejected, in both --aim fk_vision and --aim gt --shadow-vision; the flags-off run of the same step passes [implementer-reported]. V1's experiments are unbraced, so it does not block V1. Carr…
+
+- **problem** `v4_arch_step10_nominal_start_break`
+    - finding: Arch step 10 with weakest_joint bracing, run as a nominal-start step-episode, breaks at frame 779 with all perception flags off [implementer-reported]. Not caused by the perception hooks. Relevant to RL bracing R0 (paused, U-P6).
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
