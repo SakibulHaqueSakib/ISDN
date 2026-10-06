@@ -95,6 +95,9 @@ GRASP_DZ = 0.013              # TCP above a brick's bottom face while gripping; 
                               # fingertips clear of the studs on the course below
 FINGER_KE = 1000.0            # N/m finger drive; squeeze = FINGER_KE * 1.5 mm per finger
 TIP_BELOW_TCP = 0.0089        # fingertips past the TCP (measured from the FR3 finger mesh)
+SETTLE_DZ = 0.009             # B's pick hovers this far above the grasp pose until the arm has caught up with its command
+SETTLE_TOL = 0.0005           # m: hand FK xy error to the command that ends the hover
+SETTLE_MAX = 0.6              # s: or this long
 PRESS = 0.001                 # placer drives this far past seated
 BRACE_PRESS = 0.002           # stabilizer drives this far into what it braces (legacy brace only)
 
@@ -936,7 +939,11 @@ class Example:
             self.brace_info(n).update(infeasible=not s["brace"].get("feasible", True))
         sham = self.sham_s if n == self.start_step else None      # --brace-json {"sham_s": T}: stage for T s, no A
         B.push("to feeder", up(slot), yaw, g_open, 1.5)
-        B.push("descend", slot + [0, 0, GRASP_DZ], yaw, g_open, 1.0)
+        hover = slot + [0, 0, GRASP_DZ + SETTLE_DZ]
+        B.push("descend", hover, yaw, g_open, 0.9)
+        B.push("settle", hover, yaw, g_open, 0.1,
+               wait=lambda: np.linalg.norm((B.ee - hover - B.bias)[:2]) < SETTLE_TOL or B.waited > SETTLE_MAX)
+        B.push("descend", slot + [0, 0, GRASP_DZ], yaw, g_open, 0.3)
         B.push("grasp", slot + [0, 0, GRASP_DZ], yaw, g_shut, 0.5, contact=True)
         B.push("lift", up(slot), yaw, g_shut, 0.8, then=(lambda: self.staged.add(n)) if staged else None)
         if staged:
@@ -1260,7 +1267,7 @@ class Example:
         a zero-crossing). Not bisected further.
         """
         B = self.B
-        if B.phase in ("park", "to feeder", "descend", "grasp", "lift") or self.b_step is None:
+        if B.phase in ("park", "to feeder", "descend", "settle", "grasp", "lift") or self.b_step is None:
             B.bias[:], self.hand_off, self.fk = 0.0, None, None
             return
         if self.aim != "gt":

@@ -24,7 +24,7 @@ shape, always the last one added, so it is simply the highest shape index --
 never called again).
 
 Phase comes from dual_arm_sim's own state, never re-derived:
-  - B's Arm.phase: park/to feeder/descend/grasp/lift/stage/transport/pre-insert/
+  - B's Arm.phase: park/to feeder/descend/settle/grasp/lift/stage/transport/pre-insert/
     insert/release/retract (Example.queue_place; "stage" only on a braced step:
     B holds its brick over the feeder until A has closed).
   - A's Arm.phase: to brace/approach/brace-in/brace-guard/close/hold/open/
@@ -64,7 +64,7 @@ import planner as P  # noqa: E402
 
 PENETRATION_MM = 1.0   # brick-brick d below -PENETRATION_MM*scale => penetration
 DISPLACED_MM = 1.0     # a resting brick moved more than this*scale => displaced
-HELD_PHASES = ("descend", "grasp", "lift", "stage", "transport", "look", "pre-insert", "insert", "release")
+HELD_PHASES = ("descend", "settle", "grasp", "lift", "stage", "transport", "look", "pre-insert", "insert", "release")
 BRACE_PHASES = ("brace-guard", "close", "hold", "open")   # A's contact moves in the grasp_lp brace
 LEGACY_BRACE_PHASES = ("brace", "hold")                   # A's two contact=True moves with --legacy-brace
 GAP_FRAMES = 30        # merge same-key fragments up to this many frames apart (0.5 s at 60 fps)
@@ -186,7 +186,7 @@ class ContactMonitor:
                 return None                               # A bracing its gripped_bricks
         if held_cls and held_cls in (clsA, clsB):
             other = clsB if clsA == held_cls else clsA
-            if other == "ground" and ex.B.phase in ("descend", "grasp", "lift"):
+            if other == "ground" and ex.B.phase in ("descend", "settle", "grasp", "lift"):
                 return None                               # still resting on its pick-up spot
         if held_cls and ex.B.phase in ("insert", "release") and held_cls in (clsA, clsB):
             other = clsB if clsA == held_cls else clsA
