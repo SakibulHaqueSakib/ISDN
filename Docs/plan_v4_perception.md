@@ -331,3 +331,15 @@ Totals: about 9.75 agent-days and about 9.8 GPU-h. R0 and the placer wait until 
 **Changed:** `dual_arm_sim.py` (flags off by default; the scorer-only screen in `snap()`; in V2, the executor moves out); `scripts/11_camera_probe.py` (imports from `cell/cameras.py`); `experiments/v4_brace.py` (optional job-core fields); `tasks/brace_bandit.py` (V3); `tests/test_arm_protocol.py` (V2). `scripts/run.sh` already routes the new files.
 
 **Not built:** the py_trees tree, cuRobo, the `up` camera, the learned and edge fallbacks unless triggered, 2× sets, and an axis-window sweep unless ACC fires.
+
+## G-V1 outcome (2026-10-07)
+
+Computed by `experiments/v4_vision.py tables` on `results/v4/vision/v1_r1` (commit 713acad); ledger `v4_G_V1`. Outcome **ACC**.
+- Validity: pass (E1 native clean on cube/arch/hollow_box; 2 of 33 E2 contexts native; manipulation check 252/264 = 0.9545 under the amended rule; E2/E2b agreement 34/36).
+- Criterion 1 PASS: fk_oracle 3/3 on cube, arch and hollow_box, every snap passes the screen.
+- Criterion 2 FAIL: E2 scale 2 pass 72/124 (58 %); E2b 22/36 observed steps. Criterion 3 FAIL: V5 yield 0.929 (yaw p95 0.194 deg passes).
+- Criterion 4 FAIL: fk_vision built-all cube 3/3 (2 screen fails in seed 0), arch 1/3, hollow_box 0/3. Cost: fk_vision 301.6/h vs gt 276.2/h; U-P3 stands, provisional.
+- Codex round 1 (CHANGES REQUESTED): ACC is correct; the scale-2 failure through fk_oracle shows an insertion-margin limitation, so the ACC remedies may not reach criterion 2.
+- Codex round 2 (CHANGES REQUESTED): fixes 1, 2, 4, 5 confirmed in code; fix 3 (E2b) not confirmed: all 6 builds stopped early, 26 of 62 steps unscored, so 22/36 is selected by early stopping. No firewall problem (`v4_G_V1_review`).
+- User decisions: (i) run the ACC branch (`v4_v1_acc_branch`); (ii) E2b keeps building after jams, every step scored, later steps flagged (`v4_v1_e2b_continue`); (iii) a settle hover before the close on every pick, regression on the acceptance shapes required (`v4_pick_settle_hover`).
+- ACC branch in progress; V2/V3 stay a draft until the ACC re-run's gate.

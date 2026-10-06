@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-227 entries. Later entries supersede earlier ones; retractions are marked.
+232 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -310,6 +310,23 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `v4_v1_cost`
     - result: E4 cost (tables.json T_V1c_cost; 40 episodes per arm, 4 workers, 0 lost). gt: wall 521.4 s, 276.2 episodes/h, episode wall median 51.05 s, startup median 7.19 s, real-time factor median 0.278, success 4/40. fk_vision: wall 477.5 s, 301.6 episodes/h, episode wall median 46.75 s, startup median 7.18 s, real-time factor median 0.328, success 3/40; per-episode medians render 36.2 ms, vision 163.9 ms, …
     - finding: A ratio above 1 means vision mode did not slow throughput in this fixture; it is not a speed-up claim: success is 4/40 (gt) and 3/40 (fk_vision) because these are fixture-on unbraced contexts, so the episodes are not builds. Provisional: V2's acquisition motions are not included.
+
+- **GATE** `v4_G_V1` → **ACC**
+    - result: ACC
+    - status: G-V1 (Phase 4 Perception V1 feasibility), computed by experiments/v4_vision.py tables on results/v4/vision/v1_r1 (tables.json G_V1). VALIDITY all pass: (a) E1 native clean on cube, arch, hollow_box; (b) 2 of 33 E2 contexts native (arch step 10, S5p13 step 12; limit 3); (c) manipulation check 252/264 = 0.9545 under the amended rule (v4_v1_e2_manipulation_matched_control; limit 95 %); (d) E2/E2b agr…
+
+- **result** `v4_G_V1_review`
+    - result: G-V1 review by Codex, two rounds, both CHANGES REQUESTED. Round 1: ACC is the correct outcome; the scale-2 failure seen through fk_oracle shows an insertion-margin limitation of the cell, not only perception accuracy, so the ACC remedies (perception-side) may not reach criterion 2. Round 2, the five r2 plan fixes checked in code: (1) FK lever arm and control path CONFIRMED; (2) one pre-weld screen…
+    - finding: Fix (3) is handled by v4_v1_e2b_continue (every E2b step scored). The round-1 point stands as a risk to the ACC branch: if scale 2 still fails through fk_oracle after the remedies, the user chooses among a lower success criterion, an insertion search, or stop (v4_v1_acc_branch).
+
+- **deviated** `v4_v1_acc_branch`
+    - rationale: G-V1 outcome is ACC (v4_G_V1): criteria 2, 3 and 4 fail while validity and criterion 1 pass. Codex round 1 warned that the scale-2 failure through fk_oracle is an insertion-margin limitation, so the remedies may not reach criterion 2; the user was told and chose the pre-registered branch.
+
+- **deviated** `v4_v1_e2b_continue`
+    - rationale: Codex round 2 (v4_G_V1_review, fix 3): all 6 E2b builds stopped early, 26 of 62 steps unscored, so the 22/36 rate is selected by early stopping. Continuing scores every step; later steps may sit on a structure holding a jammed brick, which is reported.
+
+- **deviated** `v4_pick_settle_hover`
+    - rationale: S3 fails at step 1 in every E1 arm including gt: at the 2x2 pick the hand touches down about (+2.2, +1.5) mm off against about 2.1 mm finger-pad clearance and the brick pops up (v4_s3_pick_marginal_2x2, cause implementer-reported). A settle hover was the first of the listed fix candidates.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
@@ -723,6 +740,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **G7**: pass_with_recorded_exceptions — S5's A6 exception removed (20 seeds per cell, a6_s5_20seeds); remaining exception: G6 has one planned seed plus 4 extra on S1-S3
 - **v4_phase1_joint_model**: changes_requested (J-b); J-a pass, J-c pass — Phase 1 'Joint model' gate (plan v4 r5; phase commits a890b68, 4ad91a7, 0dd4f8b; base f227fd4), reviewed once by Codex (adversarial review of f227fd4..HEAD). Co…
 - **v4_phase2_gate**: pass_with_recorded_exceptions — Phase 2 'Unbraced build and image pipeline' gate, closed on the user's decision after the Codex review (v4_phase2_gate_review, CHANGES REQUESTED, 3 findings; th…
+- **v4_G_V1**: ACC — G-V1 (Phase 4 Perception V1 feasibility), computed by experiments/v4_vision.py tables on results/v4/vision/v1_r1 (tables.json G_V1). VALIDITY all pass: (a) E1 n…
 
 ## Open — needs a decision
 
