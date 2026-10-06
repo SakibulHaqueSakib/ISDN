@@ -39,6 +39,14 @@ them as one episode (no plans/ or results/proto_episodes.jsonl writes; the row, 
 "out"). --press-scale L [--press-lateral FX FY] adds the design-press fixture on that step's supports (below).
 --fixture-hold: debug, the full-amplitude fixture from t = 0.5 s with both arms parked (scripts/fixture_check.py).
     bash scripts/run.sh dual_arm_sim.py --spec ep.json --viewer null --test --num-frames 40000
+
+Perception-phase hooks (plan_v4_perception S1.3, §2.2a; all off by default): --seed N seeds the cameras and the per-step V4
+prior; --look adds a look waypoint (and, over a single-footprint target, a second one with the hand turned 180 deg) between
+transport and pre-insert; --aim gt|fk_oracle|fk_vision picks the aim controller (gt: today's GT servo; fk_*: the FK aim
+controller on the estimate pair, oracle = the plan target and the GT brick, vision = V5); --aim-inject JSON adds a persistent
+setpoint to fk_oracle's target; --shadow-vision runs V5 at every look in the gt and fk_oracle modes, logged only. snap()
+always records the scorer-only pre-weld screen (plan_v4_perception D6). The row gets a "vision" block.
+    bash scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 40000 --look --aim fk_vision
 """
 
 import time
@@ -54,6 +62,7 @@ from pathlib import Path
 
 import numpy as np
 import warp as wp
+from scipy.spatial.transform import Rotation as Rot
 
 import newton
 import newton.examples
@@ -68,6 +77,7 @@ import blueprint as B  # noqa: E402
 import bracing  # noqa: E402
 import planner as P  # noqa: E402
 import stability as ST  # noqa: E402
+import vision as V  # noqa: E402
 from tasks.brace_bandit import EXE  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -134,6 +144,13 @@ ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 # BrickSim's default gate. §2.3.3 asks for 1.2 mm; position-controlled IK
 # without a force loop does not reliably get there yet.
 GATE = {"lateral_mm": 2.0, "dz_mm": 1.5, "yaw_deg": 5.0}
+# The pre-weld screen (plan_v4_perception D6, scorer only): plan_v4's r4 pose thresholds on the state snap() reads, no at-rest clause.
+SCREEN = {"lateral_mm": 1.2, "dz_mm": (-0.5, 0.3), "tilt_deg": 4.0, "yaw_deg": 5.0}
+# Look schedule (plan_v4_perception §2.2a): the brick bottom H_LOOK above the target's stud tops (P2's h_look), the move, the 180 deg
+# wrist turn, and the dwell before a capture (the arm sways ~2 mm for a moment after a move) [A].
+H_LOOK = 0.045
+LOOK_MOVE_S, LOOK_TURN_S, LOOK_DWELL_S = 0.8, 1.2, 0.3
+PRIOR_XY, PRIOR_YAW_DEG = 0.4e-3, 0.25    # V4-fine's pose error on the plan lattice (P2), 1 sigma
 # Break rule (plan_v4 r5-3, class JointBreaker): u >= U_BREAK on BREAK_SAMPLES consecutive end-of-frame
 # samples, enforced from BREAK_SETTLE_S after that weld fired.
 U_BREAK = 1.0
@@ -185,6 +202,69 @@ def wrap(a, period=2 * math.pi):
 
 
 Q_DOWN = np.array([1.0, 0.0, 0.0, 0.0])  # gripper pointing down
+RX_PI = Rot.from_euler("x", math.pi)      # Q_DOWN as a Rotation: the hand's world rotation is Rz(yaw) * RX_PI
+
+
+# --- perception-phase helpers (plan_v4_perception §2.2a): pure functions, no simulator ----------------------
+def exposed_cells(order, n, NI, NJ):
+    """(cells, single) of step n of planner.sequence `order`: the unobstructed studs of the course the target sits on (the
+    plate's studs for k = 0: lattice cells -2..N+1 round the NI x NJ grid) within 3 pitches of its footprint, sorted, and
+    whether they are only its own footprint (a tower or pier: the second look, hand turned 180 deg). P2's Scene.exposed."""
+    i0, j0, k = order[n][2:5]
+    nx, ny = P.footprint(order[n][1], order[n][5])
+    cells = lambda bs: {c for b in bs for c in P.cells(b)[0]}
+    cover = cells([b for b in order[:n] if b[4] == k])
+    below = {(i, j) for i in range(-2, NI + 2) for j in range(-2, NJ + 2)} if k == 0 else cells([b for b in order[:n] if b[4] == k - 1])
+    cs = sorted(c for c in below - cover if i0 - 3 <= c[0] < i0 + nx + 3 and j0 - 3 <= c[1] < j0 + ny + 3)
+    foot = {(i0 + a, j0 + b) for a in range(nx) for b in range(ny)}
+    return cs, bool(k > 0 and cs and set(cs) <= foot)
+
+
+def fk_bias(R_hand, d_h, T_xy, tgt_xy, i_xy):
+    """The FK aim controller's bias (§2.2a): R_hand d_h - [0, 0, GRASP_DZ] + [(T_hat - tgt)_xy, 0] + [i_xy, 0]. With the
+    waypoint tgt + [0, 0, GRASP_DZ] + bias, B_est = ee - R_hand d_h = T_hat + [i_xy, 0] in xy: the 13 mm lever cancels."""
+    return R_hand.apply(d_h) - [0.0, 0.0, GRASP_DZ] + [*(np.asarray(T_xy) - tgt_xy + i_xy), 0.0]
+
+
+def fk_integral(i_xy, T_xy, B_est_xy, dt):
+    """The integral of T_hat_xy - B_est_xy, today's gain and clip."""
+    return np.clip(i_xy + ALIGN_GAIN * dt * (np.asarray(T_xy) - B_est_xy), -0.004, 0.004)
+
+
+def add_dpsi(moves, dpsi):
+    """delta-psi, once, onto the yaw of every remaining waypoint of the step."""
+    for m in moves:
+        m["yaw"] += dpsi
+
+
+def v5_errors(tgt_xy, yaw_t, T_hat, B_hat, q):
+    """Scorer side: V5's estimates against ground truth, in the target brick's frame (x along its mesh x), mm / deg.
+    target = T_hat - plan target; held = B_hat - the brick's body_q pose q; rel = the difference of the two (target - held)."""
+    c, s = math.cos(yaw_t), math.sin(yaw_t)
+    tf = lambda e: np.array([c * e[0] + s * e[1], -s * e[0] + c * e[1]]) * 1e3
+    yb = yaw_of(q[3:])
+    et, eh = tf(np.asarray(T_hat[:2]) - tgt_xy), tf(np.asarray(B_hat[:2]) - q[:2])
+    d = lambda a: math.degrees(wrap(a, math.pi))
+    return dict(target_xy_mm=et, target_yaw_deg=d(T_hat[2] - yaw_t), held_xy_mm=eh, held_z_mm=(B_hat[2] - q[2]) * 1e3,
+                held_yaw_deg=d(B_hat[3] - yb), rel_xy_mm=et - eh, rel_radial_mm=float(np.linalg.norm(et - eh)),
+                rel_yaw_deg=d((T_hat[2] - B_hat[3]) - (yaw_t - yb)))
+
+
+def jsonable(o):
+    """numpy -> plain python, recursively (rows are JSON)."""
+    if isinstance(o, dict):
+        return {k: jsonable(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [jsonable(v) for v in o]
+    if isinstance(o, np.ndarray):
+        return jsonable(o.tolist())
+    if isinstance(o, (np.floating, float)):
+        return None if not math.isfinite(o) else round(float(o), 7)
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.bool_):
+        return bool(o)
+    return o
 
 
 @wp.kernel
@@ -485,6 +565,18 @@ class Example:
         self.frame_dt = 1.0 / self.fps
         self.sim_dt = self.frame_dt / self.substeps
         self.sim_time = 0.0
+        # perception-phase hooks (plan_v4_perception S1.3), all off by default
+        self.look, self.shadow = bool(getattr(args, "look", False)), bool(getattr(args, "shadow_vision", False))
+        self.aim, self.seed = getattr(args, "aim", None) or "gt", int(getattr(args, "seed", 0) or 0)
+        self.inject = json.loads(args.aim_inject) if getattr(args, "aim_inject", None) else None
+        if self.aim != "gt" and not self.look:
+            raise SystemExit("--aim %s needs --look: the estimate comes from the scheduled looks" % self.aim)
+        if self.inject is not None and self.aim != "fk_oracle":
+            raise SystemExit("--aim-inject needs --aim fk_oracle")
+        if self.shadow and not self.look:
+            raise SystemExit("--shadow-vision needs --look")
+        self.sees = self.look and (self.aim == "fk_vision" or self.shadow)     # V5 runs at the looks
+        self.vis, self.cand, self.fk, self.yaw_shift, self.grasp_yaw = {}, {}, None, None, 0.0   # per-step records; the last accepted V5 look; the FK aim state; the wrist-yaw shift of a look step
 
         self.plan, self.name = make_plan(args)
         self.failure = self.failed_at_step = self.built_at_failure = None   # end at the first failure (see fail())
@@ -530,6 +622,7 @@ class Example:
         NI = max(b["grid_pos"][0] + P.footprint(b["type"], b["yaw_index"])[0] for b in bricks.values())
         NJ = max(b["grid_pos"][1] + P.footprint(b["type"], b["yaw_index"])[1] for b in bricks.values())
         cx, cy = ox + NI * P.PITCH / 2, oy + NJ * P.PITCH / 2
+        self.NIJ = (NI, NJ)
         v, f = ex._make_brick_mesh(NI + 4, NJ + 4)
         scene.add_shape_mesh(-1, mesh=newton.Mesh(v, f.flatten()), color=(0.45, 0.47, 0.45),
                              xform=wp.transform((cx, cy, Z0 - ex.BRICK_HEIGHT), wp.quat_identity()),
@@ -666,12 +759,14 @@ class Example:
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
         self.fixture_setup(steps, n0)
         self.capture()
-        self.cams = None                      # --save-captures: cell.cameras.Cameras, rendered outside the captured graphs
-        if getattr(args, "save_captures", None):
-            from cell.cameras import Cameras
-            self.cap_dir, self.cap_step, self.cap_retract_step, self.fk_state = Path(args.save_captures), None, None, None
+        self.cams, self.fk_state, self.spheres = None, None, None    # cell.cameras.Cameras (--save-captures, V5 at the looks), rendered outside the captured graphs
+        self.save_caps = bool(getattr(args, "save_captures", None))
+        if self.save_caps:
+            self.cap_dir, self.cap_step, self.cap_retract_step = Path(args.save_captures), None, None
             self.cap_dir.mkdir(parents=True, exist_ok=True)
-            self.cams = Cameras(self.model, seed=0)
+        if self.save_caps or self.sees:
+            from cell.cameras import Cameras
+            self.cams = Cameras(self.model, seed=self.seed)
         self.wall0 = time.perf_counter()      # for the row's rtf
         self.startup_s = self.wall0 - _T0     # process start to here: plan, IK park, scene build, graph capture
         print("%s: %d bricks, %d braced (%s), %d clutch welds" % (
@@ -849,13 +944,145 @@ class Example:
         elif sham is not None:
             B.push("stage", up(slot), yaw, g_shut, sham)
         B.push("transport", up(tgt), yaw, g_shut, 1.5)
+        look = getattr(self.args, "look", False)
+        if look:
+            self.queue_look(s, tgt, yaw, g_shut)
         B.push("pre-insert", tgt + [0, 0, 0.025 + GRASP_DZ], yaw, g_shut, 0.6,
-               wait=(lambda: n in self.braced) if s["requires_brace"] and self.legacy else None)
+               wait=(lambda: n in self.braced) if s["requires_brace"] and self.legacy else None,
+               then=(lambda: self.on_pre_insert(s)) if look else None)
         B.push("insert", tgt + [0, 0, GRASP_DZ - PRESS], yaw, g_shut, 1.2, contact=True,
                then=lambda: self.snap(s))
         B.push("release", tgt + [0, 0, GRASP_DZ - PRESS], yaw, g_open, 0.4, contact=True,
                then=lambda: self.placed.add(n))
         B.push("retract", up(tgt), yaw, g_open, 0.8, then=(lambda: self.retracted.add(n)) if staged else None)
+
+    # -- looks (--look, plan_v4_perception §2.2a) -----------------------------------------------
+    def queue_look(self, s, tgt, yaw, g):
+        """The scheduled looks of step s, between transport and pre-insert: the hand over the target with the brick bottom
+        H_LOOK above its stud tops, a dwell, then the capture (on_look). A single-footprint target (exposed_cells) gets a second
+        look with the wrist turned 180 deg (the camera sits on the hand's +x side, so it sees the other side) and the wrist
+        turned back. A pure function of the plan: the same in every aim mode. Takes the nearer-wrist choice once, here:
+        yaw_shift (see step())."""
+        B, n = self.B, s["step"]
+        self.yaw_shift = round((ARM_B[1] + wrap(yaw - ARM_B[1], math.pi) - yaw) / math.pi) * math.pi
+        self.grasp_yaw = yaw + self.yaw_shift                     # the hand's world yaw at the grasp
+        _, single = exposed_cells(P.sequence(P.STRUCTURES[self.name]), n, *self.NIJ)
+        p = tgt + [0, 0, ex.STUD_HEIGHT + H_LOOK + GRASP_DZ]
+        turn = (-1 if self.grasp_yaw - ARM_B[1] > 0 else 1) * (math.pi - 1e-6)   # toward the wrist's middle; a hair under pi so Arm.update picks this way round
+        B.push("look", p, yaw, g, LOOK_MOVE_S)
+        B.push("look", p, yaw, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 0, not single))
+        if single:
+            B.push("look", p, yaw + turn, g, LOOK_TURN_S)
+            B.push("look", p, yaw + turn, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 1, True))
+            B.push("look", p, yaw, g, LOOK_TURN_S, then=lambda: setattr(self, "hand_off", None))   # gt: re-measure once the wrist is back
+
+    def on_look(self, s, k, final):
+        """A scheduled look: the capture (V5 when it is wanted), logged; at the final one (t_L) the aim controller is set up."""
+        n, bid = s["step"], s["brick_id"]
+        v = self.vis.setdefault(n, dict(looks=[]))
+        q, ee = self.state_0.body_q.numpy()[self.body[bid]], self.hand_fk(1)
+        rec = dict(k=k, turned=bool(k), frame=self.frame, sim_time_s=self.sim_time, hand_yaw_deg=math.degrees(yaw_of(ee[3:7])),
+                   hand_yaw_cmd_deg=math.degrees(self.B.cmd[1] + self.yaw_shift))
+        res = self.v5_look(s, rec, ee, q) if self.sees else None
+        v["looks"].append(rec)
+        if res is not None and res.accepted:
+            self.cand[n] = (res, ee, self.frame)                  # the last accepted look: what fk_vision aims with
+        if final:
+            self.look_done(s, v, ee, q)
+
+    def v5_look(self, s, rec, ee, q):
+        """One V5 look: capture wrist_B, mask A with A's FK, estimate, score against the ground truth (errors in rec). Returns
+        the V5Result. Scorer side only: `q` (the brick's body_q) enters nothing but rec["errors"]."""
+        from cell.cameras import fr3_spheres, mask_A
+        n, bid = s["step"], s["brick_id"]
+        cap = self.cams.capture("wrist_B", ee, state=self.state_0, frame=self.frame, sim_time=self.sim_time)
+        t0 = time.perf_counter()
+        if self.spheres is None:
+            self.spheres = fr3_spheres(self.model, self.n_arm_bodies)
+        camR, hand = Rot.from_quat(cap["quat_xyzw"]), (ee[:3], Rot.from_quat(ee[3:7]))
+        # A's own pixels, from A's FK (as P2 does: only when A is out of its park pose; parked it is outside the look's view and the
+        # projection of its ~100 link spheres costs ~1 s)
+        mask = (mask_A(self.spheres, self.cams.cams["wrist_B"]["rays_np"], cap["pos"], camR, cap["depth"], self.links_fk(0))
+                if self.A.phase != "park" else np.zeros(cap["depth"].shape, bool))
+        I, t1 = cap["intrinsics"], time.perf_counter()
+        ctx, prior = self.v5_inputs(s)
+        res = V.v5_estimate(cap["depth"], dict(w=I["width"], h=I["height"], vfov=I["vfov_deg"]), (cap["pos"], camR), hand, ctx, prior, mask)
+        rec.update(accepted=res.accepted, reject_reason=res.reject_reason, n_target_studs=res.n_target_studs, n_held_studs=res.n_held_studs,
+                   target_noncollinear=res.target_noncollinear, T_hat=res.T_hat, B_hat=res.B_hat, dpsi_deg=math.degrees(res.dpsi),
+                   t_rms_um=res.t_rms * 1e6, h_rms_um=res.h_rms * 1e6, diag=res.diag,
+                   render_ms=cap["render_ms"], sense_ms=cap["sense_ms"], vision_ms=(time.perf_counter() - t0) * 1e3,
+                   mask_ms=(t1 - t0) * 1e3, mask_px=int(mask.sum()))      # vision_ms = mask (A's FK + spheres) + the plan inputs + V5
+        if np.isfinite(res.T_hat).all() and np.isfinite(res.B_hat).all():
+            rec["errors"] = v5_errors(self.target[bid][0][:2], self.target[bid][1], res.T_hat, res.B_hat, q)
+        return res
+
+    def v5_inputs(self, s):
+        """StepCtx and Prior from the plan: the exposed support studs, the support top face (the target's bottom z), the nominal
+        grasp; the prior is the plan lattice moved by V4-fine's pose error, drawn per (seed, step) (the same for both looks)."""
+        n, bid = s["step"], s["brick_id"]
+        order = P.sequence(P.STRUCTURES[self.name])
+        assert order[n][0] == bid, "plan order differs from planner.sequence"
+        cells, _ = exposed_cells(order, n, *self.NIJ)
+        ox, oy, _ = self.plan["voxel_origin"]
+        nodes = np.array([(ox + (i + .5) * P.PITCH, oy + (j + .5) * P.PITCH) for i, j in cells]).reshape(-1, 2)
+        tgt, yaw_t, _ = self.target[bid]
+        rng = np.random.default_rng([self.seed, 4, n])
+        dpsi, t = math.radians(rng.normal(0, PRIOR_YAW_DEG)), rng.normal(0, PRIOR_XY, 2)
+        c, Rp = (nodes.mean(0) if len(nodes) else np.zeros(2)), Rot.from_euler("z", dpsi).as_matrix()[:2, :2]
+        f = lambda x: (x - c) @ Rp.T + c + t
+        held = (np.array([0.0, 0.0, GRASP_DZ]), RX_PI * Rot.from_euler("z", yaw_t - self.grasp_yaw))   # brick origin in the hand frame, brick <- hand
+        btype = next(b["type"] for b in self.plan["bricks"] if b["id"] == bid)
+        return V.StepCtx(btype, float(tgt[2]), np.array(cells).reshape(-1, 2), held), V.Prior(f(nodes), f(tgt[:2]), yaw_t + dpsi)
+
+    def look_done(self, s, v, ee, q):
+        """t_L: the final scheduled look. gt re-measures its GT hand offset; fk_oracle / fk_vision take their estimate pair,
+        store d_h (the full hand-frame vector at the estimate frame t_E), and add delta-psi to every remaining waypoint."""
+        n, bid = s["step"], s["brick_id"]
+        tgt, yaw_t, _ = self.target[bid]
+        t0 = self.b_phase_t.get((n, "look"))
+        v.update(n_looks=len(v["looks"]), t_L_frame=self.frame, t_L_sim_s=self.sim_time, look_sim_s=None if t0 is None else self.sim_time - t0)
+        if self.aim == "gt":
+            self.hand_off = None                                  # aim_brick measures it again, at the final look's pose
+            return
+        if self.aim == "fk_oracle":                               # the oracle: the plan target (+ the injected setpoint) and the GT brick pose
+            j = self.inject_for(n)
+            c, sn = math.cos(yaw_t), math.sin(yaw_t)
+            T = np.array([*(tgt[:2] + [c * j[0] - sn * j[1], sn * j[0] + c * j[1]]), yaw_t + math.radians(j[2])])
+            B_pos, B_yaw, ee_E, src, t_E = q[:3], yaw_of(q[3:]), ee, "oracle", self.frame
+            v["inject"] = dict(dx_mm=j[0] * 1e3, dy_mm=j[1] * 1e3, dyaw_deg=j[2])
+        else:                                                     # fk_vision: the last accepted look
+            if n not in self.cand:
+                v["failure"] = "perception_v5"
+                self.fail("perception_v5")
+                return
+            res, ee_E, t_E = self.cand[n]
+            T, B_pos, B_yaw, src = res.T_hat, res.B_hat[:3], res.B_hat[3], "v5"
+        d_h = V.hand_offset(ee_E[:3], Rot.from_quat(ee_E[3:7]), B_pos)
+        dpsi = wrap(T[2] - B_yaw, math.pi)
+        self.fk = dict(d_h=d_h, T=np.asarray(T[:2]), i_xy=np.zeros(2))
+        add_dpsi([m for m in self.B.moves if m["phase"] != "look"], dpsi)    # not the wrist's turn-back: it must stay exactly pi from the turned look,
+                                                                             # or Arm.update's 2*pi wrap sends the wrist round the other way (past its limit)
+        v.update(aim=dict(src=src, T_hat=T, B_hat=[*B_pos, B_yaw], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E))
+
+    def inject_for(self, n):
+        """(dx m, dy m, dyaw deg) of --aim-inject for step n, in the target brick's frame: one vector, or {"<step>": vector}."""
+        j = self.inject
+        if j is not None and not ({"dx_mm", "dy_mm", "dyaw_deg"} & set(j)):
+            j = j.get(str(n))
+        j = j or {}
+        return (j.get("dx_mm", 0.0) * 1e-3, j.get("dy_mm", 0.0) * 1e-3, j.get("dyaw_deg", 0.0))
+
+    def on_pre_insert(self, s):
+        """End of pre-insert (scorer only): the realised (GT brick - target) offset in the target brick's frame. The injected
+        setpoint of --aim-inject shows up here."""
+        bid = s["brick_id"]
+        q = self.state_0.body_q.numpy()[self.body[bid]]
+        tgt, yaw_t, _ = self.target[bid]
+        c, sn = math.cos(yaw_t), math.sin(yaw_t)
+        d = (q[:2] - tgt[:2]) * 1e3
+        self.vis.setdefault(s["step"], dict(looks=[]))["realised"] = dict(
+            frame=self.frame, xy_mm=[c * d[0] + sn * d[1], -sn * d[0] + c * d[1]], dz_mm=(q[2] - tgt[2]) * 1e3,
+            yaw_deg=math.degrees(wrap(yaw_of(q[3:]) - yaw_t, math.pi)))
 
     def set_brace(self, s, brace, exe):
         """--brace-json for plan step s: None = no brace; [y, z, lean_deg] = bracing.brace_at (the planner's frame,
@@ -1030,8 +1257,10 @@ class Example:
         """
         B = self.B
         if B.phase in ("park", "to feeder", "descend", "grasp", "lift") or self.b_step is None:
-            B.bias[:], self.hand_off = 0.0, None
+            B.bias[:], self.hand_off, self.fk = 0.0, None, None
             return
+        if self.aim != "gt":
+            return self.aim_fk(B)
         bid = self.plan["sequence"][self.b_step]["brick_id"]
         brick = body_q[self.body[bid]][:3]
         if self.hand_off is None:
@@ -1040,6 +1269,20 @@ class Example:
             err = (self.target[bid][0] - brick)[:2]
             self.i_xy = np.clip(self.i_xy + ALIGN_GAIN * self.frame_dt * err, -0.004, 0.004)
         B.bias[:] = self.hand_off + [*self.i_xy, 0.0]
+
+    def aim_fk(self, B):
+        """The FK aim controller (plan_v4_perception §2.2a), from t_L on: no ground truth, only the hand's FK pose and the estimate
+        pair's d_h (see look_done). bias = R_hand(t) d_h - [0, 0, GRASP_DZ] + [(T_hat - tgt)_xy, 0] + [i_xy, 0]; i_xy integrates
+        T_hat_xy - B_est_xy(t) in pre-insert and insert, B_est = ee_FK - R_hand d_h. Before t_L the hand is not offset."""
+        f = self.fk
+        if f is None:
+            B.bias[:] = 0.0
+            return
+        pose = self.hand_fk(1)
+        ee, R = pose[:3], Rot.from_quat(pose[3:7])
+        if B.phase in ("pre-insert", "insert"):
+            f["i_xy"] = fk_integral(f["i_xy"], f["T"], V.brick_from_hand(ee, R, f["d_h"])[:2], self.frame_dt)
+        B.bias[:] = fk_bias(R, f["d_h"], f["T"], self.target[self.plan["sequence"][self.b_step]["brick_id"]][0][:2], f["i_xy"])
 
     # -- clutch -----------------------------------------------------------------
     def set_group(self, shapes, group=STRUCT_GROUP):
@@ -1060,6 +1303,8 @@ class Example:
         tilt = math.degrees(math.acos(np.clip(rotate(q[3:], np.array([0, 0, 1.0]))[2], -1.0, 1.0)))
         ok = (lateral < GATE["lateral_mm"] and abs(dz) < GATE["dz_mm"]
               and dyaw < GATE["yaw_deg"] and tilt < GATE["yaw_deg"])
+        screen = (lateral < SCREEN["lateral_mm"] and SCREEN["dz_mm"][0] <= dz <= SCREEN["dz_mm"][1]
+                  and tilt < SCREEN["tilt_deg"] and dyaw < SCREEN["yaw_deg"])        # D6, scorer only: changes neither the gate nor the weld
         self.last_gate = {"brick": bid, "lateral_mm": round(lateral, 2), "dz_mm": round(dz, 2),
                           "yaw_deg": round(dyaw, 2), "tilt_deg": round(tilt, 2)}
         after = self.failure is not None      # only under --continue
@@ -1085,7 +1330,11 @@ class Example:
                "brace_target": brace["target_brick_id"] if brace else None,
                "failure_mode": None if ok else "gate", "after_failure": after}
         self.episodes.append(row)
-        self.snap_gates.append(dict(self.last_gate, ok=ok, sim_time_s=round(self.sim_time, 3)))
+        self.snap_gates.append(dict(self.last_gate, ok=ok, sim_time_s=round(self.sim_time, 3), screen_pass=bool(screen), snap_frame=self.frame))
+        self.vis.setdefault(s["step"], dict(looks=[]))["snap"] = dict(
+            snap_frame=self.frame, screen_pass=bool(screen), gate_ok=bool(ok), lateral_mm=lateral, dz_mm=dz, tilt_deg=tilt, yaw_deg=dyaw,
+            xy_mm=[math.cos(yaw) * (q[0] - tgt[0]) * 1e3 + math.sin(yaw) * (q[1] - tgt[1]) * 1e3,
+                   -math.sin(yaw) * (q[0] - tgt[0]) * 1e3 + math.cos(yaw) * (q[1] - tgt[1]) * 1e3])   # signed, in the target brick's frame
         if not self.spec:
             with self.log_path.open("a") as f:
                 f.write(json.dumps(row) + "\n")
@@ -1101,6 +1350,16 @@ class Example:
         newton.eval_fk(self.model_ik, wp.array(q, dtype=wp.float32), wp.zeros(9, dtype=wp.float32), self.fk_state)
         t = self.fk_state.body_q.numpy()[EE]
         return np.r_[rotate(qz(yaw), t[:3]) + base, qmul(qz(yaw), t[3:])]
+
+    def links_fk(self, k):
+        """Arm k's link poses in the world from its joint angles alone: (positions (n, 3), rotations): A's FK for the mask."""
+        if self.fk_state is None:
+            self.fk_state = self.model_ik.state()
+        base, yaw = (ARM_A, ARM_B)[k]
+        q = self.state_0.joint_q.numpy()[9 * k:9 * k + 9]
+        newton.eval_fk(self.model_ik, wp.array(q, dtype=wp.float32), wp.zeros(9, dtype=wp.float32), self.fk_state)
+        t, R = self.fk_state.body_q.numpy(), Rot.from_euler("z", yaw)
+        return R.apply(t[:, :3]) + base, R * Rot.from_quat(t[:, 3:])
 
     def shoot(self, cam, step):
         """One capture of `cam` of the current state, saved as step<N>_<cam>.npz (rgb, depth, nominal camera pose, frame,
@@ -1154,19 +1413,20 @@ class Example:
             p, yaw, g, tilt = arm.update(self.frame_dt, ee)
             (bx, by, bz), byaw = arm.base
             pos.append(rotate(qz(-byaw), p - [bx, by, bz]))
-            # a parallel gripper is 180-degree symmetric: pick the nearer wrist
-            yaw = byaw + wrap(yaw - byaw, math.pi)
+            # a parallel gripper is 180-degree symmetric: pick the nearer wrist. A look step (--look) takes that choice once,
+            # at its grasp (yaw_shift), so the wrist can turn 180 deg for the second look and delta-psi cannot flip it
+            yaw = yaw + self.yaw_shift if arm is self.B and self.yaw_shift is not None else byaw + wrap(yaw - byaw, math.pi)
             world = qmul(qrot(tilt), qmul(qz(yaw), Q_DOWN))
             rot.append(qmul(qz(-byaw), world))
             grip.append(g)
         if self.B.phase != self.b_phase:
-            if self.cams and self.b_phase == "retract":
+            if self.save_caps and self.b_phase == "retract":
                 self.shoot("wrist_B", self.cap_retract_step)
             self.b_phase = self.B.phase
             self.b_phase_t.setdefault((self.b_step, self.b_phase), self.sim_time)
-            if self.cams and self.b_phase == "retract":
+            if self.save_caps and self.b_phase == "retract":
                 self.cap_retract_step = self.b_step
-        if self.cams and self.b_step != self.cap_step:
+        if self.save_caps and self.b_step != self.cap_step:
             self.cap_step = self.b_step
             if self.b_step is not None:
                 self.shoot("top", self.b_step)
@@ -1285,16 +1545,30 @@ class Example:
                 "failed_at_step": self.failed_at_step,
                 "built": self.built() if self.failure is None else self.built_at_failure,
                 "breaks": self.breaker.breaks,
-                "legacy_brace": self.legacy, "perception": "ground_truth", "weld": list(WELD_ATTRS["mujoco:eq_solimp"]),
+                "legacy_brace": self.legacy, "perception": {"gt": "ground_truth"}.get(self.aim, self.aim), "weld": list(WELD_ATTRS["mujoco:eq_solimp"]),
                 "grouped": True, "rtf": round(self.sim_time / max(time.perf_counter() - self.wall0, 1e-9), 3),
                 "preflight": self.plan.get("preflight"),
                 "brace_by_step": {n: self.brace_row(n) for n in sorted(self.brace_by_step)},
                 "u_peak_by_step": {k: round(v, 4) for k, v in self.breaker.u_peak_by_step.items()},
                 "shear_torsion_peak_by_step": {k: [round(x, 5) for x in v] for k, v in
                                                self.breaker.shear_torsion_peak_by_step.items()}}
+        if self.look:
+            row["vision"] = self.vision_row()
         if self.start_step is not None:
             row["episode"] = self.episode_row(events)
         return row
+
+    def vision_row(self):
+        """The perception-phase fields (plan_v4_perception S1.3): mode, aim, seed, V5's parameter hash, the injected vector, and per
+        step: every look (frame, sim time, hand yaw, accepted / reject_reason, V5's estimates and errors against the ground truth, the
+        timings), the look count, t_L (frame), the look's sim time, the aim pair and delta-psi, the realised offset at the end of
+        pre-insert, and at snap the screen and the cell-gate values with snap_frame."""
+        by = {}
+        for n, v in sorted(self.vis.items()):
+            ms = lambda key: sum(r.get(key, 0.0) for r in v["looks"])
+            by[n] = dict(v, render_ms=ms("render_ms"), sense_ms=ms("sense_ms"), vision_ms=ms("vision_ms"), mask_ms=ms("mask_ms"))
+        return jsonable(dict(perception={"gt": "ground_truth"}.get(self.aim, self.aim), aim=self.aim, seed=self.seed, shadow_vision=self.shadow,
+                             params_hash=V.PARAMS_HASH, aim_inject=self.inject, h_look_m=H_LOOK, dwell_s=LOOK_DWELL_S, by_step=by))
 
     def episode_row(self, events):
         """The step-episode records (plan_v4_rl_brace 2.5, A2): outcome, two-sample u, B's onsets, start-up, spec echo."""
@@ -1314,7 +1588,8 @@ class Example:
                          "brace": json.loads(a.brace_json) if getattr(a, "brace_json", None) is not None else "plan",
                          "press_scale": getattr(a, "press_scale", None), "press_lateral": getattr(a, "press_lateral", None),
                          "exe": getattr(a, "exe", None) or "E0", "tag": getattr(a, "tag", None),
-                         "fixture_hold": bool(getattr(a, "fixture_hold", False))}}
+                         "fixture_hold": bool(getattr(a, "fixture_hold", False)), "look": self.look, "aim": self.aim,
+                         "aim_inject": self.inject, "seed": self.seed, "shadow_vision": self.shadow}}
 
     def fixture_row(self):
         """The press fixture as applied: lambda, lateral, per-support F_i and p_i, peak applied |F| (per support, and the
@@ -1357,7 +1632,7 @@ class Example:
                 f.write(json.dumps(self.p0_row(error)) + "\n")
         if self.recorder:
             self.recorder.save(self.args.record_all, self)
-        if self.cams:
+        if self.save_caps:
             (self.cap_dir / "timing.json").write_text(json.dumps(self.cams.timing))
         if self.inserts is not None:
             r = self.inserts
@@ -1539,6 +1814,18 @@ if __name__ == "__main__":
                              "capture after B's retract, with GT labels, in DIR; default: off, the physics is unchanged")
     parser.add_argument("--exe", choices=list(EXE), default="E0",
                         help="A's executor setting (tasks/brace_bandit.EXE): E0 committed, E1 stiff hold")
+    parser.add_argument("--seed", type=int, default=0, help="seeds the cameras (hidden extrinsics, lighting, noise) and the per-step V4 prior draw")
+    parser.add_argument("--look", action="store_true",
+                        help="plan_v4_perception: a look waypoint between transport and pre-insert (brick bottom 45 mm over the target's "
+                             "stud tops), a second one with the hand turned 180 deg over a single-footprint target; default: off")
+    parser.add_argument("--aim", choices=["gt", "fk_oracle", "fk_vision"], default="gt",
+                        help="aim controller: gt (today's GT servo), fk_oracle (FK aim on the plan target and the GT brick pose), "
+                             "fk_vision (FK aim on V5's estimate pair; none accepted -> perception_v5); fk_* need --look")
+    parser.add_argument("--aim-inject", metavar="JSON",
+                        help='--aim fk_oracle: a persistent setpoint on the target, {"dx_mm":..,"dy_mm":..,"dyaw_deg":..} in the target '
+                             'brick\'s frame, or {"<step>": vector} for a full build')
+    parser.add_argument("--shadow-vision", action="store_true",
+                        help="with --look: run V5 at every look in the gt and fk_oracle modes too; logged only, never aborts or changes control")
     parser.set_defaults(shape="arch", bricks=None)
     pre = argparse.ArgumentParser(add_help=False)
     pre.add_argument("--spec", type=Path)
@@ -1550,6 +1837,8 @@ if __name__ == "__main__":
             raise SystemExit("spec: unknown keys %s" % sorted(bad))
         if "brace_json" in spec:
             spec["brace_json"] = json.dumps(spec["brace_json"])
+        if spec.get("aim_inject") is not None and not isinstance(spec["aim_inject"], str):
+            spec["aim_inject"] = json.dumps(spec["aim_inject"])
         parser.set_defaults(**spec)
     viewer, args = newton.examples.init(parser)
     if args.front or args.structure or args.bricks:
