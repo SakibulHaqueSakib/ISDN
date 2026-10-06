@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-220 entries. Later entries supersede earlier ones; retractions are marked.
+227 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -282,6 +282,34 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **problem** `v4_s3_pick_marginal_2x2`
     - finding: S3 fails at step 1 in every E1 arm including gt with --look (Phase 2 acceptance without --look reached 15/16). Cause [implementer-reported, frames from a diagnostic run]: at the pick of b_001 (2x2, feeder slot (100, -220) mm) the hand touches down about (+2.2, +1.5) mm off the command against about 2.1 mm finger-pad clearance; the fingers land on the brick top (finger joints pushed to 0.0113/0.010…
+
+- **result** `v4_v1_builds`
+    - result: E1 builds (T-V1a), re-run after the turned-look yaw fix into results/v4/vision/v1_r1/ (params_hash 0f312821b7c8c394; 36 builds). Built-all of 3 repeats, per repeat built/n. gt: cube 3 (8/8, 8/8, 8/8), arch 3 (11/11 x3), hollow_box 3 (12/12 x3). fk_oracle: cube 3 (8/8 x3), arch 3 (11/11 x3), hollow_box 3 (12/12 x3). fk_vision: cube 3 (8/8 x3), arch 1 (10/11, 11/11, 10/11; failures gate_miss, none, …
+    - finding: Supersedes the pre-fix E1 numbers in v4_v1_e1_e1b_first_pass (fk_vision cube 2, arch 1, hollow_box 0 there; cube is now 3, arch still 1, hollow_box still 0). The fk_vision arch failures are gate_miss in two of three repeats, and both of those repeats also have a screen fail at arch step 10 (arch step 10 is also one of the two native E2 contexts, see v4_v1_margin_injection). The fk_vision hollow_bo…
+
+- **result** `v4_v1_single_footprint`
+    - result: E1b (54 step-episodes, 9 single-footprint contexts x 2 arms x 3 repeats; 0 lost, 0 errors; params_hash 0f312821b7c8c394), success / screen-pass of 3 repeats per context, fk_oracle then fk_vision. S1 step 1: 3/3, 3/3 and 3/3, 3/3. S1 step 3: 3/3, 3/3 and 3/3, 3/3. S2A step 4: 3/3, 3/3 and 3/3, 2/3. S3 step 2: 3/3, 3/3 and 3/3, 3/3. S3 step 7: 3/3, 3/3 and 3/3, 3/3. S3L step 3: 3/3, 3/3 and 3/3, 3/3…
+    - finding: S5p13 step 12 fails in fk_oracle (0/3) as well as fk_vision (1/3), so it is a native context, not a perception effect (E2 lists it as native, v4_v1_margin_injection). The vision-specific failures are S5p13 step 4 (fk_vision 1/3 against fk_oracle 3/3) and one screen fail at S2A step 4. [Per-context counts computed from results/v4/vision/v1_r1/e1b/episodes.jsonl and rows/*.json; tables.json has no p…
+
+- **result** `v4_v1_v5_accuracy_pool`
+    - result: E3 V5 accuracy and yield (E1 + E1b, tables.json T_V1b_v5 and T_V1b_pool; pool hash 553a5a31d1cb1ebe, not partial). Steps 339, looks 498, accepted looks 418; yield all 0.929 (315/339), course 0.950 (171/180), single footprint 0.906 (144/159). Relative radial p95 mm (bootstrap CI): all 0.233 (0.209-0.300), course 0.204 (0.182-0.215), single 0.301 (0.221-0.374); yaw p95 deg (CI): all 0.194 (0.153-0.2…
+    - finding: Supersedes the pre-fix V5 numbers in v4_v1_e1_e1b_first_pass (342 steps, yield 0.930, radial p95 0.222 mm, yaw p95 0.20 deg): the re-run gives 339 steps, yield 0.929, radial p95 0.233 mm, yaw p95 0.194 deg. Single-footprint steps (two looks) have the lower yield and the wider radial p95 (0.301 against 0.204 mm). The yaw p95 CIs of the single-footprint arms reach 0.44-0.46 deg (fk_oracle, fk_vision…
+
+- **result** `v4_v1_drift_b1`
+    - result: E5 drift (B1; pool of 201 drift-checked supports, tables.json T_V1b_pool): drift_max 0.355 mm (3-D), 0.308 mm (xy), median 0.010 mm. Worst cases (3-D / xy mm): arch step 10 support b_006 fk_vision seed 0 0.355 / 0.308; arch step 10 b_007 fk_vision seed 2 0.289 / 0.260; arch step 10 b_006 fk_vision seed 2 0.230 / 0.221; arch step 10 b_007 fk_vision seed 0 0.154 / 0.141; arch step 9 b_007 fk_vision …
+    - finding: All five listed worst cases are arch steps 9-10 in the fk_vision arm; the median is 0.010 mm. Arch step 10 is also where fk_vision builds fail (v4_v1_builds) and one of the two native E2 contexts (v4_v1_margin_injection).
+
+- **result** `v4_v1_margin_injection`
+    - result: E2 matched injection (tables.json F_V1_e2). Contexts 33; native (a control fails the screen) 2: S5p13 step 12 and arch step 10; included 31. Screen pass at scale 1: all 117/124, course 74/76, single footprint 43/48. At scale 2: all 72/124, course 49/76, single footprint 23/48. Manipulation check under the amended rule (ledger v4_v1_e2_manipulation_matched_control; |realised - mean(controls) - inje…
+    - finding: At scale 2 the pass rate is 72/124 overall, 23/48 on single-footprint steps against 49/76 on course steps; failures start at 0.388 mm injected xy while passes extend to 0.881 mm, so the two ranges overlap and |injected xy| alone does not separate pass from fail. The manipulation check passes at 252/264 (0.955, just above the 95 % line), so the injection is valid and the E2 result stands as measure…
+
+- **result** `v4_v1_transfer`
+    - result: E2b transfer (tables.json F_V1_e2b; 6 episodes): 62 steps, 36 observed and 26 unobserved; of the 36 observed, 22 pass the screen and 34 agree with the E2 scale-2 outcome of the matched context (0.944; no_e2_match 0; native steps included 2).
+    - finding: Agreement of the E2b observed steps with E2 is 34 of 36 (0.944); the E2b pass count is 22 of 36. 26 of the 62 steps are unobserved. No gate verdict here; that is v4_G_V1.
+
+- **result** `v4_v1_cost`
+    - result: E4 cost (tables.json T_V1c_cost; 40 episodes per arm, 4 workers, 0 lost). gt: wall 521.4 s, 276.2 episodes/h, episode wall median 51.05 s, startup median 7.19 s, real-time factor median 0.278, success 4/40. fk_vision: wall 477.5 s, 301.6 episodes/h, episode wall median 46.75 s, startup median 7.18 s, real-time factor median 0.328, success 3/40; per-episode medians render 36.2 ms, vision 163.9 ms, …
+    - finding: A ratio above 1 means vision mode did not slow throughput in this fixture; it is not a speed-up claim: success is 4/40 (gt) and 3/40 (fk_vision) because these are fixture-on unbraced contexts, so the episodes are not builds. Provisional: V2's acquisition motions are not included.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 

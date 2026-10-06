@@ -1,0 +1,24 @@
+{
+ "exp": "e2b",
+ "params_hash": "0f312821b7c8c394",
+ "git_head": "60401996a2e9645d71d0da14cfb97a2a57f040fe",
+ "dirty_py": [],
+ "time": "2026-10-06 21:54:44",
+ "jobs": 6,
+ "stats": {
+  "unique": 6,
+  "to_run": 6,
+  "ran": 6,
+  "errors": 0,
+  "wall_s": 293.3
+ },
+ "merge": {
+  "entries": 6,
+  "with_record": 6,
+  "lost": 0,
+  "missing": 0,
+  "unique_ids": 6
+ },
+ "workers": 4,
+ "pool_hash": "553a5a31d1cb1ebe"
+}
