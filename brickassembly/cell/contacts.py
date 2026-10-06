@@ -64,7 +64,7 @@ import planner as P  # noqa: E402
 
 PENETRATION_MM = 1.0   # brick-brick d below -PENETRATION_MM*scale => penetration
 DISPLACED_MM = 1.0     # a resting brick moved more than this*scale => displaced
-HELD_PHASES = ("descend", "grasp", "lift", "stage", "transport", "pre-insert", "insert", "release")
+HELD_PHASES = ("descend", "grasp", "lift", "stage", "transport", "look", "pre-insert", "insert", "release")
 BRACE_PHASES = ("brace-guard", "close", "hold", "open")   # A's contact moves in the grasp_lp brace
 LEGACY_BRACE_PHASES = ("brace", "hold")                   # A's two contact=True moves with --legacy-brace
 GAP_FRAMES = 30        # merge same-key fragments up to this many frames apart (0.5 s at 60 fps)

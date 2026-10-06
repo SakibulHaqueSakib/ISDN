@@ -986,7 +986,7 @@ class Example:
         res = self.v5_look(s, rec, ee, q) if self.sees else None
         v["looks"].append(rec)
         if res is not None and res.accepted:
-            self.cand[n] = (res, ee, self.frame)                  # the last accepted look: what fk_vision aims with
+            self.cand[n] = (res, ee, self.frame, self.B.cmd[1] + self.yaw_shift)   # the last accepted look (+ the hand's commanded yaw then): what fk_vision aims with
         if final:
             self.look_done(s, v, ee, q)
 
@@ -1048,21 +1048,25 @@ class Example:
             j = self.inject_for(n)
             c, sn = math.cos(yaw_t), math.sin(yaw_t)
             T = np.array([*(tgt[:2] + [c * j[0] - sn * j[1], sn * j[0] + c * j[1]]), yaw_t + math.radians(j[2])])
-            B_pos, B_yaw, ee_E, src, t_E = q[:3], yaw_of(q[3:]), ee, "oracle", self.frame
+            B_pos, B_yaw, ee_E, src, t_E, psi_cmd = q[:3], yaw_of(q[3:]), ee, "oracle", self.frame, self.B.cmd[1] + self.yaw_shift
             v["inject"] = dict(dx_mm=j[0] * 1e3, dy_mm=j[1] * 1e3, dyaw_deg=j[2])
         else:                                                     # fk_vision: the last accepted look
             if n not in self.cand:
                 v["failure"] = "perception_v5"
                 self.fail("perception_v5")
                 return
-            res, ee_E, t_E = self.cand[n]
+            res, ee_E, t_E, psi_cmd = self.cand[n]
             T, B_pos, B_yaw, src = res.T_hat, res.B_hat[:3], res.B_hat[3], "v5"
         d_h = V.hand_offset(ee_E[:3], Rot.from_quat(ee_E[3:7]), B_pos)
-        dpsi = wrap(T[2] - B_yaw, math.pi)
+        # B_yaw was measured with the hand at its FK yaw, not its commanded one; the remaining waypoints are commanded, so the hand's
+        # tracking offset at t_E is added back (the brick's final yaw is then T_yaw once the hand reaches its commanded yaw)
+        d_psi_hand = wrap(yaw_of(ee_E[3:7]) - psi_cmd, math.pi)
+        dpsi = wrap(T[2] - B_yaw + d_psi_hand, math.pi)
         self.fk = dict(d_h=d_h, T=np.asarray(T[:2]), i_xy=np.zeros(2))
         add_dpsi([m for m in self.B.moves if m["phase"] != "look"], dpsi)    # not the wrist's turn-back: it must stay exactly pi from the turned look,
                                                                              # or Arm.update's 2*pi wrap sends the wrist round the other way (past its limit)
-        v.update(aim=dict(src=src, T_hat=T, B_hat=[*B_pos, B_yaw], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E))
+        v.update(aim=dict(src=src, T_hat=T, B_hat=[*B_pos, B_yaw], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E,
+                      hand_yaw_track_deg=math.degrees(d_psi_hand)))
 
     def inject_for(self, n):
         """(dx m, dy m, dyaw deg) of --aim-inject for step n, in the target brick's frame: one vector, or {"<step>": vector}."""

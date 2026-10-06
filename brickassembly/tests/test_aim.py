@@ -126,6 +126,7 @@ def test_dpsi_on_every_remaining_waypoint():
         tgt, yaw_t, _ = e.target[bid]
         q = np.array([*tgt, *D.qz(yaw_t + math.radians(2.5))])            # the brick sits 2.5 deg off the target yaw
         ee = np.r_[tgt + [0, 0, D.GRASP_DZ + 0.047], (Rot.from_euler("z", 1.0) * D.RX_PI).as_quat()]
+        e.B.cmd = (e.B.cmd[0], 1.0 - e.yaw_shift, *e.B.cmd[2:])         # the hand is at its commanded yaw (1.0 rad)
         e.look_done(plan["sequence"][n], dict(looks=[]), ee, q)
         # the pre-insert, insert, release and retract waypoints get delta-psi; the wrist's turn-back (phase look) keeps its yaw
         assert e.fk is not None and len(e.B.moves) == len(before) and all(
@@ -134,6 +135,33 @@ def test_dpsi_on_every_remaining_waypoint():
         assert [m["phase"] for m in e.B.moves][-4:] == ["pre-insert", "insert", "release", "retract"]
         assert np.allclose(e.fk["T"], tgt[:2])
     print("delta-psi on all remaining waypoints: ok")
+
+
+def ee_at_cmd(e, tgt):
+    """The hand pose (xyzw) at its commanded yaw."""
+    return np.r_[tgt + [0, 0, D.GRASP_DZ + 0.047], (Rot.from_euler("z", e.B.cmd[1] + e.yaw_shift) * D.RX_PI).as_quat()]
+
+
+def test_hand_tracking_offset_at_t_E_is_removed():
+    """The estimate pair is taken with the hand at its FK yaw (cmd + 0.37 deg here, as in the turned look); the brick's yaw is then
+    hand yaw + const. dpsi = T - B + (FK - cmd): applied to the commanded waypoints, the brick ends at T once the hand reaches cmd."""
+    for off_deg in (0.37, -0.37, 0.0):
+        e, plan = look_stub(aim="fk_oracle")
+        n = 0
+        queue(e, plan, n)
+        bid = plan["sequence"][n]["brick_id"]
+        tgt, yaw_t, _ = e.target[bid]
+        psi_cmd, rel = 1.0, math.radians(2.5)                           # the hand's commanded yaw at t_E; the brick sits 2.5 deg off it
+        e.B.cmd = (e.B.cmd[0], psi_cmd - e.yaw_shift, *e.B.cmd[2:])
+        psi_fk = psi_cmd + math.radians(off_deg)
+        ee = np.r_[tgt + [0, 0, D.GRASP_DZ + 0.047], (Rot.from_euler("z", psi_fk) * D.RX_PI).as_quat()]
+        q = np.array([*tgt, *D.qz(psi_fk + rel)])                       # the brick is rigid in the hand
+        v = dict(looks=[])
+        e.look_done(plan["sequence"][n], v, ee, q)
+        dpsi = math.radians(v["aim"]["dpsi_deg"])
+        assert abs(v["aim"]["hand_yaw_track_deg"] - off_deg) < 1e-9
+        # the hand later at its commanded yaw + dpsi: the brick is at psi_cmd + dpsi + rel, which must be T's yaw (mod pi)
+        assert abs(D.wrap(psi_cmd + dpsi + rel - yaw_t, math.pi)) < 1e-9, (off_deg, dpsi)
 
 
 def test_turn_back_goes_the_way_it_came():
@@ -148,7 +176,7 @@ def test_turn_back_goes_the_way_it_came():
         tgt, yaw_t, _ = e.target[bid]
         q = np.array([*tgt, *D.qz(yaw_t - sign * math.radians(2.5))])      # brick yaw error -sign * 2.5 deg: delta-psi = +sign * 2.5 deg
         ee = np.r_[tgt + [0, 0, D.GRASP_DZ + 0.047], (Rot.from_euler("z", 1.0) * D.RX_PI).as_quat()]
-        e.on_look = lambda s, k, final: e.look_done(s, dict(looks=[]), ee, q) if final else None
+        e.on_look = lambda s, k, final: e.look_done(s, dict(looks=[]), ee_at_cmd(e, tgt), q) if final else None   # the hand tracks perfectly
         e.on_pre_insert = lambda s: None
         e.B.moves[:] = moves[[m["phase"] for m in moves].index("transport"):]   # from the transport on
         psi = moves[0]["yaw"]
