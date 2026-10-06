@@ -4,11 +4,12 @@
     bash scripts/run.sh experiments/v4_vision.py e1b --workers 4       # 54 single-footprint step-episodes
     bash scripts/run.sh experiments/v4_vision.py pool                  # E3 + E5 -> pool.json (frozen, hashed); E2 and E2b need it
     bash scripts/run.sh experiments/v4_vision.py e2 --workers 4        # 330 matched-injection step-episodes (fk_oracle)
-    bash scripts/run.sh experiments/v4_vision.py e2b --workers 4       # 6 full builds with the signed scale-2 vectors
+    bash scripts/run.sh experiments/v4_vision.py e2b --workers 4       # 6 full builds (--continue) with the signed scale-2 vectors
+    bash scripts/run.sh experiments/v4_vision.py sweep --workers 4     # ACC's first diagnostic: signed axis sweep, 31 contexts x 12 = 372
     bash scripts/run.sh experiments/v4_vision.py e4 --workers 4        # 40 contexts x {gt no look, fk_vision} timed
     bash scripts/run.sh experiments/v4_vision.py tables                # T-V1a/b/c, F-V1, G-V1 -> tables.json
 
-Everything lives under --root (default results/v4/vision/v1; smoke runs use another root, e.g. results/v4/vision/v1_smoke):
+Everything lives under --root (default results/v4/vision/v1; a re-run round or a smoke run uses another root, e.g. v1_acc, v1_smoke):
 rows/<id>.json (one per job, as in experiments/v4_brace.py), recordings/<id>.npz (E1's --record-all), plans/ (the cell's plan cache),
 specs/, logs/<id>.log, <exp>/{episodes.jsonl, merge.json, manifest.json}, e4/batches.json, pool.json, tables.json. A manifest carries
 the vision PARAMS_HASH and the git HEAD. Every subcommand takes --workers, --limit (run only the first N jobs without a row),
@@ -24,7 +25,7 @@ import shutil
 import subprocess
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -49,7 +50,10 @@ E2_EXTRA = (("S5p13", 12), ("S3", 7))
 K_DRAWS = 4
 BOOT = 2000
 EXPECTED = {"e1": 36, "e1b": 54, "e2": 330, "e2b": 6, "e4": 80}
-TIMEOUT = {"e1": 2400, "e2b": 2400, "e1b": 600, "e2": 600, "e4": 600}
+TIMEOUT = {"e1": 2400, "e2b": 2400, "e1b": 600, "e2": 600, "e4": 600, "sweep": 600}
+SWEEP_LEVELS = (0.3, 0.6, 1.0)                   # mm; the ACC axis sweep: {long, short} x {+, -} x levels
+NATIVES = HERE / "results" / "v4" / "vision" / "v1_r1" / "tables.json"       # the sweep's common contexts: E2's included contexts of this round
+EDGE_MIN = 20                                    # plan 2.4: the edge fallback is admitted after >= 20 single-footprint cases that pass E2 at 2x
 
 
 # --- structures --------------------------------------------------------------------------------------------------
@@ -102,8 +106,10 @@ def check_s5_prefix():
 
 # --- jobs ----------------------------------------------------------------------------------------------------------
 
-def vflags(aim, seed, shadow=False, inject=None, record=False, rr=0):
+def vflags(aim, seed, shadow=False, inject=None, record=False, rr=0, cont=False):
     v = {"look": True, "aim": aim, "seed": seed}
+    if cont:
+        v["continue_"] = True                                    # the cell's --continue (spec key = its dest): the queue goes on after a failure
     if shadow:
         v["shadow_vision"] = True
     if inject:
@@ -205,13 +211,38 @@ def build_e2(pool):
 
 
 def build_e2b(pool):
-    """fk_oracle full builds of the three gated shapes with E2's signed scale-2 vector at every step, k in {0, 1}."""
+    """fk_oracle full builds of the three gated shapes with E2's signed scale-2 vector at every step, k in {0, 1}. Run with the cell's
+    --continue (user decision 2026-10-07, ledger v4_v1_e2b_continue): every step is scored; the ones after a gate miss are after_failure."""
     jobs = []
     for name in GATED:
         for k in (0, 1):
             vec = {str(n): inj(scale2(draw_vectors(pool, name, n)[k], pool["drift_max_mm"])) for n in range(len(bricks_of(name)))}
-            jobs.append(VB.job("e2b", sid_of(name), None, "fk_oracle", None, rep=k, meta={"shape": name, "k": k, "pool_hash": pool["hash"]},
-                               v=vflags("fk_oracle", 0, inject=vec)))
+            jobs.append(VB.job("e2b", sid_of(name), None, "fk_oracle", None, rep=k, meta={"shape": name, "k": k, "pool_hash": pool["hash"], "continue": True},
+                               v=vflags("fk_oracle", 0, inject=vec, cont=True)))
+    return jobs
+
+
+def sweep_contexts(natives):
+    """E2's contexts minus the native ones ([[name, step], ...]): the common context set (31 of 33 in round v1_r1)."""
+    nat = {tuple(c) for c in natives}
+    return [c for c in e2_contexts() if c not in nat]
+
+
+def build_sweep(natives):
+    """ACC's first diagnostic: fk_oracle step-episodes (nominal start, unbraced), a persistent vector along the target brick's long axis
+    (target-frame x: the mesh's long side; for a square brick the axis is arbitrary) or short axis (y), both signs, |b| in SWEEP_LEVELS
+    mm, dpsi 0, 1 trial each: 12 per context."""
+    check_s5_prefix()
+    jobs = []
+    for name, step in sweep_contexts(natives):
+        typ, sid = look_type(name, step), sid_of(name)
+        for axis, i in (("long", 0), ("short", 1)):
+            for sign in (1, -1):
+                for b in SWEEP_LEVELS:
+                    vec = [0.0, 0.0, 0.0]
+                    vec[i] = sign * b
+                    jobs.append(VB.job("sweep", sid, step, "fk_oracle", None, rep=0, v=vflags("fk_oracle", 0, inject=inj(vec)),
+                                       meta={"ctx": [name, step], "look_type": typ, "axis": axis, "sign": sign, "level": b, "inj": inj(vec)}))
     return jobs
 
 
@@ -299,6 +330,18 @@ def cmd_e2b(args):
     run_exp("e2b", build_e2b(pool), args, pool_hash=pool["hash"])
 
 
+def read_natives(path):
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit("--natives-from %s does not exist" % p)
+    return json.loads(p.read_text())["F_V1_e2"]["native"]
+
+
+def cmd_sweep(args):
+    natives = read_natives(args.natives_from)
+    run_exp("sweep", build_sweep(natives), args, natives=natives, natives_from=str(args.natives_from))
+
+
 def cmd_e4(args):
     """Two timed batches (gt, then fk_vision) at --workers; each is run in full from nothing (never from stored rows)."""
     root, by_arm = Path(args.root), build_e4()
@@ -372,7 +415,8 @@ def p95_ci(x, tag):
 def collect_v5(sources):
     """sources: [(entries, label)] -> (steps, looks). A step = one with a complete look schedule (n_looks): type from the number of
     looks (a single footprint gets a second look), yielded iff any look was accepted. A look = every scheduled look of such a step;
-    accepted ones carry the relative error vector (rel dx, dy in the target frame mm, rel dyaw deg)."""
+    accepted ones carry the relative error vector (rel dx, dy in the target frame mm, rel dyaw deg) and the estimator ("edge" = the
+    edge fallback; anything else, the stud fit). A step has `yielded` (any accepted look) and `yielded_stud` (without the edge looks)."""
     steps, looks = [], []
     for ents, label in sources:
         for e, rec in ents or []:
@@ -380,16 +424,22 @@ def collect_v5(sources):
                 if "n_looks" not in v or not v.get("looks"):
                     continue
                 typ = "single" if v["n_looks"] == 2 else "course"
-                steps.append(dict(src=label, arm=e["arm"], shape=e["meta"]["shape"], step=int(n), type=typ, yielded=any(l.get("accepted") for l in v["looks"])))
+                steps.append(dict(src=label, arm=e["arm"], shape=e["meta"]["shape"], step=int(n), type=typ, yielded=any(l.get("accepted") for l in v["looks"]),
+                                  yielded_stud=any(l.get("accepted") and l.get("estimator") != "edge" for l in v["looks"])))
                 for l in v["looks"]:
                     er = l.get("errors")
                     ok = bool(l.get("accepted")) and er is not None
-                    looks.append(dict(steps[-1], accepted=ok, vec=[er["rel_xy_mm"][0], er["rel_xy_mm"][1], er["rel_yaw_deg"]] if ok else None,
+                    looks.append(dict(steps[-1], accepted=ok, estimator=l.get("estimator"), vec=[er["rel_xy_mm"][0], er["rel_xy_mm"][1], er["rel_yaw_deg"]] if ok else None,
                                       radial=er["rel_radial_mm"] if ok else None))
     return steps, looks
 
 
-def v5_summary(steps, looks, tag="v5"):
+def v5_summary(steps, looks, tag="v5", edge=True):
+    """edge False: the edge-fallback looks do not count (not qualified): neither their errors nor their yield."""
+    if not edge:
+        looks = [l for l in looks if l["estimator"] != "edge"]
+        steps = [dict(s, yielded=s["yielded_stud"]) for s in steps]
+
     def block(st, lk, t):
         acc = [l for l in lk if l["accepted"]]
         return {"steps": len(st), "yielded": sum(s["yielded"] for s in st), "yield": (sum(s["yielded"] for s in st) / len(st)) if st else None,
@@ -610,21 +660,88 @@ def margin_status(k, n, thr=0.95):
 
 
 def e2b_agreement(e2b_steps, e2_s2):
-    """e2b_steps: [(shape, k, step, observed, screen)]; e2_s2: {(shape, step, k): screen at scale 2}. Agreement over the observed steps."""
+    """e2b_steps: [(shape, k, step, observed, screen, after_failure, reason)]; e2_s2: {(shape, step, k): screen at scale 2}. Agreement
+    over the scored (observed) steps: all of them (the validity check d and criterion 2), and the pre-failure ones only (before the
+    first gate miss of the build: a build on a possibly defective structure is after_failure)."""
+    def block(obs):
+        agree = sum(1 for s in obs if e2_s2.get((s[0], s[2], s[1])) == s[4])
+        return {"observed": len(obs), "pass": sum(s[4] for s in obs), "agree": agree, "frac": agree / len(obs) if obs else None}
     obs = [s for s in e2b_steps if s[3]]
-    miss = [s for s in obs if (s[0], s[2], s[1]) not in e2_s2]
-    agree = sum(1 for s in obs if (s[0], s[2], s[1]) in e2_s2 and e2_s2[(s[0], s[2], s[1])] == s[4])
-    return {"observed": len(obs), "unobserved": sum(1 for s in e2b_steps if not s[3]), "pass": sum(s[4] for s in obs), "agree": agree,
-            "frac": agree / len(obs) if obs else None, "no_e2_match": len(miss)}
+    out = block(obs)
+    out.update(unobserved=sum(1 for s in e2b_steps if not s[3]), no_e2_match=sum(1 for s in obs if (s[0], s[2], s[1]) not in e2_s2),
+               after_failure_steps=sum(1 for s in obs if s[5]), pre_failure=block([s for s in obs if not s[5]]),
+               after_failure=block([s for s in obs if s[5]]), unobserved_reasons=dict(Counter(s[6] for s in e2b_steps if not s[3])))
+    return out
 
 
 def e2b_steps_of(ents):
+    """Every step of every E2b build (a --continue build): (shape, k, step, observed, screen, after_failure, reason). Observed = the step
+    has a snap, scored on the screen. after_failure = after the build's first gate miss (n > that step), or at / after a failure that
+    is not a gate miss (a joint break, ...: the step's own structure may already be defective). A step with no snap stays unobserved,
+    with the build's failure as the reason."""
     out = []
     for e, rec in ents or []:
         row = row_of(rec)
-        for n in range(row["total"] if row else 0):
-            snap = step_v(rec, n).get("snap")
-            out.append((e["meta"]["shape"], e["meta"]["k"], n, snap is not None, bool(snap and snap["screen_pass"])))
+        snaps = {n: step_v(rec, n).get("snap") for n in range(row["total"] if row else 0)}
+        miss = min((n for n, sn in snaps.items() if sn and not sn["gate_ok"]), default=None)
+        fail, at = row and row.get("failure"), row and row.get("failed_at_step")
+        for n, snap in snaps.items():
+            after = (miss is not None and n > miss) or (fail not in (None, "gate_miss") and at is not None and n >= at)
+            reason = None if snap else "no_snap: %s at step %s" % (fail, at) if fail else "no_snap (no failure recorded)"
+            out.append((e["meta"]["shape"], e["meta"]["k"], n, snap is not None, bool(snap and snap["screen_pass"]), bool(after), reason))
+    return out
+
+
+# --- the ACC axis sweep ------------------------------------------------------------------------------------------------------------
+
+def sweep_analysis(trials):
+    """trials: [dict(ctx, type, axis, sign, level, screen)] -> per signed axis ("long+", "long-", "short+", "short-"): the screen pass
+    rate per level (all / course / single contexts), per context the largest passing level (None = none passes), the contexts whose
+    passes are not monotone in the level (a level passes above one that fails) and the count of largest levels by look type."""
+    ctx = defaultdict(dict)
+    for t in trials:
+        ctx[(t["axis"] + ("+" if t["sign"] > 0 else "-"), tuple(t["ctx"]))][t["level"]] = (t["screen"], t["type"])
+    out, rate = {"episodes": len(trials), "contexts": len({c for _, c in ctx}), "levels_mm": list(SWEEP_LEVELS), "axes": {}}, lambda ts: {"pass": sum(ts), "n": len(ts)}
+    for sa in ("long+", "long-", "short+", "short-"):
+        cs = {c: d for (a, c), d in ctx.items() if a == sa}
+        typ = lambda d: next(iter(d.values()))[1]
+        by_level = {str(b): {t: rate([d[b][0] for d in cs.values() if b in d and (t == "all" or typ(d) == t)]) for t in ("all", "course", "single")}
+                    for b in SWEEP_LEVELS}
+        largest = {"%s:%d" % c: max((b for b in SWEEP_LEVELS if d.get(b, (False,))[0]), default=None) for c, d in cs.items()}
+        counts = {t: dict(Counter(str(largest["%s:%d" % c]) for c, d in cs.items() if t == "all" or typ(d) == t)) for t in ("all", "course", "single")}
+        mono = lambda d: not any(lo in d and hi in d and d[hi][0] and not d[lo][0] for lo, hi in zip(SWEEP_LEVELS, SWEEP_LEVELS[1:]))   # no pass above a fail
+        out["axes"][sa] = {"pass_by_level": by_level, "largest_passing_counts": counts, "largest_passing_by_context": largest,
+                           "non_monotone": sorted("%s:%d" % c for c, d in cs.items() if not mono(d))}
+    return out
+
+
+def sweep_trial(e, rec):
+    m, v = e["meta"], step_v(rec, e["step"])
+    snap = v.get("snap")
+    return dict(ctx=tuple(m["ctx"]), type=m["look_type"], axis=m["axis"], sign=m["sign"], level=m["level"], screen=bool(snap and snap["screen_pass"]))
+
+
+# --- the edge fallback's qualification (plan 2.4) ------------------------------------------------------------------------------------
+
+def edge_qualification(looks, pool, trials, native):
+    """The edge fallback is admitted after >= EDGE_MIN accepted single-footprint cases whose errors join the pool and that pass E2 at 2x on the
+    single-footprint contexts. looks: collect_v5's (estimator "edge" = the fallback); trials: E2's (e2_trial); native: E2's native contexts
+    ([[name, step], ...]). The E2 pass is over the included single-footprint scale-2 trials whose injected vector is scale2 of an edge
+    vector. qualified: False (fewer than EDGE_MIN cases, or the pass rate < 95 % or no E2 trial used an edge vector), None (E2 unavailable)."""
+    edge = [l for l in looks if l["accepted"] and l["estimator"] == "edge" and l["type"] == "single"]
+    if not edge:
+        return {"unavailable": "no accepted edge-fallback single-footprint look in the rows", "qualified": None}
+    vecs = [[round(x, 4) for x in l["vec"]] for l in edge]
+    out = {"n_cases": len(edge), "n_steps": len({(l["src"], l["arm"], l["shape"], l["step"]) for l in edge}),
+           "rel_radial_mm_p95": p95_ci([l["radial"] for l in edge], "edgeradial"), "rel_yaw_deg_p95": p95_ci([abs(l["vec"][2]) for l in edge], "edgeyaw"),
+           "in_pool": None if pool is None else sum(v in pool["single"] for v in vecs), "e2_scale2_single": None}
+    if pool is not None and trials:
+        s2 = {tuple(scale2(v, pool["drift_max_mm"])) for v in vecs}
+        ts = [t for t in trials if t["kind"] == "inject" and t["scale"] == 2 and t["type"] == "single" and list(t["ctx"]) not in native
+              and tuple(round(x, 4) for x in t["inj"]) in s2]
+        out["e2_scale2_single"] = {"pass": sum(t["screen"] for t in ts), "n": len(ts)}
+    e2 = out["e2_scale2_single"]
+    out["qualified"] = False if len(edge) < EDGE_MIN else None if e2 is None else bool(e2["n"] and e2["pass"] >= 0.95 * e2["n"])
     return out
 
 
@@ -689,6 +806,7 @@ def compute_tables(root):
     e1b, s1b = load_exp(root, "e1b")
     e2, s2 = load_exp(root, "e2")
     e2b, s2b = load_exp(root, "e2b")
+    sw, ssw = load_exp(root, "sweep")
     reruns = json.loads(mp.read_text()).get("reruns", {}) if mp.exists() else {}
     full = {"e1": complete(s1, e1_expected(root)), "e1b": complete(s1b, EXPECTED["e1b"]), "e2": complete(s2, EXPECTED["e2"]),
             "e2b": complete(s2b, EXPECTED["e2b"])}
@@ -698,17 +816,14 @@ def compute_tables(root):
     except SystemExit:
         pass
     # params hash of the rows against the current vision parameters
-    stale = sorted({e.get("params_hash") for ents in (e1, e1b, e2, e2b) for e, _ in ents or [] if e.get("params_hash") not in (None, V.PARAMS_HASH)})
+    stale = sorted({e.get("params_hash") for ents in (e1, e1b, e2, e2b, sw) for e, _ in ents or [] if e.get("params_hash") not in (None, V.PARAMS_HASH)})
     T = {"params_hash": V.PARAMS_HASH, "git_head": git_head(), "complete": full, "stale_params_hashes": stale,
          "pool_hash": pool and pool["hash"], "pool_partial": pool and pool.get("partial")}
     # T-V1a
     T["T_V1a_builds"] = t_v1a(e1) if e1 else {"unavailable": "e1 has not run"}
-    # T-V1b
-    if e1 is not None or e1b is not None:
-        steps, looks = collect_v5([([x for x in e1 or [] if x[0]["meta"]["rr"] == latest_rr(e1, x[0]["meta"]["shape"])], "e1"), (e1b, "e1b")])
-        T["T_V1b_v5"] = v5_summary(steps, looks)
-    else:
-        T["T_V1b_v5"] = {"unavailable": "e1 and e1b have not run"}
+    # T-V1b (the summary is made below, once the edge fallback's qualification is known)
+    have_v5 = e1 is not None or e1b is not None
+    steps, looks = collect_v5([([x for x in e1 or [] if x[0]["meta"]["rr"] == latest_rr(e1, x[0]["meta"]["shape"])], "e1"), (e1b, "e1b")]) if have_v5 else ([], [])
     T["T_V1b_pool"] = None if pool is None else {k: pool[k] for k in ("hash", "partial", "n_steps", "n_looks", "n_accepted", "drift_max_mm", "drift_xy_max_mm",
                                                                        "drift_steps", "drift_median_mm", "drift_worst")} | {"course": len(pool["course"]), "single": len(pool["single"])}
     # F-V1
@@ -719,6 +834,13 @@ def compute_tables(root):
     if B2:
         B2["n_native_steps_included"] = sum(1 for s in e2b_steps_of(e2b) if s[3] and [s[0], s[2]] in (A2 or {}).get("native", []))
     T["F_V1_e2"] = A2 or {"unavailable": "e2 has not run"}
+    T["T_V1b_edge_fallback"] = edge_qualification(looks, pool, trials, A2["native"]) if have_v5 and A2 else \
+        edge_qualification(looks, pool, [], []) if have_v5 else {"unavailable": "e1 and e1b have not run", "qualified": None}
+    edge_ok = T["T_V1b_edge_fallback"]["qualified"] is True        # edge-accepted steps count in the yield (and the accuracy) only if qualified
+    T["T_V1b_v5"] = dict(v5_summary(steps, looks, edge=edge_ok), edge_counted=edge_ok) if have_v5 else {"unavailable": "e1 and e1b have not run"}
+    nsw = json.loads((root / "sweep" / "manifest.json").read_text())["jobs"] if (root / "sweep" / "manifest.json").exists() else None
+    T["F_V1_sweep"] = dict(sweep_analysis([sweep_trial(e, r) for e, r in sw if r and r["row"]]), complete=complete(ssw, nsw)) if sw and nsw else \
+        {"unavailable": "the sweep has not run"}
     T["F_V1_e2b"] = B2 or {"unavailable": "e2b has not run"}
     T["T_V1c_cost"] = table_e4(root)
     # G-V1
@@ -732,7 +854,7 @@ def compute_tables(root):
     validity["b_native_contexts_le_3"] = tri(A2["n_native"] <= 3, "%d of %d native" % (A2["n_native"], A2["contexts"])) if ok2 else tri(None, "e2 unavailable")
     validity["c_manipulation_check"] = tri(A2["manipulation"]["frac"] >= 0.95, "%s" % A2["manipulation"]) if ok2 and A2["manipulation"]["frac"] is not None else tri(None, "e2 unavailable")
     ok2b = full["e2b"] and B2 is not None and B2["frac"] is not None and B2["no_e2_match"] == 0 and ok2
-    validity["d_e2_e2b_agreement_ge_90"] = tri(B2["frac"] >= 0.9, "%s of %s observed steps agree" % (B2["agree"], B2["observed"])) if ok2b else tri(None, "e2b unavailable")
+    validity["d_e2_e2b_agreement_ge_90"] = tri(B2["frac"] >= 0.9, "%s of %s scored steps agree (pre-failure only: %s of %s)" % (B2["agree"], B2["observed"], B2["pre_failure"]["agree"], B2["pre_failure"]["observed"])) if ok2b else tri(None, "e2b unavailable")
     c1, why1 = e1_criterion(e1, "fk_oracle") if e1 and full["e1"] else (None, "e1 unavailable")
     c4, why4 = e1_criterion(e1, "fk_vision") if e1 and full["e1"] else (None, "e1 unavailable")
     crit[1], crit[4] = tri(c1, why1), tri(c4, why4)
@@ -762,8 +884,13 @@ def compute_tables(root):
 
 def print_tables(T, root):
     for title, key in (("T-V1a: builds (E1)", "T_V1a_builds"), ("T-V1b: V5 accuracy and yield (E1 + E1b)", "T_V1b_v5"), ("T-V1b: the frozen pool, drift", "T_V1b_pool"),
-                       ("F-V1: matched injection (E2)", "F_V1_e2"), ("F-V1: transfer (E2b)", "F_V1_e2b"), ("T-V1c: cost (E4)", "T_V1c_cost")):
+                       ("T-V1b: edge fallback qualification", "T_V1b_edge_fallback"),
+                       ("F-V1: matched injection (E2)", "F_V1_e2"), ("F-V1: transfer (E2b, --continue)", "F_V1_e2b"),
+                       ("F-V1: ACC axis sweep", "F_V1_sweep"), ("T-V1c: cost (E4)", "T_V1c_cost")):
         v = T[key]
+        if key == "F_V1_sweep" and "unavailable" not in v:           # per-context detail stays in tables.json
+            v = dict({k: v[k] for k in ("complete", "episodes", "contexts")},
+                     **{sa + " " + k: d[k] for sa, d in v["axes"].items() for k in ("pass_by_level", "largest_passing_counts", "non_monotone")})
         print(VB.md(title, v if v is not None else {"unavailable": "no pool.json"}) + "\n")
     G = T["G_V1"]
     print("### G-V1 (complete: %s)\n" % T["complete"])
@@ -781,7 +908,7 @@ def cmd_tables(args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["e1", "e1b", "pool", "e2", "e2b", "e4", "tables"])
+    ap.add_argument("cmd", choices=["e1", "e1b", "pool", "e2", "e2b", "sweep", "e4", "tables"])
     ap.add_argument("--root", type=Path, default=ROOT)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--timeout", type=float, help="wall seconds per job (default: %s)" % TIMEOUT)
@@ -789,11 +916,12 @@ def main():
     ap.add_argument("--limit", type=int, help="run only the first N jobs that still lack a row (smoke)")
     ap.add_argument("--retry-errors", action="store_true", help="also re-run jobs whose stored record is a job error")
     ap.add_argument("--partial", action="store_true", help="pool / e2 / e2b: accept incomplete E1 / E1b rows (a smoke pool)")
+    ap.add_argument("--natives-from", type=Path, default=NATIVES, help="sweep: the tables.json whose F_V1_e2.native contexts are left out (default: %(default)s)")
     ap.add_argument("--shapes", nargs="+", help="e1: run only these shapes (the merge still covers all)")
     ap.add_argument("--seeds", nargs="+", type=int, help="e1: run only these seeds")
     ap.add_argument("--rerun", nargs="+", metavar="SHAPE", help="e1: the plan's re-run rule: that gated shape's repeats once more in all arms")
     args = ap.parse_args()
-    {"e1": cmd_e1, "e1b": cmd_e1b, "pool": cmd_pool, "e2": cmd_e2, "e2b": cmd_e2b, "e4": cmd_e4, "tables": cmd_tables}[args.cmd](args)
+    {"e1": cmd_e1, "e1b": cmd_e1b, "pool": cmd_pool, "e2": cmd_e2, "e2b": cmd_e2b, "sweep": cmd_sweep, "e4": cmd_e4, "tables": cmd_tables}[args.cmd](args)
 
 
 if __name__ == "__main__":
