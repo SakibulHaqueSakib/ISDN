@@ -1054,6 +1054,8 @@ class Example:
         """t_L: the final scheduled look. gt re-measures its GT hand offset; fk_oracle / fk_vision take their estimate pair, store d_h (the full
         hand-frame vector), and add delta-psi to every remaining waypoint. fk_vision (and the shadow arms, logged only) average the accepted looks
         (V.fuse_looks: d_h, in-hand yaw and T averaged, delta-psi from the averages; one accepted look is used alone, none is perception_v5).
+        The edge fallback is a fallback at step level (plan §2.4): when at least one look is stud-accepted the edge-estimated looks are dropped from
+        the average (v["used"]["dropped"] says which and why); edge looks are used only when no look is stud-accepted.
         v["used"] is the estimate steered with (or, in a shadow arm, that would be) and its errors against the ground truth, scorer side."""
         n, bid = s["step"], s["brick_id"]
         tgt, yaw_t, _ = self.target[bid]
@@ -1062,12 +1064,24 @@ class Example:
         fz = None
         if self.sees:
             ks = self.cand.get(n, [])
-            v["used"] = dict(n_used=len(ks), estimators=[r.estimator for r, *_ in ks])
+            stud = [c for c in ks if c[0].estimator != "edge"]
+            dropped = []
+            if stud and len(stud) < len(ks):                          # a stud look exists: the edge looks are only the fallback
+                dropped = [dict(k=l["k"], estimator="edge", why="edge is a fallback: %d stud-accepted look(s) of the step" % len(stud))
+                           for l in v["looks"] if l.get("accepted") and l.get("estimator") == "edge"]
+                ks = stud
+            v["used"] = dict(n_used=len(ks), estimators=[r.estimator for r, *_ in ks], dropped=dropped)
             if ks:
-                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc in ks],
-                                  ref=(ee[:3], Rot.from_quat(ee[3:7])))      # B at the hand's pose now (t_L), where q is the ground truth
-                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]),
-                                 e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q))
+                # Scored where it matters: at the FINAL hand yaw. The hand turns back 180 deg after t_L, so B is taken at the turned-back pose R_ref =
+                # Rz(pi) R_L, and the ground truth at the same pose (the grasp is rigid: its hand-frame offset and yaw at t_L, carried to R_ref). A hand-frame
+                # error of the estimate (the camera's, flipped by the turn) then shows up in the error, as it will in the insertion; scored at t_L it would hide.
+                R_L = Rot.from_quat(ee[3:7])
+                R_ref = Rot.from_euler("z", math.pi) * R_L
+                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc in ks], ref=(ee[:3], R_ref))
+                d_gt, phi_gt = V.hand_offset(ee[:3], R_L, q[:3]), yaw_of(q[3:]) - yaw_of(ee[3:7])
+                q_ref = np.r_[V.brick_from_hand(ee[:3], R_ref, d_gt), qz(yaw_of(R_ref.as_quat()) + phi_gt)]
+                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]), scored_at="turned-back hand pose",
+                                 e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q_ref))
         if self.aim == "gt":
             self.hand_off = None                                  # aim_brick measures it again, at the final look's pose
             return
@@ -1083,7 +1097,7 @@ class Example:
                 v["failure"] = "perception_v5"
                 self.fail("perception_v5")
                 return
-            fo, src, (_, ee_L, t_E, psi_cmd), used = fz, "v5", self.cand[n][-1], fz["n"]
+            fo, src, (_, ee_L, t_E, psi_cmd), used = fz, "v5", ks[-1], fz["n"]
         # The yaw: the brick's yaw in the hand (phi = B_yaw - the hand's FK yaw) is what is measured; the remaining waypoints are commanded, so the
         # dpsi that puts the brick at T_yaw once the hand reaches its commanded yaw is T_yaw - phi - psi_cmd (fuse_looks; a look's hand-tracking offset
         # at t_E is inside phi). The hand's tracking offset at the last accepted look is logged.

@@ -303,7 +303,7 @@ def fake_res(look, est="studs"):
     return SimpleNamespace(T_hat=look["T"], B_hat=look["B"], estimator=est)
 
 
-def fused_step(accepted, aim="fk_vision", n=0, est=("studs", "studs")):
+def fused_step(accepted, aim="fk_vision", n=0, est=("studs", "studs"), e_cm=None):
     """look_done on the stub with `accepted` of the two rigid looks accepted. -> (example, v, truth q)."""
     e, plan = look_stub(aim=aim, shadow=aim != "fk_vision")
     e.welds = {}
@@ -312,12 +312,12 @@ def fused_step(accepted, aim="fk_vision", n=0, est=("studs", "studs")):
     tgt, yaw_t, _ = e.target[bid]
     rng = np.random.default_rng(5)
     psi0 = 1.0 - e.yaw_shift
-    looks = rigid_looks(rng, psi_cmd=(1.0, 1.0 + math.pi - 1e-6), T=(*tgt[:2], yaw_t), phi0=0.3)
+    looks = rigid_looks(rng, psi_cmd=(1.0, 1.0 + math.pi - 1e-6), T=(*tgt[:2], yaw_t), phi0=0.3, e_cm=e_cm)
     e.B.cmd = (e.B.cmd[0], psi0, *e.B.cmd[2:])
     e.cand = {n: [(fake_res(looks[k], est[k]), np.r_[looks[k]["ee"], looks[k]["R"].as_quat()], 100 + 10 * k, looks[k]["psi_cmd"]) for k in accepted]}
     ee, R = looks[1]["ee"], looks[1]["R"]                                       # the final look's hand pose; the brick is rigid in it
     q = np.r_[ee + R.apply([0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM]), Rot.from_euler("z", V._yaw(R) + 0.3).as_quat()]
-    v = dict(looks=[{}, {}])
+    v = dict(looks=[dict(k=k, accepted=k in accepted, estimator=est[k]) for k in (0, 1)])
     e.look_done(plan["sequence"][n], v, np.r_[ee, R.as_quat()], q)
     return e, v, (tgt, yaw_t)
 
@@ -337,11 +337,44 @@ def test_look_done_averages_two_looks_and_uses_one_alone():
     assert e.failure == "perception_v5" and e.fk is None and v["failure"] == "perception_v5" and v["used"]["n_used"] == 0
 
 
+def test_edge_is_a_fallback_at_step_level():
+    """Plan 2.4: edge looks are used only when the stud rule fails for the whole step. A stud-accepted look present: the edge looks are dropped from
+    the average (recorded in v["used"]["dropped"] with the look and why); no stud look: the edge looks are used (alone or together)."""
+    e, v, _ = fused_step((0, 1), est=("studs", "edge"))                                # look 0 stud, look 1 edge: edge dropped
+    u = v["used"]
+    assert u["estimators"] == ["studs"] and u["n_used"] == 1 and v["aim"]["n_looks_used"] == 1 and u["errors"]["rel_radial_mm"] < 1e-6
+    assert len(u["dropped"]) == 1 and u["dropped"][0]["k"] == 1 and u["dropped"][0]["estimator"] == "edge" and "fallback" in u["dropped"][0]["why"]
+    assert abs(v["aim"]["hand_yaw_track_deg"] - (0.37)) < 0.05                          # the stud look 0 is the last used one (its tracking offset)
+    _, v, _ = fused_step((0, 1), est=("edge", "studs"))                                # the other way round
+    assert v["used"]["estimators"] == ["studs"] and [d["k"] for d in v["used"]["dropped"]] == [0]
+    _, v, _ = fused_step((0, 1), est=("edge", "edge"))                                 # both edge: both used, nothing dropped
+    assert v["used"]["estimators"] == ["edge", "edge"] and v["used"]["dropped"] == [] and v["aim"]["n_looks_used"] == 2
+    _, v, _ = fused_step((1,), est=("studs", "edge"))                                  # only the edge look accepted: it is used
+    assert v["used"]["estimators"] == ["edge"] and v["used"]["dropped"] == []
+    _, v, _ = fused_step((0, 1), est=("studs", "studs"))
+    assert v["used"]["estimators"] == ["studs", "studs"] and v["used"]["dropped"] == []
+    # the averaged estimate with the edge look dropped equals the stud look alone (not a mix)
+    _, v2, _ = fused_step((0,), est=("studs", "studs"))
+    assert v["used"]["d_h_mm"] is not None and np.allclose(v["used"]["d_h_mm"], v2["used"]["d_h_mm"])
+
+
+def test_used_errors_are_scored_at_the_turned_back_hand():
+    """The hand turns back after the final look, so the used estimate is scored at the turned-back pose (ground truth carried there rigidly). With the camera's
+    hand-fixed offset e (0.2, -0.3 mm) in T and B: look 0 alone (the hand's yaw at the insert) is right to the tilt; look 1 alone (the turned look) misses by
+    2|e| there, although at t_L it looked fine; both looks (common mode removed) are right."""
+    e = (0.2 * MM, -0.3 * MM)
+    err = lambda acc: fused_step(acc, e_cm=e)[1]["used"]["errors"]["rel_radial_mm"]
+    assert err((0,)) < 0.03 and abs(err((1,)) - 2 * math.hypot(*e) / MM) < 0.05 and err((0, 1)) < 0.03, (err((0,)), err((1,)), err((0, 1)))
+    assert fused_step((0, 1))[1]["used"]["scored_at"] == "turned-back hand pose"
+
+
 def test_used_estimators_are_recorded_and_shadow_arms_log_but_do_not_steer():
-    _, v, _ = fused_step((0, 1), est=("studs", "edge"))
-    assert v["used"]["estimators"] == ["studs", "edge"]
+    _, v, _ = fused_step((0, 1), est=("edge", "edge"))
+    assert v["used"]["estimators"] == ["edge", "edge"]
     e, v, _ = fused_step((0, 1), aim="gt")                                        # a shadow arm: v["used"] is logged, the aim is the GT servo
     assert v["used"]["n_used"] == 2 and "aim" not in v and e.fk is None
+    e, v, _ = fused_step((0, 1), aim="gt", est=("studs", "edge"))                 # the shadow arm applies the same fallback rule
+    assert v["used"]["estimators"] == ["studs"] and len(v["used"]["dropped"]) == 1
 
 
 def test_inject_for():

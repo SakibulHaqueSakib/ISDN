@@ -291,6 +291,63 @@ def test_unqualified_edge_fails_its_fk_vision_build():
     assert t["fk_vision/arch"]["built_all"] == 2 and t["fk_vision/arch"]["edge_steered_steps"] == [[1, [0]]] and t["fk_vision/cube"]["built_all"] == 3
 
 
+def drift_recording(n=3, name="cube", cap=5, onset=13, snap=18, moves={}):
+    """A synthetic --record-all recording of a build of `name` standing at step n: frames 1..24 (row i = frame i + 1), the supports of step n at rest
+    except `moves` = {frame: (dx, dy, dz) m} (each from that frame on), b_step = n and b_phase "pre-insert" until frame onset - 1, "insert" from `onset`.
+    -> (d, order, v, supports)"""
+    bricks = X.bricks_of(name)
+    order = X.P.sequence(bricks)
+    sup = X.P.supports(order[n], order[:n])
+    ids = [b[0] for b in order]
+    F = 24
+    q = np.tile(np.array([0, 0, 0.01, 0, 0, 0, 1.0]), (F, len(ids), 1))
+    for fr, dv in moves.items():
+        for sid_ in sup:
+            q[fr - 1:, ids.index(sid_), :3] += dv
+    d = dict(frame=np.arange(1, F + 1), brick_ids=np.array(ids), brick_q=q, b_step=np.full(F, n),
+             b_phase=np.where(np.arange(1, F + 1) < onset, 0, 1).astype(np.int8), phase_names=np.array(["pre-insert", "insert"]))
+    return d, order, {str(n): dict(aim=dict(t_E_frame=cap), t_L_frame=cap, snap=dict(snap_frame=snap))}, sup
+
+
+def drift(**kw):
+    d, order, v, _ = drift_recording(**kw)
+    return X.drift_of(d, "cube", order, v)
+
+
+def test_e5_drift_window_ends_at_the_insert_onset():
+    """E5 (user decision 2026-10-07): capture frame (t_E) to the last recorded row BEFORE the first insert row; insertion contact and jams do not enter.
+    The old capture-to-snap value is kept as d3_snap_mm / dxy_snap_mm."""
+    # pre-insert drift of (0.06, 0.08, 0) = 0.1 mm at frame 10; z drift 0.3 mm at frame 12 (still pre-insert); insert contact at frame 15 shoves 0.5 mm in x
+    d, order, v, sup = drift_recording(moves={10: (0.06e-3, 0.08e-3, 0.0), 12: (0, 0, 0.3e-3), 15: (0.5e-3, 0, 0)})
+    out = X.drift_of(d, "cube", order, v)
+    assert len(out) == len(sup) >= 1
+    for r in out:
+        assert r["cap"] == 5 and r["insert_onset"] == 13 and r["window_end"] == 12 and r["rows"] == 8      # frames 5..12
+        assert abs(r["dxy_mm"] - 0.1) < 1e-9 and abs(r["d3_mm"] - math.hypot(0.1, 0.3)) < 1e-9, r           # the z drift is 3-D only; the insert shove is not in it
+        assert r["snap"] == 18 and r["d3_snap_mm"] > r["d3_mm"]
+        assert abs(r["dxy_snap_mm"] - math.hypot(0.06 + 0.5, 0.08)) < 1e-9, r                              # capture-to-snap: includes the shove
+    # a displacement exactly at the first insert frame is outside; one at the last pre-insert frame is inside
+    out = drift(**dict(moves={13: (1e-3, 0, 0)}))
+    assert all(r["dxy_mm"] == 0.0 and abs(r["dxy_snap_mm"] - 1.0) < 1e-9 for r in out)
+    out = drift(moves={12: (1e-3, 0, 0)})
+    assert all(abs(r["dxy_mm"] - 1.0) < 1e-9 for r in out)
+    # motion before the capture frame does not count (the window starts at t_E)
+    out = drift(moves={3: (1e-3, 0, 0)})
+    assert all(r["dxy_mm"] == 0.0 for r in out)
+    # no insert onset (the step failed before it) or no snap: no record / no snap value
+    d, order, v, _ = drift_recording()
+    d["b_phase"][:] = 0
+    assert X.drift_of(d, "cube", order, v) == []
+    d, order, v, _ = drift_recording()
+    del v["3"]["snap"]
+    out = X.drift_of(d, "cube", order, v)
+    assert out and all(r["snap"] is None and r["d3_snap_mm"] is None for r in out)
+    # a capture frame that is not a recorded row: no record (as before)
+    d, order, v, _ = drift_recording()
+    v["3"]["aim"]["t_E_frame"] = 99
+    assert X.drift_of(d, "cube", order, v) == []
+
+
 def test_draws_and_scale():
     pool = {"course": [[0.1 * i, -0.05 * i, 0.01 * i] for i in range(40)], "single": [[0.2 * i, 0.1 * i, 0.02 * i] for i in range(10)], "drift_max_mm": 0.3}
     d = X.draw_vectors(pool, "cube", 0)

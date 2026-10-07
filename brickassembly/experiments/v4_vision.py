@@ -478,29 +478,48 @@ def top_corners(q, btype):
 
 
 def drift_of(d, name, order, v):
-    """E5, one build: per step with a snap, the maximum displacement (3-D, mm; and xy only) of the target's supports' top-face corners
-    from the capture frame to the snap frame, both read as ex.frame at the call: row i of the record is frame i + 1, the snap_frame
-    row is the pre-weld state, the first welded row is snap_frame + 1. Capture frame = the estimate frame t_E of the aim (t_L else)."""
+    """E5, one build: per step with an insert onset, the maximum displacement (3-D, mm; and xy only) of the target's supports' top-face corners
+    from the capture frame to the START OF THE INSERT (user decision 2026-10-07: insertion contact and jams must not enter the drift allowance).
+    Frames are ex.frame at the call; row i of the record is frame i + 1 (the recording holds frame, b_step, b_phase and phase_names).
+    - capture frame = the estimate frame t_E of the aim (t_L else); its row is the first row of the window.
+    - insert onset = the first row with b_step == n and b_phase == "insert"; the window ends at the row BEFORE it, the last recorded
+      state before B's insert phase begins (the pre-insert row).
+    The old window, capture to the snap frame (the snap_frame row is the pre-weld state snap() read), is kept as `d3_snap_mm` / `dxy_snap_mm`
+    ("drift_to_snap", for comparison; None without a snap). A step that never reaches its insert, or whose capture row is not recorded, has no record."""
     ids, out = [str(b) for b in d["brick_ids"]], []
+    names = [str(x) for x in d["phase_names"]]
+    ins = names.index("insert") if "insert" in names else None
     for n, vs in v.items():
         n, snap, aim = int(n), vs.get("snap"), vs.get("aim") or {}
         cap = aim.get("t_E_frame", vs.get("t_L_frame"))
-        if not snap or cap is None or n >= len(order):
+        if cap is None or ins is None or n >= len(order):
             continue
+        on = np.where((d["b_step"] == n) & (d["b_phase"] == ins))[0]
         sup = P.supports(order[n], order[:n])
-        rows = np.where((d["frame"] >= cap) & (d["frame"] <= snap["snap_frame"]))[0]
-        if not sup or not len(rows) or d["frame"][rows[0]] != cap:
+        if not sup or not len(on) or on[0] < 1:
             continue
+        end = int(on[0]) - 1                                            # the last row before the insert phase begins
+        rows = np.where((d["frame"] >= cap) & (np.arange(len(d["frame"])) <= end))[0]
+        if not len(rows) or d["frame"][rows[0]] != cap:
+            continue
+        rs = np.where((d["frame"] >= cap) & (d["frame"] <= snap["snap_frame"]))[0] if snap else []
         for sid_, btype in ((b[0], b[1]) for b in order[:n] if b[0] in sup):
-            c = top_corners(d["brick_q"][rows, ids.index(sid_)], btype)
+            q = d["brick_q"][:, ids.index(sid_)]
+            c = top_corners(q[rows], btype)
             dd = c - c[0]
-            out.append(dict(shape=name, step=n, support=sid_, rows=len(rows), cap=int(cap), snap=int(snap["snap_frame"]),
-                            d3_mm=float(np.linalg.norm(dd, axis=-1).max() * 1e3), dxy_mm=float(np.linalg.norm(dd[..., :2], axis=-1).max() * 1e3)))
+            rec = dict(shape=name, step=n, support=sid_, rows=len(rows), cap=int(cap), insert_onset=int(d["frame"][on[0]]), window_end=int(d["frame"][end]),
+                       d3_mm=float(np.linalg.norm(dd, axis=-1).max() * 1e3), dxy_mm=float(np.linalg.norm(dd[..., :2], axis=-1).max() * 1e3),
+                       snap=None if not snap else int(snap["snap_frame"]), d3_snap_mm=None, dxy_snap_mm=None)
+            if len(rs) and d["frame"][rs[0]] == cap:
+                cs = top_corners(q[rs], btype)
+                ds = cs - cs[0]
+                rec.update(d3_snap_mm=float(np.linalg.norm(ds, axis=-1).max() * 1e3), dxy_snap_mm=float(np.linalg.norm(ds[..., :2], axis=-1).max() * 1e3))
+            out.append(rec)
     return out
 
 
 def e5_drift(root, ents):
-    """E5 over E1's FK-arm builds of the gated shapes (their --record-all recordings)."""
+    """E5 over E1's FK-arm builds of the gated shapes (their --record-all recordings); window: capture to the start of the insert (drift_of)."""
     res = []
     for e, rec in ents or []:
         if e["arm"] == "gt" or e["meta"]["shape"] not in GATED or e["meta"].get("rr", 0) != latest_rr(ents, e["meta"]["shape"]):
@@ -509,7 +528,7 @@ def e5_drift(root, ents):
         if not row_of(rec) or not npz.exists():
             continue
         with np.load(npz) as z:
-            d = {k: z[k] for k in ("frame", "brick_ids", "brick_q")}
+            d = {k: z[k] for k in ("frame", "brick_ids", "brick_q", "b_step", "b_phase", "phase_names")}
         res += [dict(x, arm=e["arm"], seed=e["meta"]["seed"]) for x in drift_of(d, e["meta"]["shape"], P.sequence(bricks_of(e["meta"]["shape"])), by_step(rec))]
     return res
 
@@ -536,20 +555,23 @@ def cmd_pool(args):
     steps, looks = collect_v5([(cur, "e1"), (e1b, "e1b")])      # one vector per step: the used estimate's error (the controller steers with the average of the looks)
     drift = e5_drift(root, cur)
     if not drift:
-        raise SystemExit("E5: no recorded FK-arm gated build with a snap -- the pool cannot be frozen without drift_max")
+        raise SystemExit("E5: no recorded FK-arm gated build with an insert -- the pool cannot be frozen without drift_max")
     pool = {"params_hash": V.PARAMS_HASH, "git_head": git_head(), "partial": not full, "time": time.strftime("%Y-%m-%d %H:%M:%S"),
             "n_steps": len(steps), "n_looks": len(looks), "n_accepted": sum(x["accepted"] for x in steps), "n_accepted_looks": sum(l["accepted"] for l in looks),
             "course": sorted([round(x, 4) for x in x_["vec"]] for x_ in steps if x_["accepted"] and x_["type"] == "course"),
             "single": sorted([round(x, 4) for x in x_["vec"]] for x_ in steps if x_["accepted"] and x_["type"] == "single"),
             "drift_max_mm": round(max(x["d3_mm"] for x in drift), 4), "drift_xy_max_mm": round(max(x["dxy_mm"] for x in drift), 4),
             "drift_steps": len(drift), "drift_worst": sorted(drift, key=lambda x: -x["d3_mm"])[:5],
+            "drift_to_snap": dict(max_mm=max((x["d3_snap_mm"] for x in drift if x["d3_snap_mm"] is not None), default=None),
+                                  xy_max_mm=max((x["dxy_snap_mm"] for x in drift if x["dxy_snap_mm"] is not None), default=None),
+                                  worst=sorted((x for x in drift if x["d3_snap_mm"] is not None), key=lambda x: -x["d3_snap_mm"])[:5]),   # the old window, for comparison only
             "drift_median_mm": float(np.median([x["d3_mm"] for x in drift])), "v5": v5_summary(steps, looks)}
     pool["hash"] = pool_hash(pool)
     (root / "pool.json").write_text(json.dumps(pool, indent=1, default=float))
     write_manifest(root, "pool", pool_hash=pool["hash"], partial=pool["partial"])
-    print("pool %s%s: course %d, single %d vectors (one per step, of %d steps; %d looks); drift_max %.4f mm (3-D), %.4f mm (xy) over %d support records"
+    print("pool %s%s: course %d, single %d vectors (one per step, of %d steps; %d looks); drift_max %.4f mm (3-D), %.4f mm (xy) to the start of the insert (to the snap: %s, %s) over %d support records"
           % (pool["hash"], " (PARTIAL)" if pool["partial"] else "", len(pool["course"]), len(pool["single"]), pool["n_steps"], pool["n_looks"],
-             pool["drift_max_mm"], pool["drift_xy_max_mm"], len(drift)))
+             pool["drift_max_mm"], pool["drift_xy_max_mm"], pool["drift_to_snap"]["max_mm"], pool["drift_to_snap"]["xy_max_mm"], len(drift)))
 
 
 # --- E1: builds -----------------------------------------------------------------------------------------------------------
@@ -846,8 +868,8 @@ def compute_tables(root):
     # T-V1a and T-V1b are made below, once the edge fallback's qualification is known (an unqualified edge estimate fails its fk_vision build)
     have_v5 = e1 is not None or e1b is not None
     steps, looks = collect_v5([([x for x in e1 or [] if x[0]["meta"]["rr"] == latest_rr(e1, x[0]["meta"]["shape"])], "e1"), (e1b, "e1b")]) if have_v5 else ([], [])
-    T["T_V1b_pool"] = None if pool is None else {k: pool[k] for k in ("hash", "partial", "n_steps", "n_looks", "n_accepted", "drift_max_mm", "drift_xy_max_mm",
-                                                                       "drift_steps", "drift_median_mm", "drift_worst")} | {"course": len(pool["course"]), "single": len(pool["single"])}
+    T["T_V1b_pool"] = None if pool is None else {k: pool.get(k) for k in ("hash", "partial", "n_steps", "n_looks", "n_accepted", "drift_max_mm", "drift_xy_max_mm",
+                                                                       "drift_steps", "drift_median_mm", "drift_worst", "drift_to_snap")} | {"course": len(pool["course"]), "single": len(pool["single"])}
     # F-V1
     trials = [e2_trial(e, r) for e, r in e2 or [] if r and r["row"]]
     A2 = e2_analysis(trials) if trials else None
