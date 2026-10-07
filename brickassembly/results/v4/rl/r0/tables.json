@@ -1,0 +1,219 @@
+{
+ "manifest_hash": "55e0ac788a9c0185",
+ "exe": null,
+ "band": [
+  0.5,
+  1.3
+ ],
+ "c0_harness": {
+  "fixture_wrench_checks": "not run by this runner (static scenes, S0.2/S0.4)",
+  "repeat_agreement": {
+   "equal": 20,
+   "pairs": 20,
+   "gate": ">= 18/20",
+   "u2_peak_pairs": [
+    [
+     1.1908,
+     1.1909
+    ],
+    [
+     1.4404,
+     1.4154
+    ],
+    [
+     1.0639,
+     1.0639
+    ],
+    [
+     1.1726,
+     1.4948
+    ],
+    [
+     1.0852,
+     1.0852
+    ],
+    [
+     1.6356,
+     1.5998
+    ],
+    [
+     1.1068,
+     1.1068
+    ],
+    [
+     1.0057,
+     1.0067
+    ],
+    [
+     1.039,
+     1.039
+    ],
+    [
+     0.511,
+     0.5109
+    ],
+    [
+     0.5429,
+     0.5429
+    ],
+    [
+     1.1056,
+     1.1025
+    ],
+    [
+     1.075,
+     1.0758
+    ],
+    [
+     1.2052,
+     1.208
+    ],
+    [
+     0.8852,
+     0.8852
+    ],
+    [
+     1.056,
+     1.0532
+    ],
+    [
+     1.029,
+     1.0279
+    ],
+    [
+     0.7571,
+     0.756
+    ],
+    [
+     1.1323,
+     1.1324
+    ],
+    [
+     1.2118,
+     1.3608
+    ]
+   ]
+  },
+  "nominal_start": [
+   {
+    "shape": "cube",
+    "step": 7,
+    "runs": 3,
+    "success": [
+     true,
+     true,
+     true
+    ],
+    "u2_peak": [
+     0.0171,
+     0.0169,
+     0.0169
+    ],
+    "full_build_u_peak_range": [
+     0.0252,
+     0.0273
+    ]
+   },
+   {
+    "shape": "arch",
+    "step": 10,
+    "runs": 3,
+    "success": [
+     true,
+     true,
+     true
+    ],
+    "u2_peak": [
+     0.0386,
+     0.0385,
+     0.0385
+    ],
+    "full_build_u_peak_range": [
+     0.0372,
+     0.0379
+    ]
+   },
+   {
+    "shape": "hollow_box",
+    "step": 11,
+    "runs": 3,
+    "success": [
+     true,
+     true,
+     true
+    ],
+    "u2_peak": [
+     0.1515,
+     0.1523,
+     0.1487
+    ],
+    "full_build_u_peak_range": [
+     0.318,
+     0.4238
+    ]
+   }
+  ]
+ },
+ "c1_throughput": {
+  "batches": [
+   {
+    "workers": 1,
+    "n": 40,
+    "wall_s": 1052.6,
+    "episodes_per_h": 136.8041041231237,
+    "per_worker_per_h": 136.8041041231237,
+    "lost": 0,
+    "startup_s_median": 5.615,
+    "rtf_median": 0.85
+   },
+   {
+    "workers": 2,
+    "n": 40,
+    "wall_s": 826.3,
+    "episodes_per_h": 174.27084593973134,
+    "per_worker_per_h": 87.13542296986567,
+    "lost": 0,
+    "startup_s_median": 6.14,
+    "rtf_median": 0.47450000000000003
+   },
+   {
+    "workers": 4,
+    "n": 40,
+    "wall_s": 770.2,
+    "episodes_per_h": 186.96442482472085,
+    "per_worker_per_h": 46.74110620618021,
+    "lost": 0,
+    "startup_s_median": 7.58,
+    "rtf_median": 0.2455
+   },
+   {
+    "workers": 8,
+    "n": 40,
+    "wall_s": 832.2,
+    "episodes_per_h": 173.03532804614275,
+    "per_worker_per_h": 21.629416005767844,
+    "lost": 1,
+    "startup_s_median": 10.38,
+    "rtf_median": 0.133
+   }
+  ],
+  "best": 4,
+  "best_per_h": 186.96442482472085,
+  "branch": "pass"
+ },
+ "c2_placer": {
+  "unavailable": "prerequisite missing: placer has no episodes.jsonl -- run `placer` first"
+ },
+ "c3_signal": {
+  "unavailable": "prerequisite missing: signal has no episodes.jsonl -- run `signal` first"
+ },
+ "reaction": {
+  "unavailable": "prerequisite missing: reaction has no episodes.jsonl -- run `reaction` first"
+ },
+ "screen": {
+  "unavailable": "prerequisite missing: screen has no episodes.jsonl -- run `screen` first"
+ },
+ "c4_c5_benefit": {
+  "unavailable": "prerequisite missing: validate has no episodes.jsonl -- run `validate` first"
+ }
+}

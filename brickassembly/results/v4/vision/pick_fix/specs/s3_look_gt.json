@@ -1,0 +1,1 @@
+{"structure": "S3", "plan": "results/v4/vision/pick_fix/plans/structure_S3.json", "exe": "E0", "out": "results/v4/vision/pick_fix/rows/s3_look_gt.part", "tag": "pf_s3_look_gt", "repeat": 0, "look": true, "aim": "gt", "seed": 0, "shadow_vision": true, "record_all": "results/v4/vision/pick_fix/rec/s3_look_gt.npz"}

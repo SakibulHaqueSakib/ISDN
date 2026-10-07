@@ -1,0 +1,1 @@
+{"shape": "hollow_box", "plan": "results/v4/vision/v1_acc/plans/shape_hollow_box.json", "exe": "E0", "out": "results/v4/vision/v1_acc/rows/69a5144473282018.part", "tag": "69a5144473282018", "repeat": 2, "look": true, "aim": "gt", "seed": 2, "shadow_vision": true, "record_all": "results/v4/vision/v1_acc/recordings/69a5144473282018.npz"}

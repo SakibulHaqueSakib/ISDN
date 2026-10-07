@@ -1,0 +1,651 @@
+=== e1 --workers 4
+[1/36] b952876d178fcb46 e1 shape:cube step None gt -> success (280s)
+[2/36] 61999bf2c815dc75 e1 shape:cube step None gt -> success (282s)
+[3/36] 08fdf68df991b771 e1 shape:cube step None fk_vision -> success (288s)
+[4/36] 641e427aab9febf6 e1 shape:cube step None fk_oracle -> success (288s)
+[5/36] cf7c916f34d2ada5 e1 shape:cube step None fk_oracle -> success (280s)
+[6/36] 0e75a88b1632d344 e1 shape:cube step None fk_vision -> success (282s)
+[7/36] 1b3b0a2817f46774 e1 shape:cube step None gt -> success (277s)
+[8/36] c3bbcdf9856bc2ac e1 shape:cube step None fk_oracle -> success (280s)
+[9/36] 683a06e38ecda141 e1 shape:cube step None fk_vision -> success (285s)
+[10/36] 7b28c726a60c0910 e1 shape:arch step None fk_vision -> fail:perception_v5 (307s)
+[11/36] a3b25bb2c0cfc52b e1 shape:arch step None gt -> success (408s)
+[12/36] ab97d22fa2e8e393 e1 shape:arch step None fk_oracle -> success (422s)
+[13/36] ea884f4c8600dbda e1 shape:arch step None fk_vision -> fail:gate_miss (54s)
+[14/36] 0d2dd08425a4f2cc e1 shape:arch step None gt -> success (416s)
+[15/36] e6a6dcd02fa41dcc e1 shape:arch step None fk_oracle -> success (430s)
+[16/36] cce3839d695fa004 e1 shape:arch step None gt -> success (415s)
+[17/36] 0c82ec7e9a1c38a0 e1 shape:arch step None fk_oracle -> success (428s)
+[18/36] db8887d5f32e2f33 e1 shape:arch step None fk_vision -> fail:perception_v5 (302s)
+[19/36] 658d99cbfb8e1c7f e1 shape:hollow step None gt -> success (448s)
+[20/36] 6a98b2886264c404 e1 shape:hollow step None fk_oracle -> success (465s)
+[21/36] cc7e3be3a59b5645 e1 shape:hollow step None fk_vision -> success (463s)
+[22/36] 1a417185905064f8 e1 shape:hollow step None gt -> success (450s)
+[23/36] 77b548fea8668328 e1 shape:hollow step None fk_oracle -> success (463s)
+[24/36] 6eaa8503812c7838 e1 shape:hollow step None fk_vision -> success (462s)
+[25/36] 69a5144473282018 e1 shape:hollow step None gt -> success (445s)
+[26/36] ec43e4581bb605f8 e1 shape:hollow step None fk_oracle -> success (466s)
+[27/36] 009f9203070979c8 e1 shape:hollow step None fk_vision -> success (481s)
+[28/36] de8d954ad79fb7bd e1 structure:S3 step None fk_vision -> fail:perception_v5 (549s)
+[29/36] d8a3229bddd66c5a e1 structure:S3 step None gt -> success (758s)
+[30/36] a4c923c865979f99 e1 structure:S3 step None fk_oracle -> success (789s)
+[31/36] 063ab7b390406d9a e1 structure:S3 step None fk_vision -> fail:gate_miss (68s)
+[32/36] 6f2dfa5f35435797 e1 structure:S3 step None gt -> success (775s)
+[33/36] 07fed2bc54e1f815 e1 structure:S3 step None fk_oracle -> success (797s)
+[34/36] 3a788b3be38e8aab e1 structure:S3 step None gt -> success (754s)
+[35/36] 7d496ae3be425f8a e1 structure:S3 step None fk_oracle -> success (765s)
+[36/36] 7c4cfc9c83b91e9e e1 structure:S3 step None fk_vision -> fail:perception_v5 (467s)
+e1: {'unique': 36, 'to_run': 36, 'ran': 36, 'errors': 0, 'wall_s': 3938.4} | merge {'entries': 36, 'with_record': 36, 'lost': 0, 'missing': 0, 'unique_ids': 36}
+=== e1b --workers 4
+[1/54] 13c26ceb1cac530c e1b structure:S1 step 1 fk_oracle -> success (49s)
+[2/54] 5690d273290fc213 e1b structure:S2 step 4 fk_oracle -> success (50s)
+[3/54] be74980222fa6b8b e1b structure:S3 step 2 fk_vision -> success (60s)
+[4/54] bc9c937bc2e018d0 e1b structure:S3 step 2 fk_oracle -> success (61s)
+[5/54] 79a54daf4f2a3c26 e1b structure:S1 step 1 fk_vision -> success (38s)
+[6/54] ceffaa20edf0f08a e1b structure:S1 step 1 fk_oracle -> success (38s)
+[7/54] 545399a3b1d3039b e1b structure:S1 step 1 fk_vision -> success (37s)
+[8/54] 451291fd2f4a716d e1b structure:S1 step 1 fk_oracle -> success (37s)
+[9/54] f6d19205e538793f e1b structure:S1 step 1 fk_vision -> success (37s)
+[10/54] 71c8ee4e865914ba e1b structure:S1 step 3 fk_oracle -> success (36s)
+[11/54] 977464f112ef2701 e1b structure:S1 step 3 fk_vision -> success (36s)
+[12/54] 0b855d80a6e24b2b e1b structure:S1 step 3 fk_oracle -> success (36s)
+[13/54] 3c7bab0f517348e4 e1b structure:S1 step 3 fk_vision -> success (37s)
+[14/54] 789c5f0c7f15c584 e1b structure:S1 step 3 fk_oracle -> success (36s)
+[15/54] 6f07e235ddc9a165 e1b structure:S1 step 3 fk_vision -> success (36s)
+[16/54] 2dcc392ae1a85953 e1b structure:S2 step 4 fk_vision -> success (37s)
+[17/54] 072aed12d0dda4be e1b structure:S2 step 4 fk_oracle -> success (39s)
+[18/54] 44ca5881094b012a e1b structure:S2 step 4 fk_vision -> success (39s)
+[19/54] 8a2203d8004591c2 e1b structure:S2 step 4 fk_oracle -> success (38s)
+[20/54] 761a1bea3ae84bf7 e1b structure:S2 step 4 fk_vision -> success (37s)
+[21/54] eca72d547546c5aa e1b structure:S3 step 2 fk_oracle -> success (63s)
+[22/54] bd7bd6b4fc7b99ba e1b structure:S3 step 2 fk_vision -> success (63s)
+[23/54] 3525ec21f378a312 e1b structure:S3 step 2 fk_oracle -> success (64s)
+[24/54] cefe86ec09fb0abb e1b structure:S3 step 2 fk_vision -> success (64s)
+[25/54] b8e8e5db7a0c879d e1b structure:S3 step 7 fk_oracle -> success (60s)
+[26/54] d78126e4e9031c85 e1b structure:S3 step 7 fk_vision -> success (61s)
+[27/54] 72db34d22797bb5a e1b structure:S3 step 7 fk_oracle -> success (62s)
+[28/54] 7eb87eeb46b60b2e e1b structure:S3 step 7 fk_vision -> success (62s)
+[29/54] 69a7ad22616b2b6d e1b structure:S3 step 7 fk_oracle -> success (57s)
+[30/54] fbf4671035826240 e1b structure:S3 step 7 fk_vision -> success (58s)
+[31/54] 3e17e8c279166e8b e1b structure:S3 step 3 fk_oracle -> success (49s)
+[32/54] 30469e142eb5e73d e1b prefix:S5:13 step 4 fk_oracle -> success (51s)
+[33/54] 9ac9675fc2818874 e1b structure:S3 step 3 fk_vision -> success (36s)
+[34/54] 97f2db695ea7fcfd e1b structure:S3 step 3 fk_oracle -> success (42s)
+[35/54] f1881e485451fe46 e1b structure:S3 step 3 fk_vision -> success (42s)
+[36/54] 0b431d258beae2d0 e1b structure:S3 step 3 fk_oracle -> success (41s)
+[37/54] 1e6b4c36edb42d8f e1b structure:S3 step 3 fk_vision -> success (29s)
+[38/54] 69bd8f79b5490e93 e1b prefix:S5:13 step 4 fk_oracle -> success (54s)
+[39/54] 3d2d75d36b670856 e1b prefix:S5:13 step 4 fk_vision -> success (54s)
+[40/54] d6d87c442f7d57a3 e1b prefix:S5:13 step 4 fk_vision -> fail:gate_miss (56s)
+[41/54] 24188606a442c545 e1b prefix:S5:13 step 4 fk_oracle -> success (42s)
+[42/54] 4f9d59258c36ec5a e1b prefix:S5:13 step 4 fk_vision -> success (51s)
+[43/54] e2df9803a2123106 e1b prefix:S5:13 step 10 fk_oracle -> success (52s)
+[44/54] 029f73145d812be1 e1b prefix:S5:13 step 10 fk_vision -> success (52s)
+[45/54] 1b7729e5c7b2adcb e1b prefix:S5:13 step 10 fk_oracle -> success (48s)
+[46/54] bcbe01b9b43b33cf e1b prefix:S5:13 step 10 fk_vision -> success (47s)
+[47/54] 8fe9b9f02ff7f6ea e1b prefix:S5:13 step 10 fk_oracle -> success (52s)
+[48/54] 783af0ce38e7b334 e1b prefix:S5:13 step 10 fk_vision -> success (52s)
+[49/54] 91ec26e316f31e27 e1b prefix:S5:13 step 12 fk_oracle -> fail:gate_miss (51s)
+[50/54] 2457d0638936bdb7 e1b prefix:S5:13 step 12 fk_vision -> success (41s)
+[51/54] c594370295bbe466 e1b prefix:S5:13 step 12 fk_oracle -> success (51s)
+[52/54] d97b030e79369bd7 e1b prefix:S5:13 step 12 fk_vision -> success (51s)
+[53/54] 6bacc1c1abc33da7 e1b prefix:S5:13 step 12 fk_oracle -> success (51s)
+[54/54] 6dad0e833079d6c8 e1b prefix:S5:13 step 12 fk_vision -> success (30s)
+e1b: {'unique': 54, 'to_run': 54, 'ran': 54, 'errors': 0, 'wall_s': 646.6} | merge {'entries': 54, 'with_record': 54, 'lost': 0, 'missing': 0, 'unique_ids': 54}
+=== pool
+pool 356b6a468a67d388: course 199, single 221 vectors (one per step, of 436 steps; 872 looks); drift_max 0.0000 mm (3-D), 0.0000 mm (xy) to the start of the insert (to the snap: 0.08436280916762386, 0.06281503085684247) over 208 support records
+=== e2 --workers 4
+[1/328] ac7f0574c66dc1b2 e2 shape:cube step 0 x2 -> success (48s)
+[2/328] f96ef376f3be3d5f e2 shape:cube step 0 control -> success (49s)
+[3/328] b0ae55f26935c4cd e2 shape:cube step 0 control -> success (49s)
+[4/328] e1d1a379550c19cc e2 shape:cube step 0 x1 -> success (49s)
+[5/328] ed97c7bd50c98151 e2 shape:cube step 0 x1 -> success (44s)
+[6/328] fb9cfde62135137c e2 shape:cube step 0 x1 -> success (47s)
+[7/328] 6ebccd9e7c367114 e2 shape:cube step 0 x2 -> success (47s)
+[8/328] ec2dd2f963fd3f3e e2 shape:cube step 0 x2 -> success (47s)
+[9/328] 25bbf9a29f7eef82 e2 shape:cube step 0 x1 -> success (37s)
+[10/328] 9265f1ba82d97e7f e2 shape:cube step 0 x2 -> success (45s)
+[11/328] 85bc80a95d4f0b6f e2 shape:cube step 1 control -> success (46s)
+[12/328] e893863c139943f7 e2 shape:cube step 1 control -> success (46s)
+[13/328] ff9b9b1403262da2 e2 shape:cube step 1 x1 -> success (33s)
+[14/328] 7f8f8ab8ac645087 e2 shape:cube step 1 x2 -> success (45s)
+[15/328] f5c56cf0e447bd23 e2 shape:cube step 1 x2 -> success (46s)
+[16/328] 48db2da4a07e1248 e2 shape:cube step 1 x1 -> success (47s)
+[17/328] 30815d895e800161 e2 shape:cube step 1 x1 -> success (34s)
+[18/328] 5828e8b01a02dd5d e2 shape:cube step 1 x2 -> success (43s)
+[19/328] a6e3443cec66a828 e2 shape:cube step 1 x1 -> success (46s)
+[20/328] 12da5a54977889e1 e2 shape:cube step 1 x2 -> success (46s)
+[21/328] 48eb90ad6627f523 e2 shape:cube step 2 control -> success (41s)
+[22/328] 3a37f7b29f2466ac e2 shape:cube step 2 control -> success (34s)
+[23/328] 763ffd3d0265e9d0 e2 shape:cube step 2 x1 -> success (44s)
+[24/328] eed61e92a5d56fb7 e2 shape:cube step 2 x2 -> success (44s)
+[25/328] af5dfac5d4cee8bd e2 shape:cube step 2 x1 -> success (44s)
+[26/328] d6a48361d015c773 e2 shape:cube step 2 x2 -> success (32s)
+[27/328] f9bd9e4ee7685160 e2 shape:cube step 2 x1 -> success (45s)
+[28/328] 7c13f4bb46ccf535 e2 shape:cube step 2 x2 -> success (45s)
+[29/328] 234eb1990266c735 e2 shape:cube step 2 x1 -> success (44s)
+[30/328] 020126b1d7208340 e2 shape:cube step 2 x2 -> success (34s)
+[31/328] 5fd2f1a05a5bf633 e2 shape:cube step 3 control -> success (45s)
+[32/328] 38a9225f2e0b538f e2 shape:cube step 3 control -> success (46s)
+[33/328] 4f1a5db9bdb4f5b4 e2 shape:cube step 3 x1 -> success (46s)
+[34/328] b0cedb76ce761bd1 e2 shape:cube step 3 x2 -> success (43s)
+[35/328] 488f97fd5ee56c30 e2 shape:cube step 3 x1 -> success (44s)
+[36/328] a4b51248e00c91af e2 shape:cube step 3 x2 -> success (46s)
+[37/328] 9f4cbeddfe1706f0 e2 shape:cube step 3 x1 -> success (46s)
+[38/328] 98be9d6710a80f9f e2 shape:cube step 3 x2 -> success (45s)
+[39/328] 02632cf7b123a6a2 e2 shape:cube step 3 x1 -> success (39s)
+[40/328] 2fa776321fb27fb6 e2 shape:cube step 3 x2 -> success (44s)
+[41/328] da223f8088664f64 e2 shape:cube step 4 control -> success (45s)
+[42/328] 7063b68caddc9d66 e2 shape:cube step 4 control -> success (45s)
+[43/328] 9d8a90cd74b29fa1 e2 shape:cube step 4 x1 -> success (34s)
+[44/328] c5c49ba057603b99 e2 shape:cube step 4 x2 -> success (44s)
+[45/328] 4f1b585fc23abfe7 e2 shape:cube step 4 x1 -> success (44s)
+[46/328] df5ccc2c2026478b e2 shape:cube step 4 x2 -> success (45s)
+[47/328] 09c6edaa9abd161b e2 shape:cube step 4 x1 -> success (34s)
+[48/328] 7277e049e31b95f5 e2 shape:cube step 4 x2 -> success (44s)
+[49/328] d30120a1081fa027 e2 shape:cube step 4 x1 -> success (45s)
+[50/328] 85cd5f7883cc90db e2 shape:cube step 4 x2 -> success (45s)
+[51/328] 6cbf0ef7a5d1e9df e2 shape:cube step 5 control -> success (37s)
+[52/328] 5b4af861dc4f4192 e2 shape:cube step 5 control -> success (40s)
+[53/328] 109589c853ce9164 e2 shape:cube step 5 x1 -> success (44s)
+[54/328] 7fde2ff84b398b21 e2 shape:cube step 5 x2 -> fail:gate_miss (45s)
+[55/328] 895d95f0fd05162e e2 shape:cube step 5 x1 -> success (43s)
+[56/328] c6a692ff96df6de0 e2 shape:cube step 5 x2 -> success (36s)
+[57/328] ba995bdca548cea7 e2 shape:cube step 5 x1 -> success (42s)
+[58/328] 46927067366e502f e2 shape:cube step 5 x2 -> success (44s)
+[59/328] 0265cf00cde0cf7f e2 shape:cube step 5 x1 -> success (43s)
+[60/328] 168eefb2f5c08756 e2 shape:cube step 5 x2 -> success (37s)
+[61/328] 18790841d9d394b7 e2 shape:cube step 6 control -> success (41s)
+[62/328] 3d63cb74e9132c2a e2 shape:cube step 6 control -> success (43s)
+[63/328] 658aae79e6f2a9a5 e2 shape:cube step 6 x1 -> success (43s)
+[64/328] f8b4784453e62031 e2 shape:cube step 6 x2 -> success (37s)
+[65/328] c7ee9c2df10c953b e2 shape:cube step 6 x1 -> success (40s)
+[66/328] 99f6d16db8c6b9c6 e2 shape:cube step 6 x2 -> success (42s)
+[67/328] 561362ae301d474a e2 shape:cube step 6 x1 -> success (42s)
+[68/328] 63fe7d2b3a40364a e2 shape:cube step 6 x2 -> success (37s)
+[69/328] 71bac6e1c8a3f988 e2 shape:cube step 6 x1 -> success (40s)
+[70/328] 305094facdf4df33 e2 shape:cube step 6 x2 -> success (42s)
+[71/328] a300c2013a206bf7 e2 shape:cube step 7 control -> success (42s)
+[72/328] 79afd7f90a4b1d30 e2 shape:cube step 7 control -> success (40s)
+[73/328] 0db85117eaf049d1 e2 shape:cube step 7 x1 -> success (39s)
+[74/328] 15fbe51c553087b3 e2 shape:cube step 7 x2 -> fail:gate_miss (43s)
+[75/328] 93e65c9c1905da35 e2 shape:cube step 7 x1 -> success (43s)
+[76/328] 7f0514b910c1ac98 e2 shape:cube step 7 x2 -> success (42s)
+[77/328] 99df834fb14cd3c5 e2 shape:cube step 7 x1 -> success (38s)
+[78/328] ed05b52343c24124 e2 shape:cube step 7 x2 -> success (42s)
+[79/328] 9b66ba97e71c962d e2 shape:cube step 7 x1 -> success (43s)
+[80/328] ed49db22845365b4 e2 shape:cube step 7 x2 -> success (43s)
+[81/328] f8f85ed6e05fd335 e2 shape:arch step 0 control -> success (43s)
+[82/328] 04c42ed5cdf4d147 e2 shape:arch step 0 control -> success (45s)
+[83/328] 5cb2d9599306b4db e2 shape:arch step 0 x1 -> success (48s)
+[84/328] 619894a2b66232e2 e2 shape:arch step 0 x2 -> success (47s)
+[85/328] bfc4143e26b0ff25 e2 shape:arch step 0 x1 -> success (43s)
+[86/328] 8c293c80706a3a4c e2 shape:arch step 0 x2 -> success (44s)
+[87/328] f06961954f6a4e70 e2 shape:arch step 0 x1 -> success (47s)
+[88/328] 97d171d15107a55e e2 shape:arch step 0 x2 -> success (47s)
+[89/328] 7f8af3b31dafe2fa e2 shape:arch step 0 x1 -> success (44s)
+[90/328] 29d3d4386b195895 e2 shape:arch step 0 x2 -> success (43s)
+[91/328] 28476c4c789de207 e2 shape:arch step 1 control -> success (47s)
+[92/328] 533f05c54f942640 e2 shape:arch step 1 control -> success (47s)
+[93/328] 6f901a0e888c8fbf e2 shape:arch step 1 x1 -> success (44s)
+[94/328] 1dfd3b3a09aa8026 e2 shape:arch step 1 x2 -> success (44s)
+[95/328] 4970c91482c54417 e2 shape:arch step 1 x1 -> success (46s)
+[96/328] f2466dd29aac951d e2 shape:arch step 1 x2 -> success (47s)
+[97/328] f1cbc20799d03639 e2 shape:arch step 1 x1 -> success (45s)
+[98/328] f3f3b21a911ebbae e2 shape:arch step 1 x2 -> success (44s)
+[99/328] 3b0aec5848884f31 e2 shape:arch step 1 x1 -> success (45s)
+[100/328] d46ace3d40cc4323 e2 shape:arch step 1 x2 -> success (47s)
+[101/328] 244aedd16a63f054 e2 shape:arch step 2 control -> success (46s)
+[102/328] 6af48636fccbda51 e2 shape:arch step 2 control -> success (45s)
+[103/328] dc08aaf5b24e61dc e2 shape:arch step 2 x1 -> success (46s)
+[104/328] eed8730454a308ec e2 shape:arch step 2 x2 -> success (48s)
+[105/328] 2b602f9025d1f93f e2 shape:arch step 2 x1 -> success (47s)
+[106/328] 660ad67b033a79a8 e2 shape:arch step 2 x2 -> success (45s)
+[107/328] 5df65ceddf23566a e2 shape:arch step 2 x1 -> success (46s)
+[108/328] f899e37f49c20547 e2 shape:arch step 2 x2 -> success (48s)
+[109/328] 24a51a11f6970115 e2 shape:arch step 2 x1 -> success (47s)
+[110/328] 640566b5e61e9015 e2 shape:arch step 2 x2 -> success (45s)
+[111/328] bc3d413cd356fce0 e2 shape:arch step 3 control -> success (45s)
+[112/328] 07e5aff3557d5976 e2 shape:arch step 3 control -> success (47s)
+[113/328] 723c89c59a794867 e2 shape:arch step 3 x1 -> success (47s)
+[114/328] ccca17946b9edfb9 e2 shape:arch step 3 x2 -> success (45s)
+[115/328] bef0f18a1ed9edc5 e2 shape:arch step 3 x1 -> success (45s)
+[116/328] 0c4ffa1319876a26 e2 shape:arch step 3 x2 -> success (46s)
+[117/328] 09033fda2e5ce1d0 e2 shape:arch step 3 x1 -> success (47s)
+[118/328] 66a194385445300a e2 shape:arch step 3 x2 -> success (45s)
+[119/328] 04089babea1de808 e2 shape:arch step 3 x1 -> success (46s)
+[120/328] 11139e727b0714a2 e2 shape:arch step 3 x2 -> success (45s)
+[121/328] eebd327f855c19ed e2 shape:arch step 4 control -> success (46s)
+[122/328] 9f6b5dc97346f355 e2 shape:arch step 4 control -> success (45s)
+[123/328] 0c25b4f7084e1860 e2 shape:arch step 4 x1 -> success (45s)
+[124/328] 825f676342e18a6d e2 shape:arch step 4 x2 -> success (45s)
+[125/328] 5af9ad1614e1b923 e2 shape:arch step 4 x1 -> success (46s)
+[126/328] 81844f4022d75207 e2 shape:arch step 4 x2 -> success (46s)
+[127/328] 0590b57f4aaa8ca4 e2 shape:arch step 4 x1 -> success (45s)
+[128/328] 88b9f4be1722b8e5 e2 shape:arch step 4 x2 -> success (45s)
+[129/328] a261e7e7bbe144bf e2 shape:arch step 4 x1 -> success (46s)
+[130/328] 5eb5bb27862e8a4d e2 shape:arch step 4 x2 -> success (46s)
+[131/328] 9ffe3016644ca4a6 e2 shape:arch step 5 control -> success (46s)
+[132/328] 4a624a7cba0e6ef3 e2 shape:arch step 5 control -> success (45s)
+[133/328] e07838f0251512c1 e2 shape:arch step 5 x1 -> success (47s)
+[134/328] aa4c73051e661db6 e2 shape:arch step 5 x2 -> success (47s)
+[135/328] 42c0ed808b610cff e2 shape:arch step 5 x1 -> success (46s)
+[136/328] 9b90688b2deb2534 e2 shape:arch step 5 x2 -> success (46s)
+[137/328] 330f48188a48ad2b e2 shape:arch step 5 x1 -> success (47s)
+[138/328] 686917036b9792bb e2 shape:arch step 5 x2 -> success (47s)
+[139/328] 5f1f5e4911f77c80 e2 shape:arch step 5 x1 -> success (46s)
+[140/328] 49c4d9ca12c01f6f e2 shape:arch step 5 x2 -> success (46s)
+[141/328] ef96198edf113882 e2 shape:arch step 6 control -> success (45s)
+[142/328] 96bb1656b717b9a3 e2 shape:arch step 6 control -> success (46s)
+[143/328] 5a9fc0e45d015dfd e2 shape:arch step 6 x1 -> success (45s)
+[144/328] 7760ea5b41052444 e2 shape:arch step 6 x2 -> success (45s)
+[145/328] 4524c5f96fb44c38 e2 shape:arch step 6 x1 -> success (45s)
+[146/328] f82122818eb04dfe e2 shape:arch step 6 x2 -> success (45s)
+[147/328] 0a427d8ff47f62c4 e2 shape:arch step 6 x1 -> success (45s)
+[148/328] f0cc38352dacf410 e2 shape:arch step 6 x2 -> success (45s)
+[149/328] 9325733e126bff84 e2 shape:arch step 6 x1 -> success (45s)
+[150/328] f2870682c18ba028 e2 shape:arch step 6 x2 -> success (45s)
+[151/328] 7d828b599ce11992 e2 shape:arch step 7 control -> success (45s)
+[152/328] 37a3aca2c9f230ab e2 shape:arch step 7 control -> success (45s)
+[153/328] 5121269a41f98ce8 e2 shape:arch step 7 x1 -> success (45s)
+[154/328] 20ae644d181d97a0 e2 shape:arch step 7 x2 -> success (46s)
+[155/328] 1a0bae8fd6f8020a e2 shape:arch step 7 x1 -> success (46s)
+[156/328] 74fb0976dfdb3e6b e2 shape:arch step 7 x2 -> success (45s)
+[157/328] d3993932ecf6a140 e2 shape:arch step 7 x1 -> success (45s)
+[158/328] 251a8b5e9427e368 e2 shape:arch step 7 x2 -> success (45s)
+[159/328] ab290097dc96ba11 e2 shape:arch step 7 x1 -> success (46s)
+[160/328] 67592d23a1ee0abd e2 shape:arch step 7 x2 -> success (46s)
+[161/328] ac08c39dcd96d15a e2 shape:arch step 8 control -> success (47s)
+[162/328] f2090609467e5008 e2 shape:arch step 8 control -> success (47s)
+[163/328] cd05c3d05f9f9ec6 e2 shape:arch step 8 x1 -> success (46s)
+[164/328] 492817084b93193e e2 shape:arch step 8 x2 -> success (47s)
+[165/328] 5cb39881c98c359f e2 shape:arch step 8 x1 -> success (47s)
+[166/328] 9c23ec17e9dde980 e2 shape:arch step 8 x2 -> success (47s)
+[167/328] b9defc22b2d6f498 e2 shape:arch step 8 x1 -> success (47s)
+[168/328] fb268f7dbb48a177 e2 shape:arch step 8 x2 -> success (47s)
+[169/328] 3e7fffbf0e6e6fbc e2 shape:arch step 8 x1 -> success (47s)
+[170/328] 4bfa1ca5db28eb35 e2 shape:arch step 8 x2 -> success (46s)
+[171/328] aef9494ab79b3054 e2 shape:arch step 9 control -> success (45s)
+[172/328] e7cc4b907a2fd2ec e2 shape:arch step 9 control -> success (45s)
+[173/328] 15180a58ef95fcb3 e2 shape:arch step 9 x1 -> success (45s)
+[174/328] d3e6f4017603b289 e2 shape:arch step 9 x2 -> success (45s)
+[175/328] 8bc44db7f9105959 e2 shape:arch step 9 x1 -> success (45s)
+[176/328] 0f7a74fdf21a37ed e2 shape:arch step 9 x2 -> success (45s)
+[177/328] f1eeacc694a9fb90 e2 shape:arch step 9 x1 -> success (45s)
+[178/328] 355500eb94927208 e2 shape:arch step 9 x2 -> success (45s)
+[179/328] 484908698dbcb701 e2 shape:arch step 9 x1 -> success (45s)
+[180/328] 982be5b32eb3404b e2 shape:arch step 9 x2 -> success (46s)
+[181/328] a51bef58b94e7493 e2 shape:arch step 10 control -> fail:gate_miss (47s)
+[182/328] 5c804646cd44adea e2 shape:arch step 10 control -> fail:gate_miss (48s)
+[183/328] 8b4a13963d70c0db e2 shape:arch step 10 x1 -> fail:gate_miss (48s)
+[184/328] e81473c63bb419ee e2 shape:arch step 10 x2 -> fail:gate_miss (48s)
+[185/328] 699a840b93dd09c6 e2 shape:arch step 10 x1 -> fail:gate_miss (48s)
+[186/328] 00918ac2820c197d e2 shape:arch step 10 x2 -> success (46s)
+[187/328] 982db44d038fb44a e2 shape:arch step 10 x1 -> fail:gate_miss (48s)
+[188/328] 23a7087ed29f8796 e2 shape:arch step 10 x2 -> success (46s)
+[189/328] 9572b0b6aa6138cf e2 shape:arch step 10 x1 -> fail:gate_miss (48s)
+[190/328] b5a98fbf161089b6 e2 shape:arch step 10 x2 -> fail:gate_miss (48s)
+[191/328] 66d36789f345b123 e2 shape:hollow step 0 control -> success (46s)
+[192/328] b18913b9771c7b1b e2 shape:hollow step 0 control -> success (46s)
+[193/328] aaaa9b18a1128849 e2 shape:hollow step 0 x1 -> success (45s)
+[194/328] 5dfce43a0bb38768 e2 shape:hollow step 0 x2 -> success (45s)
+[195/328] a9552e7eafd0da86 e2 shape:hollow step 0 x1 -> success (45s)
+[196/328] 1de87ad2ced819a0 e2 shape:hollow step 0 x2 -> success (45s)
+[197/328] 52dda1c4836027f8 e2 shape:hollow step 0 x1 -> success (45s)
+[198/328] 54166828f6e58872 e2 shape:hollow step 0 x2 -> success (45s)
+[199/328] c33b6f4ddf872289 e2 shape:hollow step 0 x1 -> success (45s)
+[200/328] 46abba8ad75012a8 e2 shape:hollow step 0 x2 -> success (45s)
+[201/328] dacf1ef9988fd320 e2 shape:hollow step 1 control -> success (45s)
+[202/328] e0df55deaefe2c38 e2 shape:hollow step 1 control -> success (45s)
+[203/328] 13d2dadc36d684c0 e2 shape:hollow step 1 x1 -> success (45s)
+[204/328] 53dbdb3f38261bfa e2 shape:hollow step 1 x2 -> fail:gate_miss (46s)
+[205/328] 80e49a984b4060c8 e2 shape:hollow step 1 x1 -> success (45s)
+[206/328] 3940f6e9158ca4f2 e2 shape:hollow step 1 x2 -> success (45s)
+[207/328] d2bce491c8c66118 e2 shape:hollow step 1 x1 -> success (45s)
+[208/328] 8167ae57552e6edf e2 shape:hollow step 1 x2 -> success (45s)
+[209/328] 1733630fa6e905f7 e2 shape:hollow step 1 x1 -> success (44s)
+[210/328] 1d2b6d7bcd8061bb e2 shape:hollow step 1 x2 -> success (44s)
+[211/328] 4a7f4ee4528b4d39 e2 shape:hollow step 2 control -> success (45s)
+[212/328] 93e578cb98535718 e2 shape:hollow step 2 control -> success (45s)
+[213/328] 5e8bb226614cc55f e2 shape:hollow step 2 x1 -> fail:gate_miss (53s)
+[214/328] db12110e67d1b415 e2 shape:hollow step 2 x2 -> fail:gate_miss (53s)
+[215/328] 6e81d2aacaddc2d1 e2 shape:hollow step 2 x1 -> success (46s)
+[216/328] 254a15bf120f7973 e2 shape:hollow step 2 x2 -> success (45s)
+[217/328] b8c4354e6fabd208 e2 shape:hollow step 2 x1 -> success (45s)
+[218/328] e924719f363e7b27 e2 shape:hollow step 2 x2 -> fail:gate_miss (53s)
+[219/328] 33e00516d42aeaf1 e2 shape:hollow step 2 x1 -> fail:gate_miss (54s)
+[220/328] f95295511e784e9d e2 shape:hollow step 2 x2 -> fail:gate_miss (54s)
+[221/328] 534bf471f059009c e2 shape:hollow step 3 control -> success (45s)
+[222/328] b40e6f7d9f00524c e2 shape:hollow step 3 control -> success (45s)
+[223/328] ec7727777a5c6f40 e2 shape:hollow step 3 x1 -> success (46s)
+[224/328] b2645645c6d27120 e2 shape:hollow step 3 x2 -> success (45s)
+[225/328] ebbd23a225bbe1d1 e2 shape:hollow step 3 x1 -> success (44s)
+[226/328] b1c0d30023f333e6 e2 shape:hollow step 3 x2 -> success (45s)
+[227/328] 9a76f224ac0e70cb e2 shape:hollow step 3 x1 -> success (46s)
+[228/328] aa05828882d6445f e2 shape:hollow step 3 x2 -> success (45s)
+[229/328] e76e2b7b6c4ae2da e2 shape:hollow step 3 x1 -> success (44s)
+[230/328] 3b6c910c50ffcf10 e2 shape:hollow step 3 x2 -> success (44s)
+[231/328] a0bb4be964ac9b82 e2 shape:hollow step 4 control -> success (46s)
+[232/328] 65b4eea14c2d20e2 e2 shape:hollow step 4 control -> success (46s)
+[233/328] ae78a82093d4b96f e2 shape:hollow step 4 x1 -> success (44s)
+[234/328] 9c14c23e2c2c4b4f e2 shape:hollow step 4 x2 -> success (45s)
+[235/328] 0343f22a4048f31a e2 shape:hollow step 4 x1 -> success (46s)
+[236/328] e286df835ee7e9eb e2 shape:hollow step 4 x2 -> success (46s)
+[237/328] 584229357d154e4a e2 shape:hollow step 4 x1 -> success (45s)
+[238/328] f3d0ce164b8377d3 e2 shape:hollow step 4 x2 -> success (46s)
+[239/328] 4e5baaa6e8dc8bf6 e2 shape:hollow step 4 x1 -> success (45s)
+[240/328] 6afb75c8f8492c18 e2 shape:hollow step 4 x2 -> success (46s)
+[241/328] 39f572c865a6e017 e2 shape:hollow step 5 control -> success (46s)
+[242/328] 3962ccd92ecce6bb e2 shape:hollow step 5 control -> success (46s)
+[243/328] b58815f9784a11a5 e2 shape:hollow step 5 x1 -> success (45s)
+[244/328] f0ff49e16ff8351a e2 shape:hollow step 5 x2 -> success (46s)
+[245/328] c655ef5676b7a387 e2 shape:hollow step 5 x1 -> success (46s)
+[246/328] e07ed0f3b6df829e e2 shape:hollow step 5 x2 -> success (46s)
+[247/328] 7ef25060d521d196 e2 shape:hollow step 5 x1 -> success (46s)
+[248/328] 31cd1caefd458577 e2 shape:hollow step 5 x2 -> success (46s)
+[249/328] 2206c2b31a70c5bb e2 shape:hollow step 5 x1 -> success (46s)
+[250/328] 5b179c0c86edc549 e2 shape:hollow step 5 x2 -> success (46s)
+[251/328] 4ed65ad936deddcc e2 shape:hollow step 6 control -> success (45s)
+[252/328] 7f9fe0ea240bf060 e2 shape:hollow step 6 control -> success (46s)
+[253/328] 396dec12cc1e64b0 e2 shape:hollow step 6 x1 -> success (46s)
+[254/328] 9b1daff6ce8ce8f5 e2 shape:hollow step 6 x2 -> success (46s)
+[255/328] c2ffa9a1d4c4b37c e2 shape:hollow step 6 x1 -> success (46s)
+[256/328] 14f93bd3ee2f43c2 e2 shape:hollow step 6 x2 -> success (46s)
+[257/328] 2a54e6c5a77465da e2 shape:hollow step 6 x1 -> success (46s)
+[258/328] 61c5a47afae2ce56 e2 shape:hollow step 6 x2 -> success (45s)
+[259/328] cd597c9a2bab5c62 e2 shape:hollow step 6 x1 -> success (45s)
+[260/328] 6ec057fa119e7ed5 e2 shape:hollow step 6 x2 -> success (45s)
+[261/328] 67c268edffdd254a e2 shape:hollow step 7 control -> success (46s)
+[262/328] 2d0d3d350355fb0e e2 shape:hollow step 7 control -> success (45s)
+[263/328] cc98b6de6dd71bd7 e2 shape:hollow step 7 x1 -> fail:gate_miss (47s)
+[264/328] 5ac99a60022406b4 e2 shape:hollow step 7 x2 -> fail:gate_miss (48s)
+[265/328] 4a419c1b742554e1 e2 shape:hollow step 7 x1 -> success (47s)
+[266/328] 173f5116b1272b9f e2 shape:hollow step 7 x2 -> fail:gate_miss (48s)
+[267/328] cbb19f38991fea61 e2 shape:hollow step 7 x1 -> success (46s)
+[268/328] ac8670b573c8d23d e2 shape:hollow step 7 x2 -> success (45s)
+[269/328] 8e5a6dd0f2badab9 e2 shape:hollow step 7 x1 -> success (46s)
+[270/328] a50f4d2357b03b18 e2 shape:hollow step 7 x2 -> success (46s)
+[271/328] 3acb589c0eb3f031 e2 shape:hollow step 8 control -> success (46s)
+[272/328] f523df8bd28d0451 e2 shape:hollow step 8 control -> success (45s)
+[273/328] 0810bbbc59bca36b e2 shape:hollow step 8 x1 -> success (46s)
+[274/328] f51dbd433dc24824 e2 shape:hollow step 8 x2 -> success (46s)
+[275/328] 2929b6cba3565c06 e2 shape:hollow step 8 x1 -> success (46s)
+[276/328] 1c8d88a5c6cbdc81 e2 shape:hollow step 8 x2 -> success (46s)
+[277/328] 5779598cf5c90203 e2 shape:hollow step 8 x1 -> success (46s)
+[278/328] cfb7ecbdbb183718 e2 shape:hollow step 8 x2 -> success (46s)
+[279/328] 5939d4f891ae7ba6 e2 shape:hollow step 8 x1 -> success (46s)
+[280/328] ca8f448b5db0b86a e2 shape:hollow step 8 x2 -> success (46s)
+[281/328] 4687ff81a8b390a7 e2 shape:hollow step 9 control -> success (45s)
+[282/328] 57a09d932157d89d e2 shape:hollow step 9 control -> success (45s)
+[283/328] 479dc8a53db62181 e2 shape:hollow step 9 x1 -> success (45s)
+[284/328] 4f40f2f6c81c9f51 e2 shape:hollow step 9 x2 -> success (45s)
+[285/328] 52c5f867aca38e15 e2 shape:hollow step 9 x1 -> success (45s)
+[286/328] 3be778e1063b64d7 e2 shape:hollow step 9 x2 -> success (45s)
+[287/328] 636b0e4b7c559a16 e2 shape:hollow step 9 x1 -> success (45s)
+[288/328] 20140e16f7074eec e2 shape:hollow step 9 x2 -> fail:gate_miss (47s)
+[289/328] 97c54ddbc1cb6e9c e2 shape:hollow step 9 x1 -> success (46s)
+[290/328] 75da48e9c78dcafc e2 shape:hollow step 9 x2 -> success (45s)
+[291/328] fd124a2002115178 e2 shape:hollow step 10 control -> success (45s)
+[292/328] e9ea4f3c8c043747 e2 shape:hollow step 10 control -> success (45s)
+[293/328] 33e782506d0b5e70 e2 shape:hollow step 10 x1 -> success (46s)
+[294/328] 5cd588fa99699e81 e2 shape:hollow step 10 x2 -> success (45s)
+[295/328] b5a7c1924d52b67e e2 shape:hollow step 10 x1 -> success (45s)
+[296/328] 31431303765c34dc e2 shape:hollow step 10 x2 -> success (45s)
+[297/328] 78bc82852fcb746d e2 shape:hollow step 10 x1 -> success (46s)
+[298/328] 54b8eb5c8cbfefba e2 shape:hollow step 10 x2 -> success (45s)
+[299/328] 1b79fe51253b130e e2 shape:hollow step 10 x1 -> success (45s)
+[300/328] 82e3233c155f9b05 e2 shape:hollow step 10 x2 -> success (45s)
+[301/328] 8826675138a3bc5f e2 shape:hollow step 11 control -> success (45s)
+[302/328] e6dfbf8bb8f5269c e2 shape:hollow step 11 control -> success (45s)
+[303/328] 2d768065e4d9ad3b e2 shape:hollow step 11 x1 -> success (45s)
+[304/328] 6fcb2462eb493938 e2 shape:hollow step 11 x2 -> success (45s)
+[305/328] 44b1064e4ed75d55 e2 shape:hollow step 11 x1 -> success (45s)
+[306/328] 8466bfe7de558a39 e2 shape:hollow step 11 x2 -> success (45s)
+[307/328] 8550cf9720c7154d e2 shape:hollow step 11 x1 -> success (46s)
+[308/328] d36ddac5ff6b2ca9 e2 shape:hollow step 11 x2 -> success (45s)
+[309/328] 1e574e1a2abd22d7 e2 shape:hollow step 11 x1 -> success (46s)
+[310/328] ec5ecac178018179 e2 shape:hollow step 11 x2 -> success (46s)
+[311/328] 762c8508bc96754d e2 prefix:S5:13 step 12 control -> fail:gate_miss (50s)
+[312/328] 1185a627d0c89584 e2 prefix:S5:13 step 12 x1 -> success (48s)
+[313/328] 2f6294dc41fed93e e2 prefix:S5:13 step 12 x2 -> success (47s)
+[314/328] 6aaa312b6f7c63df e2 prefix:S5:13 step 12 x1 -> fail:gate_miss (49s)
+[315/328] e3e3f337970d34a8 e2 prefix:S5:13 step 12 x2 -> fail:gate_miss (50s)
+[316/328] 63f93869cd27e292 e2 prefix:S5:13 step 12 x1 -> fail:gate_miss (50s)
+[317/328] 2a90eae0065c70c7 e2 prefix:S5:13 step 12 x2 -> fail:gate_miss (50s)
+[318/328] 5fe124747ea88447 e2 prefix:S5:13 step 12 x1 -> fail:gate_miss (50s)
+[319/328] 81c7ba7289b7b93a e2 prefix:S5:13 step 12 x2 -> fail:gate_miss (52s)
+[320/328] 67616190337c1383 e2 structure:S3 step 7 control -> success (59s)
+[321/328] 90ab6205ee766f5a e2 structure:S3 step 7 x1 -> success (60s)
+[322/328] d1f07fecec16e776 e2 structure:S3 step 7 x2 -> success (60s)
+[323/328] 507ef95b71b78a7e e2 structure:S3 step 7 x1 -> success (61s)
+[324/328] 959742c00cc1651f e2 structure:S3 step 7 x2 -> success (60s)
+[325/328] d6bc29a249d1d951 e2 structure:S3 step 7 x1 -> success (61s)
+[326/328] 5cf57080db5a6e62 e2 structure:S3 step 7 x2 -> success (58s)
+[327/328] f8ca3a1c9a550e2a e2 structure:S3 step 7 x1 -> success (51s)
+[328/328] 54d50408b2c2147d e2 structure:S3 step 7 x2 -> success (40s)
+e2: {'unique': 330, 'to_run': 328, 'ran': 328, 'errors': 0, 'wall_s': 3736.3} | merge {'entries': 330, 'with_record': 330, 'lost': 0, 'missing': 0, 'unique_ids': 330}
+=== e2b --workers 4
+[1/6] b3224eb5c50492ce e2b shape:cube step None fk_oracle -> fail:gate_miss (307s)
+[2/6] 5399d144e42049b1 e2b shape:cube step None fk_oracle -> fail:gate_miss (309s)
+[3/6] 625355a72670179a e2b shape:arch step None fk_oracle -> fail:gate_miss (420s)
+[4/6] acb6c758162febc3 e2b shape:arch step None fk_oracle -> fail:gate_miss (420s)
+[5/6] 1446c1c6884d659a e2b shape:hollow step None fk_oracle -> fail:gate_miss (315s)
+[6/6] 7cf668e314d87c3b e2b shape:hollow step None fk_oracle -> fail:gate_miss (340s)
+e2b: {'unique': 6, 'to_run': 6, 'ran': 6, 'errors': 0, 'wall_s': 646.6} | merge {'entries': 6, 'with_record': 6, 'lost': 0, 'missing': 0, 'unique_ids': 6}
+=== e4 --workers 4
+[1/40] 6d0231ead7dac8bf e4 0813a88a6b01 step 12 gt -> success (45s)
+[2/40] bc678e8045f0d7d1 e4 563e57e9863f step 17 gt -> fail:joint_break (58s)
+[3/40] 7d1865593a43f479 e4 204b2d0b94a1 step 15 gt -> fail:joint_break (63s)
+[4/40] dab72585e9623894 e4 7058bb984429 step 15 gt -> fail:joint_break (70s)
+[5/40] 8989a866db445442 e4 cf41ec7ce56e step 18 gt -> fail:joint_break (53s)
+[6/40] 93777183447e798d e4 c2c29f558444 step 13 gt -> fail:joint_break (48s)
+[7/40] 955f41b7bd1675f9 e4 f34c16554242 step 8 gt -> fail:joint_break (43s)
+[8/40] 8f6d5e727d3464e7 e4 51079b0c17e1 step 7 gt -> fail:joint_break (38s)
+[9/40] 8f9277ef4c369815 e4 315f8c89b3f5 step 4 gt -> fail:joint_break (39s)
+[10/40] 165b3a7cd0820a1d e4 5977342480ce step 19 gt -> fail:joint_break (49s)
+[11/40] ef4a4a9593bc3f01 e4 c1835c776e4d step 12 gt -> fail:joint_break (48s)
+[12/40] 20b94097ec814239 e4 56757dba0685 step 6 gt -> fail:joint_break (40s)
+[13/40] 454fd3065e12d492 e4 ded1e720e84f step 17 gt -> fail:joint_break (82s)
+[14/40] f2f84033b53b8494 e4 cc7d1795c13d step 15 gt -> success (50s)
+[15/40] 1caeb74cdc32914c e4 3c6ca34f3b6a step 18 gt -> fail:joint_break (69s)
+[16/40] 9572ea221b3698b3 e4 c9f4d38b6a76 step 17 gt -> fail:joint_break (53s)
+[17/40] 9c9b6809160ef797 e4 c3e319bc2002 step 16 gt -> fail:joint_break (57s)
+[18/40] 96d247a565c77c39 e4 28583c6d06dd step 18 gt -> fail:joint_break (73s)
+[19/40] 0d19dec4cfcac6ba e4 a914433aee30 step 15 gt -> fail:joint_break (61s)
+[20/40] ca11d13c8eaeeb7a e4 49040e590109 step 15 gt -> fail:joint_break (44s)
+[21/40] 9dd8b707de837fa4 e4 0813a88a6b01 step 12 gt -> fail:joint_break (45s)
+[22/40] 07995a555aff3ffc e4 204b2d0b94a1 step 15 gt -> fail:joint_break (52s)
+[23/40] 6c5858b7cb42291c e4 563e57e9863f step 17 gt -> fail:joint_break (73s)
+[24/40] fdd7de52421152d4 e4 7058bb984429 step 15 gt -> fail:joint_break (81s)
+[25/40] 9e4f1228bba95d17 e4 cf41ec7ce56e step 18 gt -> fail:joint_break (59s)
+[26/40] 06c4d7c12beaf9b4 e4 c2c29f558444 step 13 gt -> fail:joint_break (54s)
+[27/40] 631f727cf5ddd2ee e4 f34c16554242 step 8 gt -> fail:joint_break (32s)
+[28/40] 98f66b78795b91ba e4 51079b0c17e1 step 7 gt -> fail:joint_break (34s)
+[29/40] 5031524b9c77f3d9 e4 315f8c89b3f5 step 4 gt -> success (33s)
+[30/40] c3dc4990bbdd4998 e4 5977342480ce step 19 gt -> fail:joint_break (50s)
+[31/40] ffedb0cde9454303 e4 c1835c776e4d step 12 gt -> success (46s)
+[32/40] 7ce7492761b8fdd8 e4 56757dba0685 step 6 gt -> fail:joint_break (39s)
+[33/40] caaba56f4c2e92b5 e4 ded1e720e84f step 17 gt -> fail:joint_break (75s)
+[34/40] 4c4f22d3a8317e35 e4 3c6ca34f3b6a step 18 gt -> fail:joint_break (64s)
+[35/40] d41e11a9fa6cf33f e4 cc7d1795c13d step 15 gt -> success (51s)
+[36/40] 58de6ff13d9a7c7b e4 c9f4d38b6a76 step 17 gt -> fail:joint_break (54s)
+[37/40] 02f24af2ac947670 e4 28583c6d06dd step 18 gt -> fail:gate_miss (56s)
+[38/40] bca85e1a6bca5775 e4 c3e319bc2002 step 16 gt -> success (47s)
+[39/40] 74baecd8a45ee231 e4 a914433aee30 step 15 gt -> fail:joint_break (47s)
+[40/40] 343b78bf153fa629 e4 49040e590109 step 15 gt -> fail:joint_break (43s)
+batch gt workers=4: 40 episodes in 535 s = 269/h
+[1/40] 1a839240f04c2507 e4 0813a88a6b01 step 12 fk_vision -> success (58s)
+[2/40] 761f63fd863af976 e4 7058bb984429 step 15 fk_vision -> fail:perception_v5 (62s)
+[3/40] 88769558c0740d20 e4 563e57e9863f step 17 fk_vision -> fail:joint_break (69s)
+[4/40] 642963b82275aa7c e4 204b2d0b94a1 step 15 fk_vision -> fail:joint_break (74s)
+[5/40] f6b762e775830586 e4 c2c29f558444 step 13 fk_vision -> fail:joint_break (63s)
+[6/40] cf10e62fedaea61e e4 cf41ec7ce56e step 18 fk_vision -> fail:joint_break (68s)
+[7/40] c73c2c2ebfd471d5 e4 f34c16554242 step 8 fk_vision -> fail:joint_break (58s)
+[8/40] 6d0d7fdb16e29018 e4 51079b0c17e1 step 7 fk_vision -> fail:joint_break (54s)
+[9/40] 8f34b679795022d4 e4 315f8c89b3f5 step 4 fk_vision -> fail:joint_break (47s)
+[10/40] 861dbebec094f441 e4 c1835c776e4d step 12 fk_vision -> fail:joint_break (66s)
+[11/40] 02c896f4102b6853 e4 ded1e720e84f step 17 fk_vision -> fail:perception_v5 (66s)
+[12/40] 86e49b21aa922502 e4 5977342480ce step 19 fk_vision -> fail:joint_break (73s)
+[13/40] e2e2fc42da55ec81 e4 56757dba0685 step 6 fk_vision -> fail:perception_v5 (31s)
+[14/40] 674829df16fb4fb9 e4 cc7d1795c13d step 15 fk_vision -> success (64s)
+[15/40] cd4ff07f71d8c3f7 e4 c9f4d38b6a76 step 17 fk_vision -> fail:joint_break (71s)
+[16/40] 17632b6bd719d94f e4 3c6ca34f3b6a step 18 fk_vision -> fail:joint_break (81s)
+[17/40] a417a0d27a82ea39 e4 28583c6d06dd step 18 fk_vision -> fail:joint_break (79s)
+[18/40] e0197b4c21a89a3d e4 c3e319bc2002 step 16 fk_vision -> fail:perception_v5 (49s)
+[19/40] 429f6851fcdb31e6 e4 a914433aee30 step 15 fk_vision -> fail:joint_break (81s)
+[20/40] b329804d2a53988e e4 49040e590109 step 15 fk_vision -> fail:joint_break (76s)
+[21/40] 509178f8d3ed62c0 e4 204b2d0b94a1 step 15 fk_vision -> fail:joint_break (72s)
+[22/40] 36d550321a2111e5 e4 0813a88a6b01 step 12 fk_vision -> fail:joint_break (57s)
+[23/40] 156b6d1026fdc102 e4 7058bb984429 step 15 fk_vision -> fail:perception_v5 (58s)
+[24/40] 3e147f909acd4a83 e4 563e57e9863f step 17 fk_vision -> fail:joint_break (81s)
+[25/40] 467963cf97af5f0d e4 c2c29f558444 step 13 fk_vision -> fail:joint_break (68s)
+[26/40] 2e3a86c3bae3fdd6 e4 cf41ec7ce56e step 18 fk_vision -> fail:joint_break (76s)
+[27/40] 3b7629e64cde3588 e4 f34c16554242 step 8 fk_vision -> fail:joint_break (42s)
+[28/40] 1c589312fe54b163 e4 315f8c89b3f5 step 4 fk_vision -> success (45s)
+[29/40] b1784671f82a9908 e4 51079b0c17e1 step 7 fk_vision -> fail:joint_break (48s)
+[30/40] 3887f398d5ee82b3 e4 5977342480ce step 19 fk_vision -> fail:joint_break (66s)
+[31/40] 1e2577c9d34dba89 e4 c1835c776e4d step 12 fk_vision -> success (58s)
+[32/40] c219d39552f4bf6b e4 56757dba0685 step 6 fk_vision -> fail:perception_v5 (38s)
+[33/40] e04a7946cf43e31d e4 ded1e720e84f step 17 fk_vision -> fail:perception_v5 (60s)
+[34/40] 5651f20351f8b6e5 e4 cc7d1795c13d step 15 fk_vision -> success (64s)
+[35/40] 4a03b2fe4a1d1fb5 e4 3c6ca34f3b6a step 18 fk_vision -> fail:joint_break (81s)
+[36/40] eb4661dbe42b88b0 e4 c9f4d38b6a76 step 17 fk_vision -> fail:joint_break (67s)
+[37/40] 79b611f2e1d03d3a e4 28583c6d06dd step 18 fk_vision -> fail:gate_miss (74s)
+[38/40] 72e8a02675267b2d e4 c3e319bc2002 step 16 fk_vision -> fail:perception_v5 (47s)
+[39/40] 1d4b31816fe8bfb3 e4 a914433aee30 step 15 fk_vision -> fail:joint_break (52s)
+[40/40] a1629f199bc7d768 e4 49040e590109 step 15 fk_vision -> fail:joint_break (50s)
+batch fk_vision workers=4: 40 episodes in 634 s = 227/h
+e4: merge {'entries': 80, 'with_record': 80, 'lost': 0, 'missing': 0, 'unique_ids': 80}
+=== tables
+### T-V1a: builds (E1)
+
+| item | value |
+|---|---|
+| fk_oracle/S3 | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[16, 16], [16, 16], [16, 16]], "failures": [null, null, null], "snaps": 48, "screen_pass": 48, "cell_gate_ok": 48, "lateral_mm_mean": 0.149, "lateral_mm_max": 0.2261, "dz_mm_mean": -0.3587, "dz_mm_range": [-0.3962, -0.2813], "screen_fail_steps": [], "gated": false} |
+| fk_vision/S3 | {"builds": 3, "built_all": 0, "edge_steered_steps": [], "built": [[10, 16], [0, 16], [10, 16]], "failures": ["perception_v5", "gate_miss", "perception_v5"], "snaps": 21, "screen_pass": 20, "cell_gate_ok": 20, "lateral_mm_mean": 0.3056, "lateral_mm_max": 2.6002, "dz_mm_mean": -0.161, "dz_mm_range": [-0.4187, 2.2407], "screen_fail_steps": [[1, 0]], "gated": false} |
+| gt/S3 | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[16, 16], [16, 16], [16, 16]], "failures": [null, null, null], "snaps": 48, "screen_pass": 48, "cell_gate_ok": 48, "lateral_mm_mean": 0.1615, "lateral_mm_max": 0.2324, "dz_mm_mean": -0.3343, "dz_mm_range": [-0.3581, -0.2768], "screen_fail_steps": [], "gated": false} |
+| fk_oracle/arch | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[11, 11], [11, 11], [11, 11]], "failures": [null, null, null], "snaps": 33, "screen_pass": 33, "cell_gate_ok": 33, "lateral_mm_mean": 0.1648, "lateral_mm_max": 0.2261, "dz_mm_mean": -0.3609, "dz_mm_range": [-0.4004, -0.2299], "screen_fail_steps": [], "gated": true} |
+| fk_vision/arch | {"builds": 3, "built_all": 0, "edge_steered_steps": [], "built": [[7, 11], [0, 11], [7, 11]], "failures": ["perception_v5", "gate_miss", "perception_v5"], "snaps": 15, "screen_pass": 14, "cell_gate_ok": 14, "lateral_mm_mean": 0.3294, "lateral_mm_max": 2.2447, "dz_mm_mean": -0.2073, "dz_mm_range": [-0.4166, 0.8891], "screen_fail_steps": [[1, 0]], "gated": true} |
+| gt/arch | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[11, 11], [11, 11], [11, 11]], "failures": [null, null, null], "snaps": 33, "screen_pass": 33, "cell_gate_ok": 33, "lateral_mm_mean": 0.1793, "lateral_mm_max": 0.2345, "dz_mm_mean": -0.331, "dz_mm_range": [-0.3627, -0.2044], "screen_fail_steps": [], "gated": true} |
+| fk_oracle/cube | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[8, 8], [8, 8], [8, 8]], "failures": [null, null, null], "snaps": 24, "screen_pass": 24, "cell_gate_ok": 24, "lateral_mm_mean": 0.1278, "lateral_mm_max": 0.1999, "dz_mm_mean": -0.261, "dz_mm_range": [-0.3238, -0.2298], "screen_fail_steps": [], "gated": true} |
+| fk_vision/cube | {"builds": 3, "built_all": 0, "edge_steered_steps": [[0, [3, 5, 7]], [1, [3, 5, 7]], [2, [3, 5, 7]]], "built": [[8, 8], [8, 8], [8, 8]], "failures": ["perception_v5 (edge estimate at step 3)", "perception_v5 (edge estimate at step 3)", "perception_v5 (edge estimate at step 3)"], "snaps": 24, "screen_pass": 22, "cell_gate_ok": 24, "lateral_mm_mean": 0.1117, "lateral_mm_max": 0.221, "dz_mm_mean": -0.1583, "dz_mm_range": [-0.3297, 0.6096], "screen_fail_steps": [[0, 3], [0, 7]], "gated": true} |
+| gt/cube | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[8, 8], [8, 8], [8, 8]], "failures": [null, null, null], "snaps": 24, "screen_pass": 24, "cell_gate_ok": 24, "lateral_mm_mean": 0.1345, "lateral_mm_max": 0.1955, "dz_mm_mean": -0.2466, "dz_mm_range": [-0.3044, -0.1703], "screen_fail_steps": [], "gated": true} |
+| fk_oracle/hollow_box | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[12, 12], [12, 12], [12, 12]], "failures": [null, null, null], "snaps": 36, "screen_pass": 36, "cell_gate_ok": 36, "lateral_mm_mean": 0.2218, "lateral_mm_max": 0.2758, "dz_mm_mean": -0.3428, "dz_mm_range": [-0.4251, -0.2077], "screen_fail_steps": [], "gated": true} |
+| fk_vision/hollow_box | {"builds": 3, "built_all": 0, "edge_steered_steps": [[0, [7, 11]], [1, [7, 11]], [2, [7, 11]]], "built": [[12, 12], [12, 12], [12, 12]], "failures": ["perception_v5 (edge estimate at step 7)", "perception_v5 (edge estimate at step 7)", "perception_v5 (edge estimate at step 7)"], "snaps": 36, "screen_pass": 34, "cell_gate_ok": 36, "lateral_mm_mean": 0.21, "lateral_mm_max": 0.3553, "dz_mm_mean": -0.3102, "dz_mm_range": [-0.5095, -0.1057], "screen_fail_steps": [[1, 1], [1, 2]], "gated": true} |
+| gt/hollow_box | {"builds": 3, "built_all": 3, "edge_steered_steps": [], "built": [[12, 12], [12, 12], [12, 12]], "failures": [null, null, null], "snaps": 36, "screen_pass": 36, "cell_gate_ok": 36, "lateral_mm_mean": 0.2404, "lateral_mm_max": 0.2906, "dz_mm_mean": -0.3155, "dz_mm_range": [-0.3859, -0.1807], "screen_fail_steps": [], "gated": true} |
+
+### T-V1b: V5 accuracy and yield (E1 + E1b)
+
+| item | value |
+|---|---|
+| all | {"steps": 436, "yielded": 375, "yield": 0.8601, "n_averaged": 328, "radial_mm_p95": [0.2047, 0.1736, 0.2249], "yaw_deg_p95": [0.1613, 0.1485, 0.1785], "radial_mm_median": 0.088, "radial_mm_max": 0.2993, "yaw_deg_max": 0.2106, "per_look": {"looks": 809, "accepted_looks": 746, "radial_mm_p95": [0.1807, 0.1614, 0.1922], "yaw_deg_p95": [0.2056, 0.1602, 0.2667], "radial_mm_median": 0.087, "radial_mm_max": 0.2938, "yaw_deg_max": 0.4262}} |
+| course | {"steps": 199, "yielded": 199, "yield": 1.0, "n_averaged": 192, "radial_mm_p95": [0.2093, 0.1691, 0.2487], "yaw_deg_p95": [0.1774, 0.1611, 0.1885], "radial_mm_median": 0.0864, "radial_mm_max": 0.2993, "yaw_deg_max": 0.2008, "per_look": {"looks": 398, "accepted_looks": 391, "radial_mm_p95": [0.1805, 0.1557, 0.1957], "yaw_deg_p95": [0.2912, 0.2489, 0.3065], "radial_mm_median": 0.09, "radial_mm_max": 0.2938, "yaw_deg_max": 0.3638}} |
+| single | {"steps": 237, "yielded": 176, "yield": 0.7426, "n_averaged": 136, "radial_mm_p95": [0.1891, 0.1601, 0.2175], "yaw_deg_p95": [0.0499, 0.0438, 0.0601], "radial_mm_median": 0.0884, "radial_mm_max": 0.2928, "yaw_deg_max": 0.2106, "per_look": {"looks": 411, "accepted_looks": 355, "radial_mm_p95": [0.1759, 0.1574, 0.1948], "yaw_deg_p95": [0.0603, 0.0555, 0.0681], "radial_mm_median": 0.0839, "radial_mm_max": 0.2925, "yaw_deg_max": 0.4262}} |
+| arm_gt | {"course": {"steps": 72, "yielded": 72, "yield": 1.0, "n_averaged": 68, "radial_mm_p95": [0.1836, 0.1511, 0.2315], "yaw_deg_p95": [0.1459, 0.1009, 0.1654], "radial_mm_median": 0.0848, "radial_mm_max": 0.2532, "yaw_deg_max": 0.1693, "per_look": {"looks": 144, "accepted_looks": 140, "radial_mm_p95": [0.1784, 0.1515, 0.1928], "yaw_deg_p95": [0.2064, 0.174, 0.2982], "radial_mm_median": 0.0857, "radial_mm_max": 0.2503, "yaw_deg_max": 0.3364}}, "single": {"steps": 69, "yielded": 48, "yield": 0.6957, "n_averaged": 39, "radial_mm_p95": [0.2009, 0.1333, 0.2641], "yaw_deg_p95": [0.0542, 0.0433, 0.2054], "radial_mm_median": 0.0795, "radial_mm_max": 0.2928, "yaw_deg_max": 0.2106, "per_look": {"looks": 117, "accepted_looks": 102, "radial_mm_p95": [0.1941, 0.1409, 0.2087], "yaw_deg_p95": [0.0683, 0.0575, 0.1088], "radial_mm_median": 0.0814, "radial_mm_max": 0.2925, "yaw_deg_max": 0.4262}}} |
+| arm_fk_oracle | {"course": {"steps": 72, "yielded": 72, "yield": 1.0, "n_averaged": 69, "radial_mm_p95": [0.2197, 0.156, 0.2493], "yaw_deg_p95": [0.1801, 0.154, 0.1917], "radial_mm_median": 0.0876, "radial_mm_max": 0.2576, "yaw_deg_max": 0.1947, "per_look": {"looks": 144, "accepted_looks": 141, "radial_mm_p95": [0.1674, 0.1524, 0.2361], "yaw_deg_p95": [0.2916, 0.2035, 0.3342], "radial_mm_median": 0.0884, "radial_mm_max": 0.2585, "yaw_deg_max": 0.3638}}, "single": {"steps": 96, "yielded": 75, "yield": 0.7812, "n_averaged": 57, "radial_mm_p95": [0.1631, 0.1423, 0.2202], "yaw_deg_p95": [0.0502, 0.0409, 0.0601], "radial_mm_median": 0.0888, "radial_mm_max": 0.2326, "yaw_deg_max": 0.1285, "per_look": {"looks": 171, "accepted_looks": 147, "radial_mm_p95": [0.1558, 0.1478, 0.2033], "yaw_deg_p95": [0.0626, 0.0507, 0.0761], "radial_mm_median": 0.0845, "radial_mm_max": 0.2328, "yaw_deg_max": 0.1195}}} |
+| arm_fk_vision | {"course": {"steps": 55, "yielded": 55, "yield": 1.0, "n_averaged": 55, "radial_mm_p95": [0.2297, 0.1566, 0.2738], "yaw_deg_p95": [0.189, 0.1658, 0.1939], "radial_mm_median": 0.0927, "radial_mm_max": 0.2993, "yaw_deg_max": 0.2008, "per_look": {"looks": 110, "accepted_looks": 110, "radial_mm_p95": [0.1892, 0.152, 0.2389], "yaw_deg_p95": [0.3073, 0.2547, 0.3493], "radial_mm_median": 0.0928, "radial_mm_max": 0.2938, "yaw_deg_max": 0.3625}}, "single": {"steps": 72, "yielded": 53, "yield": 0.7361, "n_averaged": 40, "radial_mm_p95": [0.1864, 0.1579, 0.2251], "yaw_deg_p95": [0.0396, 0.0356, 0.0764], "radial_mm_median": 0.1003, "radial_mm_max": 0.2364, "yaw_deg_max": 0.1184, "per_look": {"looks": 123, "accepted_looks": 106, "radial_mm_p95": [0.1882, 0.1589, 0.1924], "yaw_deg_p95": [0.0539, 0.0485, 0.0571], "radial_mm_median": 0.0901, "radial_mm_max": 0.2367, "yaw_deg_max": 0.1108}}} |
+| gated_e1_only | {"steps": 263, "yielded": 210, "yield": 0.7985, "n_averaged": 202, "radial_mm_p95": [0.216, 0.1821, 0.2484], "yaw_deg_p95": [0.1773, 0.1592, 0.1881], "radial_mm_median": 0.0883, "radial_mm_max": 0.2993, "yaw_deg_max": 0.2008, "per_look": {"looks": 463, "accepted_looks": 447, "radial_mm_p95": [0.185, 0.1635, 0.2028], "yaw_deg_p95": [0.2829, 0.2313, 0.3036], "radial_mm_median": 0.0893, "radial_mm_max": 0.2938, "yaw_deg_max": 0.3638}} |
+| edge_counted | false |
+
+### T-V1b: the frozen pool, drift
+
+| item | value |
+|---|---|
+| hash | "356b6a468a67d388" |
+| partial | false |
+| n_steps | 436 |
+| n_looks | 872 |
+| n_accepted | 420 |
+| drift_max_mm | 0.0 |
+| drift_xy_max_mm | 0.0 |
+| drift_steps | 208 |
+| drift_median_mm | 0.0 |
+| drift_worst | shape="cube", step=7, support="b_005", rows=200, cap=6068, insert_onset=6268, window_end=6267, d3_mm=0.0, dxy_mm=0.0, snap=6338, d3_snap_mm=0.025, dxy_snap_mm=0.0188, arm="fk_oracle", seed=1; shape="cube", step=7, support="b_004", rows=200, cap=6068, insert_onset=6268, window_end=6267, d3_mm=0.0, dxy_mm=0.0, snap=6338, d3_snap_mm=0.0254, dxy_snap_mm=0.0174, arm="fk_vision", seed=2; shape="hollow_box", step=9, support="b_004", rows=200, cap=7603, insert_onset=7803, window_end=7802, d3_mm=0.0, dxy_mm=0.0, snap=7873, d3_snap_mm=0.0045, dxy_snap_mm=0.0032, arm="fk_oracle", seed=2; shape="hollow_box", step=9, support="b_004", rows=200, cap=7603, insert_onset=7803, window_end=7802, d3_mm=0.0, dxy_mm=0.0, snap=7873, d3_snap_mm=0.0041, dxy_snap_mm=0.0031, arm="fk_oracle", seed=1; shape="hollow_box", step=10, support="b_006", rows=200, cap=8383, insert_onset=8583, window_end=8582, d3_mm=0.0, dxy_mm=0.0, snap=8653, d3_snap_mm=0.0042, dxy_snap_mm=0.0032, arm="fk_oracle", seed=1 |
+| drift_to_snap | {"max_mm": 0.0844, "xy_max_mm": 0.0628, "worst": [{"shape": "arch", "step": 9, "support": "b_007", "rows": 200, "cap": 7668, "insert_onset": 7868, "window_end": 7867, "d3_mm": 0.0, "dxy_mm": 0.0, "snap": 7938, "d3_snap_mm": 0.0844, "dxy_snap_mm": 0.0628, "arm": "fk_oracle", "seed": 0}, {"shape": "arch", "step": 9, "support": "b_007", "rows": 200, "cap": 7668, "insert_onset": 7868, "window_end": 7867, "d3_mm": 0.0, "dxy_mm": 0.0, "snap": 7938, "d3_snap_mm": 0.082, "dxy_snap_mm": 0.061, "arm": "fk_oracle", "seed": 2}, {"shape": "arch", "step": 10, "support": "b_006", "rows": 200, "cap": 8467, "insert_onset": 8667, "window_end": 8666, "d3_mm": 0.0, "dxy_mm": 0.0, "snap": 8737, "d3_snap_mm": 0.0602, "dxy_snap_mm": 0.0493, "arm": "fk_oracle", "seed": 2}, {"shape": "arch", "step": 8, "support": "b_006", "rows": 200, "cap": 6879, "insert_onset": 7079, "window_end": 7078, "d3_mm": 0.0, "dxy_mm": 0.0, "snap": 7149, "d3_snap_mm": 0.06, "dxy_snap_mm": 0.0475, "arm": "fk_oracle", "seed": 2}, {"shape": "arch", "step": 10, "support": "b_006", "rows": 200, "cap": 8467, "insert_onset": 8667, "window_end": 8666, "d3_mm": 0.0, "dxy_mm": 0.0, "snap": 8737, "d3_snap_mm": 0.0584, "dxy_snap_mm": 0.0491, "arm": "fk_oracle", "seed": 0}]} |
+| course | 199 |
+| single | 221 |
+
+### T-V1b: edge fallback qualification
+
+| item | value |
+|---|---|
+| n_cases | 45 |
+| n_steps | 15 |
+| rel_radial_mm_p95 | [0.1545, 0.1274, 0.1693] |
+| rel_yaw_deg_p95 | [0.0508, 0.0429, 0.0985] |
+| in_pool | 45 |
+| e2_scale2_single | {"pass": 6, "n": 9} |
+| qualified | false |
+
+### F-V1: matched injection (E2)
+
+| item | value |
+|---|---|
+| contexts | 33 |
+| native | [["S5p13", 12], ["arch", 10]] |
+| n_native | 2 |
+| included | 31 |
+| pass | {"scale1": {"all": {"pass": 119, "n": 124}, "course": {"pass": 74, "n": 76}, "single": {"pass": 45, "n": 48}}, "scale2": {"all": {"pass": 110, "n": 124}, "course": {"pass": 69, "n": 76}, "single": {"pass": 41, "n": 48}}} |
+| manipulation | {"ok": 264, "n": 264, "frac": 1.0, "rule": "|realised - mean(controls) - injected| <= max(0.1 mm, 10 %), >= 95 %"} |
+
+### F-V1: transfer (E2b, --continue)
+
+| item | value |
+|---|---|
+| observed | 62 |
+| pass | 47 |
+| agree | 57 |
+| frac | 0.9194 |
+| unobserved | 0 |
+| no_e2_match | 0 |
+| after_failure_steps | 18 |
+| pre_failure | {"observed": 44, "pass": 36, "agree": 44, "frac": 1.0} |
+| after_failure | {"observed": 18, "pass": 11, "agree": 13, "frac": 0.7222} |
+| unobserved_reasons | {} |
+| n_native_steps_included | 2 |
+
+### F-V1: ACC axis sweep
+
+| item | value |
+|---|---|
+| complete | true |
+| episodes | 372 |
+| contexts | 31 |
+| long+ pass_by_level | {"0.3": {"all": {"pass": 30, "n": 31}, "course": {"pass": 19, "n": 19}, "single": {"pass": 11, "n": 12}}, "0.6": {"all": {"pass": 22, "n": 31}, "course": {"pass": 14, "n": 19}, "single": {"pass": 8, "n": 12}}, "1.0": {"all": {"pass": 15, "n": 31}, "course": {"pass": 14, "n": 19}, "single": {"pass": 1, "n": 12}}} |
+| long+ largest_passing_counts | {"all": {"1.0": 15, "0.3": 8, "0.6": 7, "None": 1}, "course": {"1.0": 14, "0.3": 5}, "single": {"0.3": 3, "0.6": 7, "None": 1, "1.0": 1}} |
+| long+ non_monotone | [] |
+| long- pass_by_level | {"0.3": {"all": {"pass": 25, "n": 31}, "course": {"pass": 14, "n": 19}, "single": {"pass": 11, "n": 12}}, "0.6": {"all": {"pass": 23, "n": 31}, "course": {"pass": 13, "n": 19}, "single": {"pass": 10, "n": 12}}, "1.0": {"all": {"pass": 15, "n": 31}, "course": {"pass": 9, "n": 19}, "single": {"pass": 6, "n": 12}}} |
+| long- largest_passing_counts | {"all": {"1.0": 15, "0.6": 8, "0.3": 2, "None": 6}, "course": {"1.0": 9, "0.6": 4, "0.3": 1, "None": 5}, "single": {"0.6": 4, "0.3": 1, "1.0": 6, "None": 1}} |
+| long- non_monotone | [] |
+| short+ pass_by_level | {"0.3": {"all": {"pass": 27, "n": 31}, "course": {"pass": 17, "n": 19}, "single": {"pass": 10, "n": 12}}, "0.6": {"all": {"pass": 18, "n": 31}, "course": {"pass": 10, "n": 19}, "single": {"pass": 8, "n": 12}}, "1.0": {"all": {"pass": 6, "n": 31}, "course": {"pass": 6, "n": 19}, "single": {"pass": 0, "n": 12}}} |
+| short+ largest_passing_counts | {"all": {"1.0": 6, "None": 4, "0.3": 9, "0.6": 12}, "course": {"1.0": 6, "None": 2, "0.3": 7, "0.6": 4}, "single": {"0.3": 2, "None": 2, "0.6": 8}} |
+| short+ non_monotone | [] |
+| short- pass_by_level | {"0.3": {"all": {"pass": 28, "n": 31}, "course": {"pass": 18, "n": 19}, "single": {"pass": 10, "n": 12}}, "0.6": {"all": {"pass": 14, "n": 31}, "course": {"pass": 8, "n": 19}, "single": {"pass": 6, "n": 12}}, "1.0": {"all": {"pass": 7, "n": 31}, "course": {"pass": 6, "n": 19}, "single": {"pass": 1, "n": 12}}} |
+| short- largest_passing_counts | {"all": {"0.6": 8, "0.3": 14, "None": 2, "1.0": 7}, "course": {"0.6": 2, "0.3": 10, "1.0": 6, "None": 1}, "single": {"None": 1, "0.3": 4, "1.0": 1, "0.6": 6}} |
+| short- non_monotone | ["cube:7"] |
+
+### T-V1c: cost (E4)
+
+| item | value |
+|---|---|
+| complete | true |
+| arms | {"gt": {"workers": 4, "n": 40, "lost": 0, "wall_s": 535.3, "episodes_per_h": 269.008, "episode_wall_s_median": 50.85, "startup_s_median": 7.225, "rtf_median": 0.2855, "success": 6, "render_ms_median": 0.0, "vision_ms_median": 0.0, "mask_ms_median": 0.0, "looks_sim_s_median": 0.0}, "fk_vision": {"workers": 4, "n": 40, "lost": 0, "wall_s": 633.7, "episodes_per_h": 227.2369, "episode_wall_s_median": 63.65, "startup_s_median": 7.285, "rtf_median": 0.2725, "success": 5, "render_ms_median": 59.1278, "vision_ms_median": 390.9602, "mask_ms_median": 132.2144, "looks_sim_s_median": 2.5833}} |
+| ratio_vision_over_gt | 0.8447 |
+| cost_ok | true |
+| rule | "fk_vision >= 0.8 x gt episodes/h and >= 150/h (U-P3 only; provisional)" |
+
+### G-V1 (complete: {'e1': True, 'e1b': True, 'e2': True, 'e2b': True})
+
+  validity  a_E1_native_cube             pass         clean
+  validity  a_E1_native_arch             pass         clean
+  validity  a_E1_native_hollow_box       pass         clean
+  validity  b_native_contexts_le_3       pass         2 of 33 native
+  validity  c_manipulation_check         pass         {'ok': 264, 'n': 264, 'frac': 1.0, 'rule': '|realised - mean(controls) - injected| <= max(0.1 mm, 10 %), >= 95 %'}
+  validity  d_e2_e2b_agreement_ge_90     pass         57 of 62 scored steps agree (pre-failure only: 44 of 44)
+  criteria  1                            pass         {'cube': True, 'arch': True, 'hollow_box': True}
+  criteria  4                            FAIL         {'cube': False, 'arch': False, 'hollow_box': False}
+  criteria  2                            FAIL         [('e2', 'fail', 110, 124), ('e2b', 'fail', 47, 62)]
+  criteria  3                            FAIL         yield 0.860, yaw p95 0.161 deg
+
+  OUTCOME: ACC [STALE: rows from other vision parameters ['0f312821b7c8c394']]   (cost, U-P3 only: True)
+-> results/v4/vision/v1_acc/tables.json

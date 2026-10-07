@@ -1,0 +1,1 @@
+{"structure": "S3", "plan": "results/v4/vision/v1_r1/plans/structure_S3.json", "start_step": 7, "only_step": true, "brace_json": null, "press_scale": null, "press_lateral": null, "exe": "E0", "out": "results/v4/vision/v1_r1/rows/d78126e4e9031c85.part", "tag": "d78126e4e9031c85", "repeat": 0, "look": true, "aim": "fk_vision", "seed": 0}

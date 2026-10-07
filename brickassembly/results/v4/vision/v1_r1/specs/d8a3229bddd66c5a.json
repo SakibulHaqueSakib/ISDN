@@ -1,0 +1,1 @@
+{"structure": "S3", "plan": "results/v4/vision/v1_r1/plans/structure_S3.json", "exe": "E0", "out": "results/v4/vision/v1_r1/rows/d8a3229bddd66c5a.part", "tag": "d8a3229bddd66c5a", "repeat": 0, "look": true, "aim": "gt", "seed": 0, "shadow_vision": true, "record_all": "results/v4/vision/v1_r1/recordings/d8a3229bddd66c5a.npz"}

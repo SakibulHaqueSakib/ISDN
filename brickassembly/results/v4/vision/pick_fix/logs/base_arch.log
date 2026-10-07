@@ -1,0 +1,22 @@
+preflight: arch  2 x 10 studs x 5 layers, 11 bricks {'2x2': 8, '2x4': 2, '2x6': 1}, feeder slots 11 of 24
+k=4  IIKKKKKKJJ  IIKKKKKKJJ
+k=3  GGGG..HHHH  GGGG..HHHH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_arch_none.json
+arch: 11 bricks, 0 braced (none), 12 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.24}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.36, 'yaw_deg': 0.02, 'tilt_deg': 0.12}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.11}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.19, 'dz_mm': -0.33, 'yaw_deg': 0.02, 'tilt_deg': 0.48}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.16}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.24}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.23}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.15, 'dz_mm': -0.33, 'yaw_deg': 0.0, 'tilt_deg': 0.1}
+  step 8 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.17, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.37}
+  step 9 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.15, 'dz_mm': -0.32, 'yaw_deg': 0.03, 'tilt_deg': 0.33}
+  step 10 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.09, 'dz_mm': -0.19, 'yaw_deg': 0.0, 'tilt_deg': 0.14}
+done: 11 / 11 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_010)

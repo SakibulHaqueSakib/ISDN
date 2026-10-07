@@ -1,0 +1,79 @@
+preflight: S3  2 x 10 studs x 9 layers, 16 bricks {'2x2': 11, '2x4': 4, '2x6': 1}, feeder slots 16 of 24
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan <- results/v4/vision/pick_fix/plans/structure_S3.json
+S3: 16 bricks, 0 braced (none), 17 clutch welds
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.34
+TMPDBG touchdown err_mm [-0.03 -0.01  2.08] ee [ 0.17   -0.29    0.0151]
+TMPDBG lift-start tilt 0.55
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.36, 'yaw_deg': 0.0, 'tilt_deg': 0.22}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.34
+TMPDBG touchdown err_mm [-0.03 -0.03  2.11] ee [ 0.1    -0.22    0.0151]
+TMPDBG lift-start tilt 0.67
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.23, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.29}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.34
+TMPDBG touchdown err_mm [-0.05 -0.02  2.11] ee [ 0.2399 -0.36    0.0151]
+TMPDBG lift-start tilt 0.57
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.2, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.11}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.32
+TMPDBG touchdown err_mm [-0.07 -0.06  2.17] ee [ 0.3099 -0.4301  0.0152]
+TMPDBG lift-start tilt 0.39
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.2, 'dz_mm': -0.34, 'yaw_deg': 0.02, 'tilt_deg': 0.2}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.31
+TMPDBG touchdown err_mm [-0.07 -0.08  2.19] ee [ 0.0999 -0.2901  0.0152]
+TMPDBG lift-start tilt 0.41
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.19, 'dz_mm': -0.34, 'yaw_deg': 0.0, 'tilt_deg': 0.43}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.31
+TMPDBG touchdown err_mm [-0.07 -0.08  2.19] ee [ 0.1699 -0.3601  0.0152]
+TMPDBG lift-start tilt 0.37
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.19, 'dz_mm': -0.34, 'yaw_deg': 0.03, 'tilt_deg': 0.2}
+TMPDBG settle waited_s 0.55 t 0.667 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.07 -0.11  2.24] ee [ 0.2399 -0.4301  0.0152]
+TMPDBG lift-start tilt 0.39
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.18, 'dz_mm': -0.35, 'yaw_deg': 0.03, 'tilt_deg': 0.12}
+TMPDBG settle waited_s 0.4 t 0.517 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.1  -0.15  2.31] ee [ 0.0999 -0.3601  0.0153]
+TMPDBG lift-start tilt 0.71
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.18, 'dz_mm': -0.34, 'yaw_deg': 0.0, 'tilt_deg': 0.25}
+TMPDBG settle waited_s 0.35 t 0.467 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.1  -0.17  2.34] ee [ 0.1699 -0.4302  0.0153]
+TMPDBG lift-start tilt 0.34
+  step 8 b_009 SNAP  {'brick': 'b_009', 'lateral_mm': 0.17, 'dz_mm': -0.34, 'yaw_deg': 0.03, 'tilt_deg': 0.14}
+TMPDBG settle waited_s 0.367 t 0.483 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.07 -0.18  2.35] ee [ 0.3099 -0.5002  0.0153]
+TMPDBG lift-start tilt 0.48
+  step 9 b_008 SNAP  {'brick': 'b_008', 'lateral_mm': 0.15, 'dz_mm': -0.34, 'yaw_deg': 0.01, 'tilt_deg': 0.18}
+TMPDBG settle waited_s 0.217 t 0.333 xyerr_mm 0.29
+TMPDBG touchdown err_mm [ 0.   -0.03  1.86] ee [ 0.24   -0.5     0.0149]
+TMPDBG lift-start tilt 0.49
+  step 10 b_011 SNAP  {'brick': 'b_011', 'lateral_mm': 0.16, 'dz_mm': -0.35, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+TMPDBG settle waited_s 0.15 t 0.267 xyerr_mm 0.29
+TMPDBG touchdown err_mm [ 0.01 -0.07  1.89] ee [ 0.1    -0.4301  0.0149]
+TMPDBG lift-start tilt 0.43
+  step 11 b_010 SNAP  {'brick': 'b_010', 'lateral_mm': 0.08, 'dz_mm': -0.28, 'yaw_deg': 0.01, 'tilt_deg': 0.15}
+TMPDBG settle waited_s 0.083 t 0.2 xyerr_mm 0.29
+TMPDBG touchdown err_mm [ 0.   -0.09  1.94] ee [ 0.17   -0.5001  0.0149]
+TMPDBG lift-start tilt 0.43
+  step 12 b_013 SNAP  {'brick': 'b_013', 'lateral_mm': 0.15, 'dz_mm': -0.35, 'yaw_deg': 0.02, 'tilt_deg': 0.13}
+TMPDBG settle waited_s 0.533 t 0.65 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.08 -0.11  2.04] ee [ 0.0999 -0.5001  0.015 ]
+TMPDBG lift-start tilt 0.37
+  step 13 b_012 SNAP  {'brick': 'b_012', 'lateral_mm': 0.12, 'dz_mm': -0.31, 'yaw_deg': 0.02, 'tilt_deg': 0.08}
+TMPDBG settle waited_s 0.6 t 0.7 xyerr_mm 0.33
+TMPDBG touchdown err_mm [-0.06 -0.05  2.13] ee [ 0.3799 -0.4301  0.0151]
+TMPDBG lift-start tilt 0.57
+  step 14 b_014 SNAP  {'brick': 'b_014', 'lateral_mm': 0.1, 'dz_mm': -0.32, 'yaw_deg': 0.01, 'tilt_deg': 0.13}
+TMPDBG settle waited_s 0.55 t 0.667 xyerr_mm 0.3
+TMPDBG touchdown err_mm [-0.12 -0.08  2.25] ee [ 0.0299 -0.2201  0.0152]
+TMPDBG lift-start tilt 0.46
+  step 15 b_015 SNAP  {'brick': 'b_015', 'lateral_mm': 0.07, 'dz_mm': -0.3, 'yaw_deg': 0.0, 'tilt_deg': 0.08}
+done: 16 / 16 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.001 mm (b_012)

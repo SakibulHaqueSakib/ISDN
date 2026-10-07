@@ -1,0 +1,1 @@
+{"structure": "S2A", "plan": "results/v4/vision/v1_r1/plans/structure_S2A.json", "start_step": 4, "only_step": true, "brace_json": null, "press_scale": null, "press_lateral": null, "exe": "E0", "out": "results/v4/vision/v1_r1/rows/761a1bea3ae84bf7.part", "tag": "761a1bea3ae84bf7", "repeat": 2, "look": true, "aim": "fk_vision", "seed": 2}

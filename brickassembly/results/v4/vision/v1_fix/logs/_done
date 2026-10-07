@@ -1,0 +1,4 @@
+done S3_gt rc=1
+done cube_vision rc=0
+done cube_oracle rc=0
+done arch_oracle rc=0

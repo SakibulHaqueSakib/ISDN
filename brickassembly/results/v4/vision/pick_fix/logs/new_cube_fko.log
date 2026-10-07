@@ -1,0 +1,18 @@
+preflight: cube  4 x 4 studs x 4 layers, 8 bricks {'2x4': 8}, feeder slots 8 of 24
+k=3  GGHH  GGHH  GGHH  GGHH
+k=2  EEEE  EEEE  FFFF  FFFF
+k=1  CCDD  CCDD  CCDD  CCDD
+k=0  AAAA  AAAA  BBBB  BBBB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan -> plans/sim_cube_none.json
+cube: 8 bricks, 0 braced (none), 14 clutch welds
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.19, 'dz_mm': -0.3, 'yaw_deg': 0.0, 'tilt_deg': 0.03}
+  step 1 b_001 SNAP  {'brick': 'b_001', 'lateral_mm': 0.19, 'dz_mm': -0.29, 'yaw_deg': 0.02, 'tilt_deg': 0.29}
+  step 2 b_002 SNAP  {'brick': 'b_002', 'lateral_mm': 0.1, 'dz_mm': -0.25, 'yaw_deg': 0.0, 'tilt_deg': 0.03}
+  step 3 b_003 SNAP  {'brick': 'b_003', 'lateral_mm': 0.11, 'dz_mm': -0.24, 'yaw_deg': 0.06, 'tilt_deg': 0.09}
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.08, 'dz_mm': -0.24, 'yaw_deg': 0.0, 'tilt_deg': 0.04}
+  step 5 b_005 SNAP  {'brick': 'b_005', 'lateral_mm': 0.09, 'dz_mm': -0.25, 'yaw_deg': 0.02, 'tilt_deg': 0.29}
+  step 6 b_006 SNAP  {'brick': 'b_006', 'lateral_mm': 0.08, 'dz_mm': -0.25, 'yaw_deg': 0.0, 'tilt_deg': 0.07}
+  step 7 b_007 SNAP  {'brick': 'b_007', 'lateral_mm': 0.19, 'dz_mm': -0.23, 'yaw_deg': 0.01, 'tilt_deg': 0.05}
+done: 8 / 8 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_007)

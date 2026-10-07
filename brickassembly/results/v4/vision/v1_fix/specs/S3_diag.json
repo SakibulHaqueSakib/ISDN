@@ -1,0 +1,1 @@
+{"structure": "S3", "plan": "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/v4/vision/v1/plans/structure_S3.json", "exe": "E0", "out": "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/v4/vision/v1_fix/rows/S3_diag.part", "tag": "S3_diag", "repeat": 0, "look": true, "aim": "gt", "seed": 0, "shadow_vision": true}

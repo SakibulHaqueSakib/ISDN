@@ -1,0 +1,27 @@
+preflight: S3  2 x 10 studs x 9 layers, 16 bricks {'2x2': 11, '2x4': 4, '2x6': 1}, feeder slots 16 of 24
+k=8  ......PPPP  ......PPPP
+k=7  ......OOOO  ......OOOO
+k=6  ...MMMM.NN  ...MMMM.NN
+k=5  KKKKKK..LL  KKKKKK..LL
+k=4  IIII....JJ  IIII....JJ
+k=3  GG......HH  GG......HH
+k=2  EE......FF  EE......FF
+k=1  CC......DD  CC......DD
+k=0  AA......BB  AA......BB
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan <- results/v4/vision/pick_fix/plans/structure_S3.json
+S3: 16 bricks, 0 braced (none), 17 clutch welds
+TMPDBG touchdown err_mm [ 1.88  1.85 -0.92] ee [ 0.1719 -0.2882  0.0121]
+  step 0 b_000 SNAP  {'brick': 'b_000', 'lateral_mm': 0.24, 'dz_mm': -0.36, 'yaw_deg': 0.01, 'tilt_deg': 0.09}
+TMPDBG touchdown err_mm [0.65 1.29 1.58] ee [ 0.1006 -0.2187  0.0146]
+  step 1 b_001 MISS  {'brick': 'b_001', 'lateral_mm': 274.43, 'dz_mm': 4.74, 'yaw_deg': 1.42, 'tilt_deg': 90.03}
+FAILURE gate_miss at step 1: arms open and park
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1863, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1520, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: gate_miss at step 1 (1 built)

@@ -1,0 +1,84 @@
+--- attempt 1
+Warp 1.13.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 5090 D" (31 GiB, sm_120, mempool enabled)
+   Kernel cache:
+     /home/bakasakib/.cache/warp/1.13.0
+preflight: rl_c1835c776e4d  2 x 8 studs x 8 layers, 16 bricks {'1x2': 1, '2x2': 12, '2x3': 1, '2x4': 2}, feeder slots 16 of 24
+k=7  ...PPPOO  ...PPPOO
+k=6  ...MMMMN  ...MMMMN
+k=5  LLLL..KK  LLLL..KK
+k=4  II....JJ  II....JJ
+k=3  GG....HH  GG....HH
+k=2  EE....FF  EE....FF
+k=1  CC....DD  CC....DD
+k=0  AA....BB  AA....BB
+Module newton._src.geometry.inertia a7ff42e load on device 'cuda:0' took 6.91 ms  (cached)
+Module newton._src.utils.mesh 1476c2a load on device 'cpu' took 0.89 ms  (cached)
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan <- /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/v4/rl/plans/c1835c776e4d.json
+preflight WARNING: 1 of 16 bricks have no free grasp face (a neighbour sits flush against a pinch face; the placer's fingertips land on its studs): 13 (b_013 1x2) -- the build will likely stop at step 13
+Module validate_and_correct_inertia_kernel_524fb5ef 524fb5e load on device 'cuda:0' took 1.50 ms  (cached)
+Module newton._src.sim.ik.ik_solver d9f8ff8 load on device 'cuda:0' took 5.92 ms  (cached)
+Module IKOptimizerLM___build_specialized__locals___fk_local_a9d6f4f5 a9d6f4f load on device 'cuda:0' took 4.77 ms  (cached)
+Module newton._src.sim.ik.ik_common ec7ac17 load on device 'cuda:0' took 2.55 ms  (cached)
+Module newton._src.sim.ik.ik_objectives 2ab3ea8 load on device 'cuda:0' took 2.28 ms  (cached)
+Module IKOptimizerLM___build_specialized__locals___compute_motion_subspace_2d_28061874 2806187 load on device 'cuda:0' took 6.19 ms  (cached)
+Module _lm_solve_tiled_9_15_71b73c32 641c3f9 load on device 'cuda:0' took 173.05 ms  (cached)
+Module newton._src.sim.ik.ik_lm_optimizer d941fd7 load on device 'cuda:0' took 3.88 ms  (cached)
+Module newton._src.geometry.sdf_utils 30505d5 load on device 'cuda:0' took 2.56 ms  (cached)
+Module newton._src.geometry.sdf_texture ba97079 load on device 'cuda:0' took 7.91 ms  (cached)
+Module newton._src.sim.graph_coloring 95273ab load on device 'cpu' took 0.26 ms  (cached)
+Module newton._src.solvers.mujoco.kernels f5ae6c7 load on device 'cuda:0' took 5.31 ms  (cached)
+Module mujoco_warp._src.io 00dd7e1 load on device 'cuda:0' took 6.18 ms  (cached)
+Module mujoco_warp._src.smooth 976a5d7 load on device 'cuda:0' took 4.95 ms  (cached)
+Module _solve_LD_sparse_fused__locals__kernel_7e49368b 290ea73 load on device 'cuda:0' took 0.76 ms  (cached)
+Module newton._src.sim.articulation 9875313 load on device 'cuda:0' took 3.23 ms  (cached)
+Module newton._src.viewer.kernels 6eaf52b load on device 'cuda:0' took 4.87 ms  (cached)
+Module newton._src.sim.collide 0e6be4c load on device 'cuda:0' took 4.24 ms  (cached)
+Module newton._src.geometry.broad_phase_sap 7baa1de load on device 'cuda:0' took 3.06 ms  (cached)
+Module narrow_phase_primitive_write_contact e070310 load on device 'cuda:0' took 4.63 ms  (cached)
+Module narrow_phase_gjk_mpr_True_write_contact_default_default 00fbe52 load on device 'cuda:0' took 3.48 ms  (cached)
+Module newton._src.geometry.narrow_phase f722f21 load on device 'cuda:0' took 4.98 ms  (cached)
+Module newton._src.geometry.contact_reduction_global 5c84d97 load on device 'cuda:0' took 0.80 ms  (cached)
+Module newton._src.geometry.narrow_phase e577950 load on device 'cuda:0' took 0.60 ms  (cached)
+Module newton._src.geometry.sdf_contact 1cfb221 load on device 'cuda:0' took 4.08 ms  (cached)
+Module narrow_phase_mesh_plane_write_contact_to_reducer_True 0316777 load on device 'cuda:0' took 3.90 ms  (cached)
+Module mesh_triangle_contacts_to_reducer_kernel_98f62989 13e0243 load on device 'cuda:0' took 3.77 ms  (cached)
+Module newton._src.geometry.contact_reduction_global 5db63a2 load on device 'cuda:0' took 2.63 ms  (cached)
+Module sdf_contact_write_contact_to_reducer_False_True e0d3f15 load on device 'cuda:0' took 3.31 ms  (cached)
+Module export_reduced_contacts_write_contact c5c25a3 load on device 'cuda:0' took 2.31 ms  (cached)
+Module __main__ 83cffed load on device 'cuda:0' took 4.37 ms  (cached)
+Module mujoco_warp._src.constraint eb0e24d load on device 'cuda:0' took 2.02 ms  (cached)
+Module _efc_contact_init__locals__kernel_c7a6ce3a c7a6ce3 load on device 'cuda:0' took 2.21 ms  (cached)
+Module _efc_contact_jac_sparse__locals__kernel_7bafc28b 7bafc28 load on device 'cuda:0' took 0.97 ms  (cached)
+Module _efc_contact_update__locals__kernel_b43fbfe7 b43fbfe load on device 'cuda:0' took 3.48 ms  (cached)
+Module mujoco_warp._src.forward a76b6a3 load on device 'cuda:0' took 1.71 ms  (cached)
+Module mujoco_warp._src.passive 616927b load on device 'cuda:0' took 2.29 ms  (cached)
+Module mujoco_warp._src.forward 398750d load on device 'cuda:0' took 4.75 ms  (cached)
+Module mujoco_warp._src.support f32a4f8 load on device 'cuda:0' took 1.78 ms  (cached)
+Module mujoco_warp._src.solver 7df28c9 load on device 'cuda:0' took 3.35 ms  (cached)
+Module solve_init_jaref__locals__kernel_83b996d5 83b996d load on device 'cuda:0' took 3.88 ms  (cached)
+Module mul_m_sparse__locals___mul_m_sparse_32fa3590 32fa359 load on device 'cuda:0' took 5.71 ms  (cached)
+Module update_constraint_efc__locals__kernel_6bfb2757 6bfb275 load on device 'cuda:0' took 1.35 ms  (cached)
+Module update_constraint_gauss_cost__locals__kernel_73368172 7336817 load on device 'cuda:0' took 3.23 ms  (cached)
+Module update_gradient_cholesky_blocked__locals__kernel_8e3dff9e 48ead09 load on device 'cuda:0' took 188.28 ms  (cached)
+Module linesearch_jv_fused__locals__kernel_db87cbc7 db87cbc load on device 'cuda:0' took 2.80 ms  (cached)
+Module linesearch_iterative__locals__kernel_6131c716 3698647 load on device 'cuda:0' took 0.74 ms  (cached)
+Module mujoco_warp._src.sensor bee2d80 load on device 'cuda:0' took 1.51 ms  (cached)
+Module mujoco_warp._src.derivative f06cf21 load on device 'cuda:0' took 1.54 ms  (cached)
+rl_c1835c776e4d: 16 bricks, 0 braced (none), 18 clutch welds
+  BREAK b_000 on None: u 2.043, frame 759, step 12
+  BREAK b_002 on b_000: u 1.522, frame 759, step 12
+FAILURE joint_break at step 12: arms open and park
+Traceback (most recent call last):
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1522, in <module>
+    newton.examples.run(example, args)
+  File "/home/bakasakib/Codes/CAIRSS/Issac/lib/python3.12/site-packages/newton/examples/__init__.py", line 330, in run
+    example.test_final()
+  File "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/dual_arm_sim.py", line 1213, in test_final
+    assert self.failure is None, "%s at step %s (%d built)" % (self.failure, self.failed_at_step,
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: joint_break at step 12 (10 built)

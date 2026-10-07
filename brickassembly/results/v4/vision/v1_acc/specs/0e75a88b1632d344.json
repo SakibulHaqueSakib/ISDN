@@ -1,0 +1,1 @@
+{"shape": "cube", "plan": "results/v4/vision/v1_acc/plans/shape_cube.json", "exe": "E0", "out": "results/v4/vision/v1_acc/rows/0e75a88b1632d344.part", "tag": "0e75a88b1632d344", "repeat": 1, "look": true, "aim": "fk_vision", "seed": 1, "record_all": "results/v4/vision/v1_acc/recordings/0e75a88b1632d344.npz"}

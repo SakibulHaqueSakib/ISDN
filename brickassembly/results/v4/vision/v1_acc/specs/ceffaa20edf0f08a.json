@@ -1,0 +1,1 @@
+{"structure": "S1", "plan": "results/v4/vision/v1_acc/plans/structure_S1.json", "start_step": 1, "only_step": true, "brace_json": null, "press_scale": null, "press_lateral": null, "exe": "E0", "out": "results/v4/vision/v1_acc/rows/ceffaa20edf0f08a.part", "tag": "ceffaa20edf0f08a", "repeat": 1, "look": true, "aim": "fk_oracle", "seed": 1, "shadow_vision": true}

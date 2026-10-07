@@ -1,0 +1,1 @@
+{"shape": "arch", "plan": "results/v4/vision/v1_r1/plans/shape_arch.json", "exe": "E0", "out": "results/v4/vision/v1_r1/rows/db8887d5f32e2f33.part", "tag": "db8887d5f32e2f33", "repeat": 2, "look": true, "aim": "fk_vision", "seed": 2, "record_all": "results/v4/vision/v1_r1/recordings/db8887d5f32e2f33.npz"}

@@ -1,0 +1,9 @@
+# table.yml
+cuboid:
+  table:
+    dims: [4.0, 4.0, 0.2] # x, y, z
+    pose: [0.0, 0.0, -0.1, 1, 0, 0, 0.0] # x, y, z, qx, qy, qz, qw
+
+  obj:
+    dims: [0.05, 0.05, 0.05]
+    pose: [0.5, 0, 0.025, 1, 0, 0, 0]

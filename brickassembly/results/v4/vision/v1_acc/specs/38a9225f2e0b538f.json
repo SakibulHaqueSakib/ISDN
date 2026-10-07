@@ -1,0 +1,1 @@
+{"shape": "cube", "plan": "results/v4/vision/v1_acc/plans/shape_cube.json", "start_step": 3, "only_step": true, "brace_json": null, "press_scale": null, "press_lateral": null, "exe": "E0", "out": "results/v4/vision/v1_acc/rows/38a9225f2e0b538f.part", "tag": "38a9225f2e0b538f", "repeat": 1, "look": true, "aim": "fk_oracle", "seed": 0, "shadow_vision": true}

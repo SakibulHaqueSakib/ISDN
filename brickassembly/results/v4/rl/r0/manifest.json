@@ -1,0 +1,83 @@
+{
+ "master_seed": 20260930,
+ "stages": {
+  "harness": "harness",
+  "throughput": "throughput",
+  "signal": "signal",
+  "validate": "validate"
+ },
+ "band": [
+  0.5,
+  1.3
+ ],
+ "band_history": [],
+ "lateral_max_N": 3.0,
+ "no_lateral": [
+  0.0,
+  0.0
+ ],
+ "pulse": {
+  "up_s": 0.3,
+  "hold_s": 0.3,
+  "down_s": 0.3,
+  "note": "smoothstep; set in the cell (plan 2.2); a recorded value, not a runner input"
+ },
+ "actions": {
+  "leans_deg": [
+   -45,
+   0,
+   45
+  ],
+  "brace_cost": 0.05,
+  "candidates": "bracing.candidates(brick, placed, clearance=lambda *a: True) x leans (28 mm rule off)",
+  "screen": "screen_candidates: LP-best 4 + nearest 2 + random 6 (seeded from stage 'screen', key, step)",
+  "pick_rule": "screen_pick: success with lowest u2_peak; ties within 0.01 -> lp_u, |dy|, index"
+ },
+ "split": {
+  "train": 72,
+  "val": 18,
+  "test": "on demand (R2)"
+ },
+ "pools": {
+  "critical_u": 0.8,
+  "scales": [
+   0.5,
+   1.0,
+   1.3
+  ]
+ },
+ "exe_settings": {
+  "E0": {
+   "name": "E0",
+   "grip_N": 14.3,
+   "mu": 1.0,
+   "arm_ke": 400.0,
+   "arm_kd": 40.0,
+   "finger_ke": 9500.0
+  },
+  "E1": {
+   "name": "E1",
+   "grip_N": 28.6,
+   "mu": 1.0,
+   "arm_ke": 4000.0,
+   "arm_kd": 126.0,
+   "finger_ke": 19000.0
+  }
+ },
+ "exe": null,
+ "frozen": false,
+ "job_counts": {
+  "harness": {
+   "entries": 49,
+   "unique": 49,
+   "pending_sham": 0,
+   "ran_last": 49
+  },
+  "throughput": {
+   "entries": 180,
+   "unique": 180
+  }
+ },
+ "selection": {},
+ "hash": "55e0ac788a9c0185"
+}

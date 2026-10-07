@@ -1,0 +1,1 @@
+{"structure": "S3", "plan": "results/v4/vision/v1_acc/plans/structure_S3.json", "exe": "E0", "out": "results/v4/vision/v1_acc/rows/063ab7b390406d9a.part", "tag": "063ab7b390406d9a", "repeat": 1, "look": true, "aim": "fk_vision", "seed": 1, "record_all": "results/v4/vision/v1_acc/recordings/063ab7b390406d9a.npz"}

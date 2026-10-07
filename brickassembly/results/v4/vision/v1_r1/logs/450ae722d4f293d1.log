@@ -1,0 +1,68 @@
+--- attempt 1
+Warp 1.13.0 initialized:
+   CUDA Toolkit 12.9, Driver 13.2
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA GeForce RTX 5090 D" (31 GiB, sm_120, mempool enabled)
+   Kernel cache:
+     /home/bakasakib/.cache/warp/1.13.0
+preflight: hollow_box  6 x 6 studs x 3 layers, 12 bricks {'1x4': 6, '1x6': 6}, feeder slots 12 of 24
+k=2  IIIIII  J....K  J....K  J....K  J....K  LLLLLL
+k=1  EFFFFG  E....G  E....G  E....G  E....G  EHHHHG
+k=0  AAAAAA  B....C  B....C  B....C  B....C  DDDDDD
+Module newton._src.geometry.inertia a7ff42e load on device 'cuda:0' took 5.86 ms  (cached)
+Module newton._src.utils.mesh 1476c2a load on device 'cpu' took 0.94 ms  (cached)
+brace grip: 14.3 N per finger, finger material mu 1.000
+plan <- results/v4/vision/v1_r1/plans/shape_hollow_box.json
+Module validate_and_correct_inertia_kernel_524fb5ef 524fb5e load on device 'cuda:0' took 1.35 ms  (cached)
+Module newton._src.sim.ik.ik_solver d9f8ff8 load on device 'cuda:0' took 4.36 ms  (cached)
+Module IKOptimizerLM___build_specialized__locals___fk_local_a9d6f4f5 a9d6f4f load on device 'cuda:0' took 4.48 ms  (cached)
+Module newton._src.sim.ik.ik_common ec7ac17 load on device 'cuda:0' took 2.78 ms  (cached)
+Module newton._src.sim.ik.ik_objectives 2ab3ea8 load on device 'cuda:0' took 2.70 ms  (cached)
+Module IKOptimizerLM___build_specialized__locals___compute_motion_subspace_2d_28061874 2806187 load on device 'cuda:0' took 7.26 ms  (cached)
+Module _lm_solve_tiled_9_15_71b73c32 641c3f9 load on device 'cuda:0' took 164.75 ms  (cached)
+Module newton._src.sim.ik.ik_lm_optimizer d941fd7 load on device 'cuda:0' took 1.91 ms  (cached)
+Module newton._src.geometry.sdf_utils 30505d5 load on device 'cuda:0' took 5.14 ms  (cached)
+Module newton._src.geometry.sdf_texture ba97079 load on device 'cuda:0' took 8.18 ms  (cached)
+Module newton._src.sim.graph_coloring 95273ab load on device 'cpu' took 0.21 ms  (cached)
+Module newton._src.solvers.mujoco.kernels f5ae6c7 load on device 'cuda:0' took 6.38 ms  (cached)
+Module mujoco_warp._src.io 00dd7e1 load on device 'cuda:0' took 2.29 ms  (cached)
+Module mujoco_warp._src.smooth 976a5d7 load on device 'cuda:0' took 4.22 ms  (cached)
+Module _solve_LD_sparse_fused__locals__kernel_377b11bf f59036c load on device 'cuda:0' took 2.68 ms  (cached)
+Module newton._src.sim.articulation 9875313 load on device 'cuda:0' took 3.04 ms  (cached)
+Module newton._src.viewer.kernels 6eaf52b load on device 'cuda:0' took 3.91 ms  (cached)
+Module newton._src.sim.collide 0e6be4c load on device 'cuda:0' took 2.63 ms  (cached)
+Module newton._src.geometry.broad_phase_sap 7baa1de load on device 'cuda:0' took 2.95 ms  (cached)
+Module narrow_phase_primitive_write_contact e070310 load on device 'cuda:0' took 2.52 ms  (cached)
+Module narrow_phase_gjk_mpr_True_write_contact_default_default 00fbe52 load on device 'cuda:0' took 5.09 ms  (cached)
+Module newton._src.geometry.narrow_phase f722f21 load on device 'cuda:0' took 1.57 ms  (cached)
+Module newton._src.geometry.contact_reduction_global 5c84d97 load on device 'cuda:0' took 3.40 ms  (cached)
+Module newton._src.geometry.narrow_phase e577950 load on device 'cuda:0' took 2.61 ms  (cached)
+Module newton._src.geometry.sdf_contact 1cfb221 load on device 'cuda:0' took 1.85 ms  (cached)
+Module narrow_phase_mesh_plane_write_contact_to_reducer_True 0316777 load on device 'cuda:0' took 1.07 ms  (cached)
+Module mesh_triangle_contacts_to_reducer_kernel_98f62989 13e0243 load on device 'cuda:0' took 4.41 ms  (cached)
+Module newton._src.geometry.contact_reduction_global 5db63a2 load on device 'cuda:0' took 3.64 ms  (cached)
+Module sdf_contact_write_contact_to_reducer_False_True e0d3f15 load on device 'cuda:0' took 2.81 ms  (cached)
+Module export_reduced_contacts_write_contact c5c25a3 load on device 'cuda:0' took 0.38 ms  (cached)
+Module mujoco_warp._src.constraint eb0e24d load on device 'cuda:0' took 3.80 ms  (cached)
+Module _efc_contact_init__locals__kernel_c7a6ce3a c7a6ce3 load on device 'cuda:0' took 4.33 ms  (cached)
+Module _efc_contact_jac_sparse__locals__kernel_7bafc28b 7bafc28 load on device 'cuda:0' took 0.28 ms  (cached)
+Module _efc_contact_update__locals__kernel_b43fbfe7 b43fbfe load on device 'cuda:0' took 1.90 ms  (cached)
+Module mujoco_warp._src.forward a76b6a3 load on device 'cuda:0' took 4.83 ms  (cached)
+Module mujoco_warp._src.passive 616927b load on device 'cuda:0' took 4.82 ms  (cached)
+Module mujoco_warp._src.forward 398750d load on device 'cuda:0' took 0.98 ms  (cached)
+Module mujoco_warp._src.support f32a4f8 load on device 'cuda:0' took 5.51 ms  (cached)
+Module mujoco_warp._src.solver 7df28c9 load on device 'cuda:0' took 3.66 ms  (cached)
+Module solve_init_jaref__locals__kernel_9f21a0ab 9f21a0a load on device 'cuda:0' took 1.83 ms  (cached)
+Module mul_m_sparse__locals___mul_m_sparse_32fa3590 32fa359 load on device 'cuda:0' took 2.47 ms  (cached)
+Module update_constraint_efc__locals__kernel_6bfb2757 6bfb275 load on device 'cuda:0' took 1.15 ms  (cached)
+Module update_constraint_gauss_cost__locals__kernel_ff76f9ab ff76f9a load on device 'cuda:0' took 4.22 ms  (cached)
+Module update_gradient_cholesky_blocked__locals__kernel_38fff992 fd276c6 load on device 'cuda:0' took 185.57 ms  (cached)
+Module linesearch_jv_fused__locals__kernel_510fc674 510fc67 load on device 'cuda:0' took 2.57 ms  (cached)
+Module linesearch_iterative__locals__kernel_6131c716 3698647 load on device 'cuda:0' took 1.84 ms  (cached)
+Module mujoco_warp._src.sensor bee2d80 load on device 'cuda:0' took 3.06 ms  (cached)
+Module mujoco_warp._src.derivative f06cf21 load on device 'cuda:0' took 1.51 ms  (cached)
+hollow_box: 12 bricks, 0 braced (none), 20 clutch welds
+  step 4 b_004 SNAP  {'brick': 'b_004', 'lateral_mm': 0.24, 'dz_mm': -0.21, 'yaw_deg': 0.04, 'tilt_deg': 0.55}
+done: 5 / 12 placed -> /home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/proto_episodes.jsonl
+max brick drift 0.000 mm (b_004)
