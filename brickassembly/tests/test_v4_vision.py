@@ -9,7 +9,8 @@
     after_failure, counted separately; agreement is over all scored steps and over the pre-failure ones; no snap = unobserved with a reason;
   - the ACC axis sweep: 31 contexts x 12 = 372 jobs (natives left out), the table per signed axis, largest passing level, non-monotone contexts;
   - the edge fallback's qualification (>= 20 cases and E2 scale-2 pass >= 95 % on the single-footprint contexts): true / false / unavailable;
-    edge-accepted steps count in the yield only if qualified;
+    edge-steered steps count in the yield only if qualified; an fk_vision build an unqualified edge estimate steered fails (perception_v5);
+  - E3 / the pool: one vector per step, the used estimate's error (aim.used_errors), typed by the plan; per-look statistics stay as an extra table;
   - exposed_single agrees with dual_arm_sim.exposed_cells on every E2 / E1b context.
 
     ~/Codes/CAIRSS/Issac/bin/python -m pytest tests/test_v4_vision.py     (or run it as a script)
@@ -210,17 +211,141 @@ def test_edge_fallback_qualification():
         assert "unavailable" in X.edge_qualification(none, pool, [], []) and X.edge_qualification(none, pool, [], [])["qualified"] is None
 
 
+def used_ent(arm, shape, n, used, looks=None, snap=True, aim=None, failure=None, built=None, total=None):
+    """One (episodes entry, record) with a step n: its looks (default two), the used estimate (`used`: None = not seen, or dict(estimators, errors))."""
+    v = {"n_looks": 2, "looks": looks if looks is not None else [{"accepted": False}, {"accepted": False}]}
+    if used is not None:
+        v["used"] = used
+    if snap:
+        v["snap"] = dict(screen_pass=True, gate_ok=True, lateral_mm=0.1, dz_mm=0.0)
+    row = {"vision": {"aim": aim or arm, "by_step": {str(n): v}}, "failure": failure, "built": built, "total": total}
+    return {"arm": arm, "meta": {"shape": shape}}, {"row": row}
+
+
+def err(dx=0.1, dy=0.0, dyaw=0.2):
+    return {"rel_xy_mm": [dx, dy], "rel_yaw_deg": dyaw, "rel_radial_mm": math.hypot(dx, dy)}
+
+
+def test_pool_is_one_vector_per_step_from_the_used_estimate():
+    """E3 / the pool: ONE vector per step, the error of the estimate the controller steers with (the average of the accepted looks), typed from the
+    plan (every step has two looks now); the per-look records stay as an extra table."""
+    lk = lambda dx: {"accepted": True, "estimator": "studs", "errors": err(dx)}
+    cube3 = ("cube", 3)                                              # a single-footprint step of cube (exposed_single)
+    assert X.look_type("cube", 3) == "single" and X.look_type("cube", 0) == "course"
+    ents = [used_ent("fk_vision", "cube", 3, dict(n_used=2, estimators=["studs", "studs"], errors=err(0.05, 0.0, 0.1)), [lk(0.3), lk(-0.2)]),   # two looks, one averaged vector
+            used_ent("fk_vision", "cube", 0, dict(n_used=1, estimators=["studs"], errors=err(0.2, 0.1, -0.3)), [lk(0.2), {"accepted": False}]),
+            used_ent("fk_oracle", "cube", 1, dict(n_used=0, estimators=[]), [{"accepted": False}, {"accepted": False}])]   # nothing accepted: no vector
+    steps, looks = X.collect_v5([(ents, "e1")])
+    assert len(steps) == 3 and len(looks) == 6                                           # one record per step; two per step in the per-look table
+    assert [(s["type"], s["yielded"], s["n_used"]) for s in steps] == [("single", True, 2), ("course", True, 1), ("course", False, 0)]
+    assert steps[0]["vec"] == [0.05, 0.0, 0.1] and steps[1]["vec"] == [0.2, 0.1, -0.3] and steps[2]["vec"] is None
+    assert [l["vec"] and l["vec"][0] for l in looks[:2]] == [0.3, -0.2]                  # per-look vectors are still there
+    sm = X.v5_summary(steps, looks)
+    assert sm["all"]["yielded"] == 2 and abs(sm["all"]["yield"] - 2 / 3) < 1e-12 and sm["all"]["n_averaged"] == 1
+    assert sm["single"]["radial_mm_max"] == 0.05 and sm["all"]["per_look"]["accepted_looks"] == 3 and sm["all"]["per_look"]["radial_mm_max"] == 0.3
+    assert sm["course"]["yield"] == 0.5
+
+
 def test_yield_counts_edge_only_if_qualified():
-    def e(n, estimators):
-        looks = [{"accepted": True, "estimator": x, "errors": {"rel_xy_mm": [0.1, 0.0], "rel_yaw_deg": 0.2, "rel_radial_mm": 0.1}} for x in estimators]
-        looks += [{"accepted": False} for _ in range(2 - len(looks))]
-        return {"arm": "fk_vision", "meta": {"shape": "S1"}}, {"row": {"vision": {"by_step": {str(n): {"n_looks": 2, "looks": looks}}}}}
-    ents = [e(0, ["stud"]), e(1, ["edge"]), e(2, ["stud", "edge"]), e(3, [])]
+    u = lambda *est: dict(n_used=len(est), estimators=list(est), errors=err())
+    ents = [used_ent("fk_vision", "S1", 1, u("studs")), used_ent("fk_vision", "S1", 2, u("edge")), used_ent("fk_vision", "S1", 3, u("studs", "edge")),
+            used_ent("fk_vision", "S1", 4, dict(n_used=0, estimators=[]))]          # S1's steps 1-4: single footprints (a pier)
     steps, looks = X.collect_v5([(ents, "e1b")])
-    assert [(s["yielded"], s["yielded_stud"]) for s in steps] == [(True, True), (True, False), (True, True), (False, False)]
+    assert [(s["yielded"], s["yielded_stud"], s["estimator"]) for s in steps] == [(True, True, "studs"), (True, False, "edge"), (True, False, "edge"), (False, False, None)]
     on, off = X.v5_summary(steps, looks, edge=True), X.v5_summary(steps, looks, edge=False)
-    assert on["all"]["yielded"] == 3 and on["all"]["accepted_looks"] == 4
-    assert off["all"]["yielded"] == 2 and off["all"]["accepted_looks"] == 2 and off["single"]["steps"] == 4 and off["single"]["yield"] == 0.5
+    assert on["all"]["yielded"] == 3 and off["all"]["yielded"] == 1 and off["single"]["steps"] == 4 and off["single"]["yield"] == 0.25    # the edge steps do not count toward yield
+    assert off["all"]["radial_mm_max"] is not None and on["all"]["yield"] == 0.75
+    pool_like = [s["vec"] for s in steps if s["accepted"]]
+    assert len(pool_like) == 3                                                           # the pool keeps the edge steps' vectors (E2 tests them at 2x for the qualification)
+
+
+def test_unqualified_edge_fails_its_fk_vision_build():
+    """Edge not qualified: an fk_vision build in which an edge estimate steered a step is a perception_v5 failure at that step (T-V1a, criterion 4);
+    a stud-only build, an fk_oracle build with a shadow edge estimate, and a qualified edge are untouched."""
+    u = lambda *est: dict(n_used=len(est), estimators=list(est), errors=err())
+    ok_build = lambda arm, used, **kw: used_ent(arm, "cube", 0, used, built=1, total=1, **kw)
+    studs, edge, mixed = ok_build("fk_vision", u("studs", "studs")), ok_build("fk_vision", u("studs", "edge")), ok_build("fk_vision", u("edge"))
+    assert X.build_stats(studs[1], edge_ok=False)["ok"] is True and X.build_stats(studs[1])["edge_steps"] == []
+    for e in (edge, mixed):
+        bad, good = X.build_stats(e[1], edge_ok=False), X.build_stats(e[1], edge_ok=True)
+        assert bad["ok"] is False and bad["failure"].startswith("perception_v5") and bad["edge_steps"] == [0]
+        assert good["ok"] is True and good["failure"] is None and good["edge_steps"] == [0]          # qualified: it steers like any estimate
+    shadow = ok_build("fk_oracle", u("edge"), aim="fk_oracle")                          # a shadow arm logs the estimate; it steers nothing
+    assert X.build_stats(shadow[1], edge_ok=False)["ok"] is True and X.build_stats(shadow[1])["edge_steps"] == []
+    real = used_ent("fk_vision", "cube", 0, u("edge"), built=0, total=1, failure="gate_miss")
+    assert X.build_stats(real[1], edge_ok=False)["failure"] == "gate_miss"                # an existing failure is not overwritten
+    # criterion 4 / T-V1a over three gated shapes x three seeds: one edge-steered build flips fk_vision's result, not fk_oracle's
+    def e1(arm, edge_build):
+        ents = []
+        for shape in X.GATED:
+            for seed in X.SEEDS:
+                n = 1 if (shape, seed) == edge_build and arm == "fk_vision" else 0
+                ent, rec = ok_build(arm, u("edge" if n else "studs"))
+                ent["meta"] = {"shape": shape, "seed": seed, "rr": 0}
+                ents.append((ent, rec))
+        return ents
+    ents = e1("fk_vision", ("arch", 1))
+    assert X.e1_criterion(ents, "fk_vision", edge_ok=True)[0] is True
+    assert X.e1_criterion(ents, "fk_vision", edge_ok=False)[0] is False
+    t = X.t_v1a(ents, edge_ok=False)
+    assert t["fk_vision/arch"]["built_all"] == 2 and t["fk_vision/arch"]["edge_steered_steps"] == [[1, [0]]] and t["fk_vision/cube"]["built_all"] == 3
+
+
+def drift_recording(n=3, name="cube", cap=5, onset=13, snap=18, moves={}):
+    """A synthetic --record-all recording of a build of `name` standing at step n: frames 1..24 (row i = frame i + 1), the supports of step n at rest
+    except `moves` = {frame: (dx, dy, dz) m} (each from that frame on), b_step = n and b_phase "pre-insert" until frame onset - 1, "insert" from `onset`.
+    -> (d, order, v, supports)"""
+    bricks = X.bricks_of(name)
+    order = X.P.sequence(bricks)
+    sup = X.P.supports(order[n], order[:n])
+    ids = [b[0] for b in order]
+    F = 24
+    q = np.tile(np.array([0, 0, 0.01, 0, 0, 0, 1.0]), (F, len(ids), 1))
+    for fr, dv in moves.items():
+        for sid_ in sup:
+            q[fr - 1:, ids.index(sid_), :3] += dv
+    d = dict(frame=np.arange(1, F + 1), brick_ids=np.array(ids), brick_q=q, b_step=np.full(F, n),
+             b_phase=np.where(np.arange(1, F + 1) < onset, 0, 1).astype(np.int8), phase_names=np.array(["pre-insert", "insert"]))
+    return d, order, {str(n): dict(aim=dict(t_E_frame=cap), t_L_frame=cap, snap=dict(snap_frame=snap))}, sup
+
+
+def drift(**kw):
+    d, order, v, _ = drift_recording(**kw)
+    return X.drift_of(d, "cube", order, v)
+
+
+def test_e5_drift_window_ends_at_the_insert_onset():
+    """E5 (user decision 2026-10-07): capture frame (t_E) to the last recorded row BEFORE the first insert row; insertion contact and jams do not enter.
+    The old capture-to-snap value is kept as d3_snap_mm / dxy_snap_mm."""
+    # pre-insert drift of (0.06, 0.08, 0) = 0.1 mm at frame 10; z drift 0.3 mm at frame 12 (still pre-insert); insert contact at frame 15 shoves 0.5 mm in x
+    d, order, v, sup = drift_recording(moves={10: (0.06e-3, 0.08e-3, 0.0), 12: (0, 0, 0.3e-3), 15: (0.5e-3, 0, 0)})
+    out = X.drift_of(d, "cube", order, v)
+    assert len(out) == len(sup) >= 1
+    for r in out:
+        assert r["cap"] == 5 and r["insert_onset"] == 13 and r["window_end"] == 12 and r["rows"] == 8      # frames 5..12
+        assert abs(r["dxy_mm"] - 0.1) < 1e-9 and abs(r["d3_mm"] - math.hypot(0.1, 0.3)) < 1e-9, r           # the z drift is 3-D only; the insert shove is not in it
+        assert r["snap"] == 18 and r["d3_snap_mm"] > r["d3_mm"]
+        assert abs(r["dxy_snap_mm"] - math.hypot(0.06 + 0.5, 0.08)) < 1e-9, r                              # capture-to-snap: includes the shove
+    # a displacement exactly at the first insert frame is outside; one at the last pre-insert frame is inside
+    out = drift(**dict(moves={13: (1e-3, 0, 0)}))
+    assert all(r["dxy_mm"] == 0.0 and abs(r["dxy_snap_mm"] - 1.0) < 1e-9 for r in out)
+    out = drift(moves={12: (1e-3, 0, 0)})
+    assert all(abs(r["dxy_mm"] - 1.0) < 1e-9 for r in out)
+    # motion before the capture frame does not count (the window starts at t_E)
+    out = drift(moves={3: (1e-3, 0, 0)})
+    assert all(r["dxy_mm"] == 0.0 for r in out)
+    # no insert onset (the step failed before it) or no snap: no record / no snap value
+    d, order, v, _ = drift_recording()
+    d["b_phase"][:] = 0
+    assert X.drift_of(d, "cube", order, v) == []
+    d, order, v, _ = drift_recording()
+    del v["3"]["snap"]
+    out = X.drift_of(d, "cube", order, v)
+    assert out and all(r["snap"] is None and r["d3_snap_mm"] is None for r in out)
+    # a capture frame that is not a recorded row: no record (as before)
+    d, order, v, _ = drift_recording()
+    v["3"]["aim"]["t_E_frame"] = 99
+    assert X.drift_of(d, "cube", order, v) == []
 
 
 def test_draws_and_scale():

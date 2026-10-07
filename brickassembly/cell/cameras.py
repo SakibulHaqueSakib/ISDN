@@ -24,7 +24,7 @@ from newton.sensors import SensorTiledCamera
 
 HERE = Path(__file__).resolve().parent.parent
 MM = 1e-3
-CAMS = {"top": dict(w=1280, h=960, vfov=60.0), "wrist_B": dict(w=640, h=480, vfov=55.0)}
+CAMS = {"top": dict(w=1280, h=960, vfov=60.0), "wrist_B": dict(w=1280, h=960, vfov=55.0)}      # ACC remedy: wrist_B 1280x960 (same VFOV and mount; P2 ran 640x480)
 TOP_POS = np.array([0.10, -0.20, 1.10])
 TILT = math.radians(25.0)         # wrist camera tilt toward the tool axis
 MOUNT_DZ = 0.060                  # camera above the TCP
