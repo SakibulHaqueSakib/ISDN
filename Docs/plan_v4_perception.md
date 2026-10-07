@@ -343,3 +343,13 @@ Computed by `experiments/v4_vision.py tables` on `results/v4/vision/v1_r1` (comm
 - Codex round 2 (CHANGES REQUESTED): fixes 1, 2, 4, 5 confirmed in code; fix 3 (E2b) not confirmed: all 6 builds stopped early, 26 of 62 steps unscored, so 22/36 is selected by early stopping. No firewall problem (`v4_G_V1_review`).
 - User decisions: (i) run the ACC branch (`v4_v1_acc_branch`); (ii) E2b keeps building after jams, every step scored, later steps flagged (`v4_v1_e2b_continue`); (iii) a settle hover before the close on every pick, regression on the acceptance shapes required (`v4_pick_settle_hover`).
 - ACC branch in progress; V2/V3 stay a draft until the ACC re-run's gate.
+
+## ACC round outcome and stop (2026-10-08)
+
+Computed by `experiments/v4_vision.py tables` on `results/v4/vision/v1_acc` (PARAMS_HASH e346d590acba5201); ledger `v4_G_V1_acc`. Outcome **ACC** again; validity passes (manipulation check 264/264, E2/E2b agreement 57/62).
+- Criterion 1 PASS: fk_oracle built all on cube, arch and hollow_box. Criterion 2 FAIL: E2 scale 2 110/124; E2b 47/62.
+- Criterion 3 FAIL: V5 yield 0.860 (375/436), yaw p95 0.161 deg. Criterion 4 FAIL: fk_vision built-all 0/3 on cube, arch, hollow_box (edge fallback unqualified, 6/9; arch built 7/11, 0/11, 7/11). Cost ratio 0.845.
+- Codex (CHANGES REQUESTED, `v4_v1acc_review`): (1) the margin pool keeps only relative xy and yaw while the controller gets the full fused d_h including z (arch seed 1 step 0: radial 0.088 mm, held-height +0.137 mm), a supported suspect for the seed-1 step-0 jams, not proven; (2) E2b validity does not require all steps scored (does not affect this verdict).
+- User decision (`v4_perception_stopped`): "no need I will  prepare different  training  policy later. for now show me a camera guided run and if possible show me all the camera feeds and a way of manual control of the arm in the simulation".
+
+Perception V1 is closed without passing G-V1; V2 and V3 are not started.

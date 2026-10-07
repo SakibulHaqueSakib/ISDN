@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-251 entries. Later entries supersede earlier ones; retractions are marked.
+254 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -396,6 +396,17 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `v4_v1acc_gate_computed`
     - result: G_V1 block as computed (tables.json G_V1, git_head 1d0f3d4, complete e1/e1b/e2/e2b true). Validity all pass: a E1 natives cube, arch, hollow_box clean; b native contexts 2 of 33; c manipulation check 264/264; d E2/E2b agreement 57 of 62 (pre-failure 44 of 44). Criteria: 1 pass (cube, arch, hollow_box all true); 2 fail (E2 110/124, E2b 47/62); 3 fail (yield 0.860, yaw p95 0.161 deg); 4 fail (cube, …
     - finding: The stale flag comes from the 372 sweep rows (params hash 0f312821b7c8c394, run before the remedies, a pre-remedy diagnostic by design, v4_v1_acc_sweep); e1, e1b, e2, e2b and e4 rows are all e346d590acba5201, so the flag does not touch the gate inputs. Outcome ACC again: criterion 1 only. This entry is the computed block, not a gate decision; the gate entry follows the Codex review and the user's …
+
+- **result** `v4_v1acc_review`
+    - result: Codex review of the ACC round: CHANGES REQUESTED. (1) high: the margin pool (experiments/v4_vision.py about lines 433-439) keeps only relative xy and yaw, while look_done feeds the full fused d_h including z into the controller. At arch seed 1 step 0 the radial error was 0.088 mm but the held-height error +0.137 mm (about +0.186 mm by FK before contact); S3 seed 1 step 0 is similar. Held-height er…
+    - finding: The ACC numbers reproduce. Two open findings: the held-height (z) error is not tested by the margin pool, and the E2b validity rule does not require completeness. Neither changes the computed outcome (ACC).
+
+- **GATE** `v4_G_V1_acc` → **ACC — not passed; perception V1 closed by the user**
+    - result: ACC — not passed; perception V1 closed by the user
+    - status: G-V1 ACC round (merge commit 6967bbc, PARAMS_HASH e346d590acba5201, tables.json G_V1, git_head 1d0f3d4), criteria as recorded in v4_v1acc_gate_computed. VALIDITY all pass: (a) E1 natives clean on cube, arch, hollow_box; (b) 2 of 33 native contexts; (c) manipulation check 264/264; (d) E2/E2b agreement 57 of 62 (pre-failure 44 of 44). CRITERIA: (1) PASS: fk_oracle built all on cube, arch, hollow_box…
+
+- **decided** `v4_perception_stopped`
+    - outcome: The perception iteration stops after the ACC round; V2 and V3 are not started. The user will prepare a different training policy later. Open items carried: (1) held-height (z) error is not in the margin test (v4_v1acc_review); (2) the E2b validity rule does not require all planned steps scored (v4_v1acc_review); (3) look-0 rejections at arch step 7 and S3 step 10 (perception_v5, v4_v1_never_insert…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
@@ -810,6 +821,7 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **v4_phase1_joint_model**: changes_requested (J-b); J-a pass, J-c pass — Phase 1 'Joint model' gate (plan v4 r5; phase commits a890b68, 4ad91a7, 0dd4f8b; base f227fd4), reviewed once by Codex (adversarial review of f227fd4..HEAD). Co…
 - **v4_phase2_gate**: pass_with_recorded_exceptions — Phase 2 'Unbraced build and image pipeline' gate, closed on the user's decision after the Codex review (v4_phase2_gate_review, CHANGES REQUESTED, 3 findings; th…
 - **v4_G_V1**: ACC — G-V1 (Phase 4 Perception V1 feasibility), computed by experiments/v4_vision.py tables on results/v4/vision/v1_r1 (tables.json G_V1). VALIDITY all pass: (a) E1 n…
+- **v4_G_V1_acc**: ACC — not passed; perception V1 closed by the user — G-V1 ACC round (merge commit 6967bbc, PARAMS_HASH e346d590acba5201, tables.json G_V1, git_head 1d0f3d4), criteria as recorded in v4_v1acc_gate_computed. VALIDIT…
 
 ## Open — needs a decision
 
