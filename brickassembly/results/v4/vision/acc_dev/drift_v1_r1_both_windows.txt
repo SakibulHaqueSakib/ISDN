@@ -1,0 +1,24 @@
+support records 201 steps 123 builds 18
+records with a snap window 201
+INSERT window: drift_max 3-D 0.0000 mm, xy 0.0000 mm, median 0.0000
+SNAP   window: drift_max 3-D 0.3550 mm, xy 0.3077 mm, median 0.0101
+worst 5 by insert-window 3-D:
+   hollow_box/fk_oracle seed 2 step 9 support b_004: cap 5924 insert_onset 5962 snap 6032  insert 3-D 0.000 xy 0.000 | snap 3-D 0.006 xy 0.004
+   cube/fk_oracle seed 2 step 7 support b_004: cap 5042 insert_onset 5152 snap 5222  insert 3-D 0.000 xy 0.000 | snap 3-D 0.02 xy 0.015
+   hollow_box/fk_oracle seed 0 step 9 support b_004: cap 5924 insert_onset 5962 snap 6032  insert 3-D 0.000 xy 0.000 | snap 3-D 0.006 xy 0.004
+   cube/fk_vision seed 0 step 7 support b_005: cap 5042 insert_onset 5152 snap 5222  insert 3-D 0.000 xy 0.000 | snap 3-D 0.025 xy 0.019
+   hollow_box/fk_oracle seed 2 step 10 support b_006: cap 6504 insert_onset 6542 snap 6612  insert 3-D 0.000 xy 0.000 | snap 3-D 0.004 xy 0.003
+worst 5 by snap-window 3-D:
+   arch/fk_vision seed 0 step 10 support b_006: cap 7497 insert_onset 7607 snap 7677  insert 3-D 0.000 xy 0.000 | snap 3-D 0.355 xy 0.308
+   arch/fk_vision seed 2 step 10 support b_007: cap 7498 insert_onset 7608 snap 7678  insert 3-D 0.000 xy 0.000 | snap 3-D 0.289 xy 0.26
+   arch/fk_vision seed 2 step 10 support b_006: cap 7498 insert_onset 7608 snap 7678  insert 3-D 0.000 xy 0.000 | snap 3-D 0.23 xy 0.221
+   arch/fk_vision seed 0 step 10 support b_007: cap 7497 insert_onset 7607 snap 7677  insert 3-D 0.000 xy 0.000 | snap 3-D 0.154 xy 0.141
+   arch/fk_vision seed 1 step 9 support b_007: cap 6808 insert_onset 6846 snap 6916  insert 3-D 0.000 xy 0.000 | snap 3-D 0.116 xy 0.095
+worst 5 by insert-window xy:
+   hollow_box/fk_oracle seed 2 step 9 support b_004: cap 5924 insert_onset 5962 snap 6032  insert 3-D 0.000 xy 0.000 | snap 3-D 0.006 xy 0.004
+   hollow_box/fk_oracle seed 0 step 9 support b_004: cap 5924 insert_onset 5962 snap 6032  insert 3-D 0.000 xy 0.000 | snap 3-D 0.006 xy 0.004
+   hollow_box/fk_oracle seed 2 step 10 support b_006: cap 6504 insert_onset 6542 snap 6612  insert 3-D 0.000 xy 0.000 | snap 3-D 0.004 xy 0.003
+raw insert max 3-D mm 1.3355010445246312e-06 xy 1.3118680722645387e-06 n nonzero 128
+snap-window records above 0.05 mm 21 of 201 ; steps [('arch', 'fk_oracle', 0, 9), ('arch', 'fk_oracle', 0, 10), ('arch', 'fk_oracle', 1, 9), ('arch', 'fk_oracle', 1, 10), ('arch', 'fk_oracle', 2, 9), ('arch', 'fk_oracle', 2, 10), ('arch', 'fk_vision', 0, 10), ('arch', 'fk_vision', 1, 6), ('arch', 'fk_vision', 1, 7), ('arch', 'fk_vision', 1, 8), ('arch', 'fk_vision', 1, 9), ('arch', 'fk_vision', 1, 10), ('arch', 'fk_vision', 2, 8), ('arch', 'fk_vision', 2, 9), ('arch', 'fk_vision', 2, 10)]
+window rows insert: min 38 median 38 max 200
+insert_onset - cap frames median 38.0  snap - insert_onset median 70.0
