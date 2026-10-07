@@ -9,7 +9,8 @@
     after_failure, counted separately; agreement is over all scored steps and over the pre-failure ones; no snap = unobserved with a reason;
   - the ACC axis sweep: 31 contexts x 12 = 372 jobs (natives left out), the table per signed axis, largest passing level, non-monotone contexts;
   - the edge fallback's qualification (>= 20 cases and E2 scale-2 pass >= 95 % on the single-footprint contexts): true / false / unavailable;
-    edge-accepted steps count in the yield only if qualified;
+    edge-steered steps count in the yield only if qualified; an fk_vision build an unqualified edge estimate steered fails (perception_v5);
+  - E3 / the pool: one vector per step, the used estimate's error (aim.used_errors), typed by the plan; per-look statistics stay as an extra table;
   - exposed_single agrees with dual_arm_sim.exposed_cells on every E2 / E1b context.
 
     ~/Codes/CAIRSS/Issac/bin/python -m pytest tests/test_v4_vision.py     (or run it as a script)
@@ -210,17 +211,84 @@ def test_edge_fallback_qualification():
         assert "unavailable" in X.edge_qualification(none, pool, [], []) and X.edge_qualification(none, pool, [], [])["qualified"] is None
 
 
+def used_ent(arm, shape, n, used, looks=None, snap=True, aim=None, failure=None, built=None, total=None):
+    """One (episodes entry, record) with a step n: its looks (default two), the used estimate (`used`: None = not seen, or dict(estimators, errors))."""
+    v = {"n_looks": 2, "looks": looks if looks is not None else [{"accepted": False}, {"accepted": False}]}
+    if used is not None:
+        v["used"] = used
+    if snap:
+        v["snap"] = dict(screen_pass=True, gate_ok=True, lateral_mm=0.1, dz_mm=0.0)
+    row = {"vision": {"aim": aim or arm, "by_step": {str(n): v}}, "failure": failure, "built": built, "total": total}
+    return {"arm": arm, "meta": {"shape": shape}}, {"row": row}
+
+
+def err(dx=0.1, dy=0.0, dyaw=0.2):
+    return {"rel_xy_mm": [dx, dy], "rel_yaw_deg": dyaw, "rel_radial_mm": math.hypot(dx, dy)}
+
+
+def test_pool_is_one_vector_per_step_from_the_used_estimate():
+    """E3 / the pool: ONE vector per step, the error of the estimate the controller steers with (the average of the accepted looks), typed from the
+    plan (every step has two looks now); the per-look records stay as an extra table."""
+    lk = lambda dx: {"accepted": True, "estimator": "studs", "errors": err(dx)}
+    cube3 = ("cube", 3)                                              # a single-footprint step of cube (exposed_single)
+    assert X.look_type("cube", 3) == "single" and X.look_type("cube", 0) == "course"
+    ents = [used_ent("fk_vision", "cube", 3, dict(n_used=2, estimators=["studs", "studs"], errors=err(0.05, 0.0, 0.1)), [lk(0.3), lk(-0.2)]),   # two looks, one averaged vector
+            used_ent("fk_vision", "cube", 0, dict(n_used=1, estimators=["studs"], errors=err(0.2, 0.1, -0.3)), [lk(0.2), {"accepted": False}]),
+            used_ent("fk_oracle", "cube", 1, dict(n_used=0, estimators=[]), [{"accepted": False}, {"accepted": False}])]   # nothing accepted: no vector
+    steps, looks = X.collect_v5([(ents, "e1")])
+    assert len(steps) == 3 and len(looks) == 6                                           # one record per step; two per step in the per-look table
+    assert [(s["type"], s["yielded"], s["n_used"]) for s in steps] == [("single", True, 2), ("course", True, 1), ("course", False, 0)]
+    assert steps[0]["vec"] == [0.05, 0.0, 0.1] and steps[1]["vec"] == [0.2, 0.1, -0.3] and steps[2]["vec"] is None
+    assert [l["vec"] and l["vec"][0] for l in looks[:2]] == [0.3, -0.2]                  # per-look vectors are still there
+    sm = X.v5_summary(steps, looks)
+    assert sm["all"]["yielded"] == 2 and abs(sm["all"]["yield"] - 2 / 3) < 1e-12 and sm["all"]["n_averaged"] == 1
+    assert sm["single"]["radial_mm_max"] == 0.05 and sm["all"]["per_look"]["accepted_looks"] == 3 and sm["all"]["per_look"]["radial_mm_max"] == 0.3
+    assert sm["course"]["yield"] == 0.5
+
+
 def test_yield_counts_edge_only_if_qualified():
-    def e(n, estimators):
-        looks = [{"accepted": True, "estimator": x, "errors": {"rel_xy_mm": [0.1, 0.0], "rel_yaw_deg": 0.2, "rel_radial_mm": 0.1}} for x in estimators]
-        looks += [{"accepted": False} for _ in range(2 - len(looks))]
-        return {"arm": "fk_vision", "meta": {"shape": "S1"}}, {"row": {"vision": {"by_step": {str(n): {"n_looks": 2, "looks": looks}}}}}
-    ents = [e(0, ["stud"]), e(1, ["edge"]), e(2, ["stud", "edge"]), e(3, [])]
+    u = lambda *est: dict(n_used=len(est), estimators=list(est), errors=err())
+    ents = [used_ent("fk_vision", "S1", 1, u("studs")), used_ent("fk_vision", "S1", 2, u("edge")), used_ent("fk_vision", "S1", 3, u("studs", "edge")),
+            used_ent("fk_vision", "S1", 4, dict(n_used=0, estimators=[]))]          # S1's steps 1-4: single footprints (a pier)
     steps, looks = X.collect_v5([(ents, "e1b")])
-    assert [(s["yielded"], s["yielded_stud"]) for s in steps] == [(True, True), (True, False), (True, True), (False, False)]
+    assert [(s["yielded"], s["yielded_stud"], s["estimator"]) for s in steps] == [(True, True, "studs"), (True, False, "edge"), (True, False, "edge"), (False, False, None)]
     on, off = X.v5_summary(steps, looks, edge=True), X.v5_summary(steps, looks, edge=False)
-    assert on["all"]["yielded"] == 3 and on["all"]["accepted_looks"] == 4
-    assert off["all"]["yielded"] == 2 and off["all"]["accepted_looks"] == 2 and off["single"]["steps"] == 4 and off["single"]["yield"] == 0.5
+    assert on["all"]["yielded"] == 3 and off["all"]["yielded"] == 1 and off["single"]["steps"] == 4 and off["single"]["yield"] == 0.25    # the edge steps do not count toward yield
+    assert off["all"]["radial_mm_max"] is not None and on["all"]["yield"] == 0.75
+    pool_like = [s["vec"] for s in steps if s["accepted"]]
+    assert len(pool_like) == 3                                                           # the pool keeps the edge steps' vectors (E2 tests them at 2x for the qualification)
+
+
+def test_unqualified_edge_fails_its_fk_vision_build():
+    """Edge not qualified: an fk_vision build in which an edge estimate steered a step is a perception_v5 failure at that step (T-V1a, criterion 4);
+    a stud-only build, an fk_oracle build with a shadow edge estimate, and a qualified edge are untouched."""
+    u = lambda *est: dict(n_used=len(est), estimators=list(est), errors=err())
+    ok_build = lambda arm, used, **kw: used_ent(arm, "cube", 0, used, built=1, total=1, **kw)
+    studs, edge, mixed = ok_build("fk_vision", u("studs", "studs")), ok_build("fk_vision", u("studs", "edge")), ok_build("fk_vision", u("edge"))
+    assert X.build_stats(studs[1], edge_ok=False)["ok"] is True and X.build_stats(studs[1])["edge_steps"] == []
+    for e in (edge, mixed):
+        bad, good = X.build_stats(e[1], edge_ok=False), X.build_stats(e[1], edge_ok=True)
+        assert bad["ok"] is False and bad["failure"].startswith("perception_v5") and bad["edge_steps"] == [0]
+        assert good["ok"] is True and good["failure"] is None and good["edge_steps"] == [0]          # qualified: it steers like any estimate
+    shadow = ok_build("fk_oracle", u("edge"), aim="fk_oracle")                          # a shadow arm logs the estimate; it steers nothing
+    assert X.build_stats(shadow[1], edge_ok=False)["ok"] is True and X.build_stats(shadow[1])["edge_steps"] == []
+    real = used_ent("fk_vision", "cube", 0, u("edge"), built=0, total=1, failure="gate_miss")
+    assert X.build_stats(real[1], edge_ok=False)["failure"] == "gate_miss"                # an existing failure is not overwritten
+    # criterion 4 / T-V1a over three gated shapes x three seeds: one edge-steered build flips fk_vision's result, not fk_oracle's
+    def e1(arm, edge_build):
+        ents = []
+        for shape in X.GATED:
+            for seed in X.SEEDS:
+                n = 1 if (shape, seed) == edge_build and arm == "fk_vision" else 0
+                ent, rec = ok_build(arm, u("edge" if n else "studs"))
+                ent["meta"] = {"shape": shape, "seed": seed, "rr": 0}
+                ents.append((ent, rec))
+        return ents
+    ents = e1("fk_vision", ("arch", 1))
+    assert X.e1_criterion(ents, "fk_vision", edge_ok=True)[0] is True
+    assert X.e1_criterion(ents, "fk_vision", edge_ok=False)[0] is False
+    t = X.t_v1a(ents, edge_ok=False)
+    assert t["fk_vision/arch"]["built_all"] == 2 and t["fk_vision/arch"]["edge_steered_steps"] == [[1, [0]]] and t["fk_vision/cube"]["built_all"] == 3
 
 
 def test_draws_and_scale():

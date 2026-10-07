@@ -64,12 +64,12 @@ def test_selfcheck_lattice_fit():
 
 
 # --- acceptance rule, end to end on a synthetic look -----------------------------------------------------------
-W, Hh, Z0, HC = 640, 480, 0.0032, 0.14          # image, plate top, camera height (straight down, nominal = true)
+W, Hh, Z0, HC = V.PARAMS["wrist_w"], V.PARAMS["wrist_h"], 0.0032, 0.14          # image, plate top, camera height (straight down, nominal = true)
 CAM = (np.array([0.0, 0.0, HC]), np.eye(3))
 TARGET_O, HELD_O = np.array([-0.035, 0.0]), np.array([0.030, 0.0])      # world xy of the lattice origin / the held brick
 
 
-def look(cells, held_dyaw_deg=1.0, mask_x=None, seed=0):
+def look(cells, held_dyaw_deg=1.0, mask_x=None, seed=0, zshift=0.0):
     """-> (depth, ctx, prior, mask, truth). Target: studs on `cells` (i, j) of a lattice with yaw 0.3 deg, top faces at
     Z0 + stud height; held: a 2x4 whose actual pose is the nominal + (1.2, -0.6) mm, 0.3 mm up, held_dyaw_deg."""
     rng = np.random.default_rng(seed)
@@ -95,6 +95,7 @@ def look(cells, held_dyaw_deg=1.0, mask_x=None, seed=0):
         xy = (CAM[0] + d[..., None] * rays)[..., :2].reshape(-1, 2)
         best = np.minimum(best, np.where(test(xy).reshape(d.shape), d, np.inf))
     best += rng.normal(0, V.sigma_depth(best), best.shape)
+    best += zshift / rz                                                     # the camera's z offset: every point lower by zshift
     mask = np.zeros((Hh, W), bool)
     if mask_x is not None:
         mask = V.to_points(best, rays, *CAM)[..., 0] > mask_x
@@ -127,6 +128,27 @@ def test_accepted_and_accurate():
         1e6 * np.abs(res.T_hat[:2] - t["T"][:2]).max(), 1e6 * np.abs(res.B_hat[:3] - t["B"][:3]).max(), math.degrees(res.dpsi)))
 
 
+def test_z_common_mode_from_the_target_face():
+    """The camera's hand-fixed z offset (0.25 mm here) moves the target's face and the held brick alike; the held z read from the depth alone is that
+    much off. With PARAMS z_common_mode on (it is off in the frozen parameters), face_z_offset reads it off the target's bare face and B_hat's z loses
+    it; without an offset nothing changes; off: as before, no diag key."""
+    zs, was = 0.25 * MM, V.PARAMS["z_common_mode"]
+    try:
+        V.PARAMS["z_common_mode"] = 1
+        res0, t = run(cells=PATCH)
+        resz, _ = run(cells=PATCH, zshift=zs)
+        few, _ = run(cells=[(0, 0), (1, 0), (0, 1), (1, 1)], zshift=zs)                          # a small patch still has a bare face
+        V.PARAMS["z_common_mode"] = 0
+        off, _ = run(cells=PATCH, zshift=zs)
+    finally:
+        V.PARAMS["z_common_mode"] = was
+    assert abs(res0.B_hat[2] - t["B"][2]) < 1e-4 and abs(resz.B_hat[2] - t["B"][2]) < 1e-4, (res0.B_hat[2] - t["B"][2], resz.B_hat[2] - t["B"][2])
+    assert abs(resz.diag["face_dz_um"] + 250) < 25 and abs(res0.diag["face_dz_um"]) < 25, (resz.diag["face_dz_um"], res0.diag["face_dz_um"])
+    assert abs((off.B_hat[2] - t["B"][2]) + zs) < 5e-5 and "face_dz_um" not in off.diag        # uncorrected: the offset is in B_hat's z
+    assert np.abs(off.B_hat[:2] - resz.B_hat[:2]).max() < 1e-9                                   # xy untouched
+    assert few.diag["face_dz_um"] is not None
+
+
 def test_four_collinear_target_studs_rejected():
     res, _ = run(cells=[(0, 0), (1, 0), (2, 0), (3, 0)])
     assert res.n_target_studs == 4 and not res.target_noncollinear
@@ -154,6 +176,124 @@ def test_dpsi_threshold():
     bad, _ = run(cells=PATCH, held_dyaw_deg=0.3 - 4.0)       # +4 deg
     assert not bad.accepted and bad.reject_reason == "dpsi>3" and abs(math.degrees(bad.dpsi) - 4.0) < 0.15
     assert bad.n_target_studs == 24 and bad.n_held_studs == 8        # rejected on yaw alone; fit RMS is not a criterion
+
+
+# --- edge fallback ------------------------------------------------------------------------------------------------
+def edge_scene(cells, hidden=(), az_deg=60.0, seed=0, psi_t=math.radians(0.3), yaw_off=0.0):
+    """-> (depth, rays, cam, ctx, prior, truth). A support of `cells` (a one-stud-wide wall when the cells are a line) on lower ground 9.6 mm below
+    its top face; studs on `cells` except `hidden` (occluded); the camera 60 mm from the target at azimuth az, 100 mm up, tilted at it. The
+    drop sides are every side of an exposed cell whose neighbour is not exposed. Noise 2e-3 r^2. Ray casting against the support box, the
+    ground and the stud tops. truth = the footprint centre (x, y, yaw) of cells' bounding box."""
+    rng = np.random.default_rng(seed)
+    rays = V.rays_from_intrinsics(W, Hh, 55.0)
+    cells = [tuple(c) for c in cells]
+    c0 = np.array([0.0, 0.0])
+    Rl = Rz(psi_t).as_matrix()[:2, :2]
+    loc = lambda c: (np.asarray(c, float) + 0.5) * P_
+    nodes = np.array([loc(c) for c in cells]) @ Rl.T + c0                  # world xy of the exposed studs
+    zt, zg = Z0, Z0 - H_
+    ctr = ((np.array(cells).min(0) + np.array(cells).max(0) + 1) / 2 * P_) @ Rl.T + c0
+    cam_pos = np.array([*(ctr + 0.06 * np.array([math.cos(math.radians(az_deg)), math.sin(math.radians(az_deg))])), zt + 0.10])
+    f = ctr - cam_pos[:2]
+    fwd = np.array([f[0], f[1], zt - cam_pos[2]]) / np.linalg.norm([f[0], f[1], zt - cam_pos[2]])
+    right = np.cross(fwd, [0, 0, 1.0]); right /= np.linalg.norm(right)
+    up = np.cross(right, fwd)
+    Rc = np.stack([right, up, -fwd], 1)                                    # OpenGL camera: columns right, up, back
+    d = rays @ Rc.T                                                        # world ray directions
+    ox = (cam_pos[:2] - c0) @ Rl                                           # camera in the lattice frame (row vector times Rl = Rl^T applied)
+    dl = np.concatenate([d[..., :2] @ Rl, d[..., 2:]], -1)
+    lo, hi = np.array(cells).min(0) * P_, (np.array(cells).max(0) + 1) * P_          # the support's bounding box in the lattice frame
+    t_best = np.full(d.shape[:2], np.inf)
+    def upd(t, ok):
+        nonlocal t_best
+        t_best = np.minimum(t_best, np.where(ok & (t > 0), t, np.inf))
+    cell_set = set(cells)
+    tz = lambda z: (z - cam_pos[2]) / dl[..., 2]
+    t = tz(zg); upd(t, np.ones_like(t, bool))                              # lower ground
+    t = tz(zt); xl, yl = ox[0] + t * dl[..., 0], ox[1] + t * dl[..., 1]
+    ci, cj = np.floor(xl / P_).astype(int), np.floor(yl / P_).astype(int)
+    on = np.zeros(t.shape, bool)
+    for c in cells:
+        on |= (ci == c[0]) & (cj == c[1])
+    upd(t, on)                                                             # the support's top face (every exposed cell, at its own course top)
+    for axis, val in ((0, lo[0]), (0, hi[0]), (1, lo[1]), (1, hi[1])):      # side walls of the bounding box (the cells fill it in these tests)
+        t = (val - ox[axis]) / dl[..., axis]
+        o = 1 - axis
+        z, a = cam_pos[2] + t * dl[..., 2], ox[o] + t * dl[..., o]
+        upd(t, (z < zt) & (z > zg) & (a > lo[o]) & (a < hi[o]))
+    t = tz(zt + SH_); xl, yl = ox[0] + t * dl[..., 0], ox[1] + t * dl[..., 1]
+    st = np.zeros(t.shape, bool)
+    for c in cells:
+        if c not in hidden:
+            st |= np.hypot(xl - (c[0] + .5) * P_, yl - (c[1] + .5) * P_) < 0.0024
+    upd(t, st)
+    depth = t_best + rng.normal(0, V.sigma_depth(t_best), t_best.shape)
+    drop = [(i, dd) for i, c in enumerate(cells) for dd, (di, dj) in enumerate(((1, 0), (-1, 0), (0, 1), (0, -1))) if (c[0] + di, c[1] + dj) not in cell_set]
+    pr_yaw, pr_t = math.radians(-0.2), np.array([0.3 * MM, -0.25 * MM])    # V4-fine's error on the lattice
+    fp = lambda x: (x - nodes.mean(0)) @ Rz(pr_yaw).as_matrix()[:2, :2].T + nodes.mean(0) + pr_t
+    prior = V.Prior(fp(nodes), fp(ctr), psi_t + yaw_off + pr_yaw)
+    ctx = V.StepCtx("1x4", zt, np.array(cells), (np.array([0, 0, GRASP_DZ]), RX_PI), outline=tuple(drop))
+    return depth, rays, (cam_pos, Rz(0.0) * Rot.from_matrix(Rc) if False else Rot.from_matrix(Rc)), ctx, prior, np.r_[ctr, psi_t + yaw_off]
+
+
+def edge_run(**kw):
+    depth, rays, cam, ctx, prior, truth = edge_scene(**kw)
+    hand = (np.array([*truth[:2], 0.1]), Rz(0.0) * RX_PI)
+    return V.v5_estimate(depth, rays, cam, hand, ctx, prior, None), truth
+
+
+WALL = [(i, 0) for i in range(4)]
+
+
+def test_edge_fallback_on_a_one_stud_wall():
+    """A 1x4 wall: its studs are collinear and one is hidden (3 matched), so the stud rule alone rejects; the outline sides + the studs give the
+    target. Several camera azimuths (a long wall, an end wall, both, grazing): error vs truth under 0.1 mm and 0.1 deg."""
+    for az in (60.0, 0.0, 90.0, 180.0, -120.0):
+        res, t = edge_run(cells=WALL, hidden=[(3, 0)], az_deg=az)
+        assert res.estimator == "edge" and res.n_target_studs == 3, (az, res.estimator, res.n_target_studs, res.diag.get("edge"))
+        assert "target_studs" not in res.reject_reason and "target_collinear" not in res.reject_reason
+        e = np.abs(res.T_hat[:2] - t[:2]).max()
+        assert e < 1e-4 and abs(res.T_hat[2] - t[2]) < math.radians(0.1), (az, e, math.degrees(res.T_hat[2] - t[2]), res.diag["edge"])
+        print("edge az %4.0f: sides %d, T err %.1f um, yaw err %.3f deg" % (az, res.diag["edge"]["sides"], e * 1e6, math.degrees(res.T_hat[2] - t[2])))
+
+
+def test_edge_fallback_target_yaw_just_under_90_degrees():
+    """A target at yaw 90 deg minus a hair (a yaw_index 1 brick with a small prior error): the lattice axes are still the world's, not rotated by 90 deg
+    (the lattice yaw is the target yaw folded into (-45, 45] deg)."""
+    res, t = edge_run(cells=WALL, hidden=[(3, 0)], az_deg=60.0, psi_t=math.radians(-0.3), yaw_off=math.pi / 2)
+    assert res.estimator == "edge" and res.diag["edge"]["sides"] >= 2, res.diag
+    assert np.abs(res.T_hat[:2] - t[:2]).max() < 1e-4 and abs(res.T_hat[2] - t[2]) < math.radians(0.1)
+
+
+def test_edge_fallback_four_collinear_studs():
+    """All four studs of a 1x4 wall matched but collinear: the stud rule fails ("target_collinear"); the edge fallback takes over."""
+    res, t = edge_run(cells=WALL, az_deg=60.0)
+    assert res.estimator == "edge" and res.n_target_studs == 4 and not res.target_noncollinear
+    assert np.abs(res.T_hat[:2] - t[:2]).max() < 1e-4
+
+
+def test_edge_not_used_when_the_stud_rule_passes():
+    cells = [(0, 0), (1, 0), (0, 1), (1, 1)]                    # 2x2: four non-collinear studs, the studs alone are accepted for the target
+    res, t = edge_run(cells=cells, az_deg=60.0)
+    assert res.estimator == "studs" and "edge" not in res.diag and "target_studs" not in res.reject_reason and res.target_noncollinear
+    assert np.abs(res.T_hat[:2] - t[:2]).max() < 1e-4
+
+
+def test_edge_needs_two_sides_and_two_studs():
+    res, _ = edge_run(cells=WALL, hidden=[(1, 0), (2, 0), (3, 0)], az_deg=60.0)     # one stud left: no edge fit
+    assert res.estimator == "studs" and "target_studs<4" in res.reject_reason and res.diag["edge"]["ok"] is False
+    depth, rays, cam, ctx, prior, truth = edge_scene(cells=WALL, hidden=[(3, 0)], az_deg=60.0)
+    ctx.outline = ctx.outline[:0]                                                   # no outline in the plan (a course target): never tried
+    res = V.v5_estimate(depth, rays, cam, (np.array([*truth[:2], 0.1]), Rz(0.0) * RX_PI), ctx, prior, None)
+    assert res.estimator == "studs" and "edge" not in res.diag and "target_studs<4" in res.reject_reason
+
+
+def test_params_match_the_cell():
+    import re
+    src = (HERE / "cell" / "cameras.py").read_text()
+    m = re.search(r'"wrist_B": dict\(w=(\d+), h=(\d+)', src)
+    assert (int(m[1]), int(m[2])) == (V.PARAMS["wrist_w"], V.PARAMS["wrist_h"])
+    assert re.search(r"^H_LOOK = V\.PARAMS\[\"h_look\"\]", (HERE / "dual_arm_sim.py").read_text(), re.M)
 
 
 # --- hand offset ------------------------------------------------------------------------------------------------

@@ -12,7 +12,9 @@
 Everything lives under --root (default results/v4/vision/v1; a re-run round or a smoke run uses another root, e.g. v1_acc, v1_smoke):
 rows/<id>.json (one per job, as in experiments/v4_brace.py), recordings/<id>.npz (E1's --record-all), plans/ (the cell's plan cache),
 specs/, logs/<id>.log, <exp>/{episodes.jsonl, merge.json, manifest.json}, e4/batches.json, pool.json, tables.json. A manifest carries
-the vision PARAMS_HASH and the git HEAD. Every subcommand takes --workers, --limit (run only the first N jobs without a row),
+the vision PARAMS_HASH and the git HEAD. ACC round (wrist 1280x960, a second look on every step, averaged; 35 mm look; edge fallback): E3 / the pool are ONE vector per step (the used
+estimate's error, v["used"]), per-look statistics are an extra table; while the edge fallback is not qualified, an fk_vision build an edge estimate steered fails (perception_v5)
+at that step (T-V1a, criterion 4) and the step is not in the yield. Every subcommand takes --workers, --limit (run only the first N jobs without a row),
 --retry-errors, --dry-run; a finished job is never re-run (resume). The tables read the result files only: an experiment that is
 missing or incomplete is "unavailable" and never counts as a pass. No newton in this process (the cell is a subprocess).
 """
@@ -413,41 +415,51 @@ def p95_ci(x, tag):
 
 
 def collect_v5(sources):
-    """sources: [(entries, label)] -> (steps, looks). A step = one with a complete look schedule (n_looks): type from the number of
-    looks (a single footprint gets a second look), yielded iff any look was accepted. A look = every scheduled look of such a step;
-    accepted ones carry the relative error vector (rel dx, dy in the target frame mm, rel dyaw deg) and the estimator ("edge" = the
-    edge fallback; anything else, the stud fit). A step has `yielded` (any accepted look) and `yielded_stud` (without the edge looks)."""
+    """sources: [(entries, label)] -> (steps, looks). A step = one with a complete look schedule (n_looks); its type is the plan's (look_type: every
+    step now has two looks, so the look count says nothing). ONE record per step, for the estimate the controller steers with: the average of the
+    accepted looks (dual_arm_sim.look_done, v["used"]; a shadow arm logs the one it would use). `yielded` = a used estimate exists; `vec` = its
+    relative error (rel dx, dy in the target frame mm, rel dyaw deg), the E3 / pool vector; `estimator` = "edge" if an edge-fallback look is among
+    those averaged (edge steered the step), else "studs"; `yielded_stud` = yielded without one. `looks` = the per-look records (every scheduled
+    look of such a step; accepted ones carry their own error vector), an extra table."""
     steps, looks = [], []
     for ents, label in sources:
         for e, rec in ents or []:
             for n, v in by_step(rec).items():
                 if "n_looks" not in v or not v.get("looks"):
                     continue
-                typ = "single" if v["n_looks"] == 2 else "course"
-                steps.append(dict(src=label, arm=e["arm"], shape=e["meta"]["shape"], step=int(n), type=typ, yielded=any(l.get("accepted") for l in v["looks"]),
-                                  yielded_stud=any(l.get("accepted") and l.get("estimator") != "edge" for l in v["looks"])))
+                u = v.get("used") or {}
+                er = u.get("errors")
+                ok = bool(u.get("n_used")) and er is not None
+                edge = ok and "edge" in u.get("estimators", [])
+                steps.append(dict(src=label, arm=e["arm"], shape=e["meta"]["shape"], step=int(n), type=look_type(e["meta"]["shape"], int(n)), yielded=ok,
+                                  yielded_stud=ok and not edge, accepted=ok, estimator=("edge" if edge else "studs") if ok else None, n_used=u.get("n_used", 0),
+                                  vec=[er["rel_xy_mm"][0], er["rel_xy_mm"][1], er["rel_yaw_deg"]] if ok else None, radial=er["rel_radial_mm"] if ok else None))
                 for l in v["looks"]:
-                    er = l.get("errors")
-                    ok = bool(l.get("accepted")) and er is not None
-                    looks.append(dict(steps[-1], accepted=ok, estimator=l.get("estimator"), vec=[er["rel_xy_mm"][0], er["rel_xy_mm"][1], er["rel_yaw_deg"]] if ok else None,
-                                      radial=er["rel_radial_mm"] if ok else None))
+                    el = l.get("errors")
+                    okl = bool(l.get("accepted")) and el is not None
+                    looks.append(dict(steps[-1], accepted=okl, estimator=l.get("estimator"), vec=[el["rel_xy_mm"][0], el["rel_xy_mm"][1], el["rel_yaw_deg"]] if okl else None,
+                                      radial=el["rel_radial_mm"] if okl else None))
     return steps, looks
 
 
 def v5_summary(steps, looks, tag="v5", edge=True):
-    """edge False: the edge-fallback looks do not count (not qualified): neither their errors nor their yield."""
+    """Yield and accuracy over the steps' USED estimates (one vector per step); `per_look` has the per-look statistics. edge False: the
+    edge fallback is not qualified, so a step an edge estimate steered does not count (not in the yield, not in the accuracy) and neither do the
+    edge looks."""
     if not edge:
         looks = [l for l in looks if l["estimator"] != "edge"]
-        steps = [dict(s, yielded=s["yielded_stud"]) for s in steps]
+        steps = [dict(s, yielded=s["yielded_stud"], accepted=s["yielded_stud"]) for s in steps]
+
+    def stats(acc, t, key):
+        return {"radial_mm_p95": p95_ci([x["radial"] for x in acc], tag + t + "radial" + key), "yaw_deg_p95": p95_ci([abs(x["vec"][2]) for x in acc], tag + t + "yaw" + key),
+                "radial_mm_median": float(np.median([x["radial"] for x in acc])) if acc else None,
+                "radial_mm_max": max((x["radial"] for x in acc), default=None), "yaw_deg_max": max((abs(x["vec"][2]) for x in acc), default=None)}
 
     def block(st, lk, t):
-        acc = [l for l in lk if l["accepted"]]
-        return {"steps": len(st), "yielded": sum(s["yielded"] for s in st), "yield": (sum(s["yielded"] for s in st) / len(st)) if st else None,
-                "looks": len(lk), "accepted_looks": len(acc),
-                "radial_mm_p95": p95_ci([l["radial"] for l in acc], tag + t + "radial"),
-                "yaw_deg_p95": p95_ci([abs(l["vec"][2]) for l in acc], tag + t + "yaw"),
-                "radial_mm_median": float(np.median([l["radial"] for l in acc])) if acc else None,
-                "radial_mm_max": max((l["radial"] for l in acc), default=None), "yaw_deg_max": max((abs(l["vec"][2]) for l in acc), default=None)}
+        acc, pl = [x for x in st if x["accepted"]], [l for l in lk if l["accepted"]]
+        return {"steps": len(st), "yielded": sum(x["yielded"] for x in st), "yield": (sum(x["yielded"] for x in st) / len(st)) if st else None,
+                "n_averaged": sum(x["n_used"] > 1 for x in acc), **stats(acc, t, ""),
+                "per_look": dict(looks=len(lk), accepted_looks=len(pl), **stats(pl, t, "look"))}
     out = {"all": block(steps, looks, "all")}
     for typ in ("course", "single"):
         out[typ] = block([s for s in steps if s["type"] == typ], [l for l in looks if l["type"] == typ], typ)
@@ -521,35 +533,46 @@ def cmd_pool(args):
     if not full and not args.partial:
         raise SystemExit("prerequisite incomplete: e1 / e1b have missing or lost jobs -- finish them (or --partial for a smoke pool)")
     cur = [(e, r) for e, r in e1 if e["meta"]["rr"] == latest_rr(e1, e["meta"]["shape"])]      # a re-run round supersedes the first
-    steps, looks = collect_v5([(cur, "e1"), (e1b, "e1b")])
+    steps, looks = collect_v5([(cur, "e1"), (e1b, "e1b")])      # one vector per step: the used estimate's error (the controller steers with the average of the looks)
     drift = e5_drift(root, cur)
     if not drift:
         raise SystemExit("E5: no recorded FK-arm gated build with a snap -- the pool cannot be frozen without drift_max")
     pool = {"params_hash": V.PARAMS_HASH, "git_head": git_head(), "partial": not full, "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "n_steps": len(steps), "n_looks": len(looks), "n_accepted": sum(l["accepted"] for l in looks),
-            "course": sorted([round(x, 4) for x in l["vec"]] for l in looks if l["accepted"] and l["type"] == "course"),
-            "single": sorted([round(x, 4) for x in l["vec"]] for l in looks if l["accepted"] and l["type"] == "single"),
+            "n_steps": len(steps), "n_looks": len(looks), "n_accepted": sum(x["accepted"] for x in steps), "n_accepted_looks": sum(l["accepted"] for l in looks),
+            "course": sorted([round(x, 4) for x in x_["vec"]] for x_ in steps if x_["accepted"] and x_["type"] == "course"),
+            "single": sorted([round(x, 4) for x in x_["vec"]] for x_ in steps if x_["accepted"] and x_["type"] == "single"),
             "drift_max_mm": round(max(x["d3_mm"] for x in drift), 4), "drift_xy_max_mm": round(max(x["dxy_mm"] for x in drift), 4),
             "drift_steps": len(drift), "drift_worst": sorted(drift, key=lambda x: -x["d3_mm"])[:5],
             "drift_median_mm": float(np.median([x["d3_mm"] for x in drift])), "v5": v5_summary(steps, looks)}
     pool["hash"] = pool_hash(pool)
     (root / "pool.json").write_text(json.dumps(pool, indent=1, default=float))
     write_manifest(root, "pool", pool_hash=pool["hash"], partial=pool["partial"])
-    print("pool %s%s: course %d, single %d vectors (of %d looks, %d steps); drift_max %.4f mm (3-D), %.4f mm (xy) over %d support records"
-          % (pool["hash"], " (PARTIAL)" if pool["partial"] else "", len(pool["course"]), len(pool["single"]), pool["n_looks"], pool["n_steps"],
+    print("pool %s%s: course %d, single %d vectors (one per step, of %d steps; %d looks); drift_max %.4f mm (3-D), %.4f mm (xy) over %d support records"
+          % (pool["hash"], " (PARTIAL)" if pool["partial"] else "", len(pool["course"]), len(pool["single"]), pool["n_steps"], pool["n_looks"],
              pool["drift_max_mm"], pool["drift_xy_max_mm"], len(drift)))
 
 
 # --- E1: builds -----------------------------------------------------------------------------------------------------------
 
-def build_stats(rec):
-    """One build: built, total, failure, and per snap the screen / cell-gate outcomes."""
+def edge_steered_steps(rec):
+    """The steps of an fk_vision build that an edge-fallback estimate steered (an edge look among the averaged ones): the controller used it."""
+    if ((row_of(rec) or {}).get("vision") or {}).get("aim") != "fk_vision":
+        return []
+    return sorted(int(n) for n, v in by_step(rec).items() if (v.get("used") or {}).get("n_used") and "edge" in v["used"]["estimators"])
+
+
+def build_stats(rec, edge_ok=True):
+    """One build: built, total, failure, and per snap the screen / cell-gate outcomes. edge_ok False (the edge fallback is not qualified): an
+    fk_vision build in which an edge estimate steered a step counts as failing at that step (perception_v5)."""
     row = row_of(rec)
     if row is None:
         return None
     snaps = [(int(n), v["snap"]) for n, v in by_step(rec).items() if v.get("snap")]
-    return {"built": row.get("built"), "total": row.get("total"), "failure": row.get("failure"), "snaps": sorted(snaps, key=lambda x: x[0]),
-            "ok": row.get("failure") is None and row.get("built") == row.get("total") and len(snaps) == row.get("total")}
+    edge_steps = edge_steered_steps(rec)
+    bad_edge = bool(edge_steps) and not edge_ok
+    failure = row.get("failure") or ("perception_v5 (edge estimate at step %d)" % edge_steps[0] if bad_edge else None)
+    return {"built": row.get("built"), "total": row.get("total"), "failure": failure, "snaps": sorted(snaps, key=lambda x: x[0]), "edge_steps": edge_steps,
+            "ok": failure is None and row.get("built") == row.get("total") and len(snaps) == row.get("total")}
 
 
 def e1_latest(ents):
@@ -561,13 +584,13 @@ def e1_latest(ents):
     return out
 
 
-def t_v1a(ents):
+def t_v1a(ents, edge_ok=True):
     t = {}
     for (shape, arm), items in sorted(e1_latest(ents).items()):
-        bs = [(seed, build_stats(rec)) for seed, e, rec in sorted(items, key=lambda x: x[0])]
+        bs = [(seed, build_stats(rec, edge_ok)) for seed, e, rec in sorted(items, key=lambda x: x[0])]
         snaps = [s for _, b in bs if b for _, s in b["snaps"]]
         t["%s/%s" % (arm, shape)] = {
-            "builds": len(bs), "built_all": sum(1 for _, b in bs if b and b["ok"]),
+            "builds": len(bs), "built_all": sum(1 for _, b in bs if b and b["ok"]), "edge_steered_steps": [[seed, b["edge_steps"]] for seed, b in bs if b and b["edge_steps"]],
             "built": [[b["built"], b["total"]] if b else None for _, b in bs], "failures": [b["failure"] if b else "lost" for _, b in bs],
             "snaps": len(snaps), "screen_pass": sum(s["screen_pass"] for s in snaps), "cell_gate_ok": sum(s["gate_ok"] for s in snaps),
             "lateral_mm_mean": float(np.mean([s["lateral_mm"] for s in snaps])) if snaps else None,
@@ -597,12 +620,13 @@ def e1_native(ents, rerun_done):
     return out
 
 
-def e1_criterion(ents, arm):
-    """Criteria 1 / 4: every gated shape built == n in all 3 repeats with every snap passing the screen, for `arm`."""
+def e1_criterion(ents, arm, edge_ok=True):
+    """Criteria 1 / 4: every gated shape built == n in all 3 repeats with every snap passing the screen, for `arm`. With the edge fallback not
+    qualified (edge_ok False), an fk_vision build in which an edge estimate steered a step fails."""
     latest, res = e1_latest(ents), []
     for shape in GATED:
         items = latest.get((shape, arm), [])
-        stats = [build_stats(rec) for _, _, rec in items]
+        stats = [build_stats(rec, edge_ok) for _, _, rec in items]
         if len(items) < len(SEEDS) or any(b is None for b in stats):
             return None, "%s %s incomplete" % (arm, shape)
         res.append(all(b["ok"] and all(s["screen_pass"] for _, s in b["snaps"]) for b in stats))
@@ -724,13 +748,13 @@ def sweep_trial(e, rec):
 # --- the edge fallback's qualification (plan 2.4) ------------------------------------------------------------------------------------
 
 def edge_qualification(looks, pool, trials, native):
-    """The edge fallback is admitted after >= EDGE_MIN accepted single-footprint cases whose errors join the pool and that pass E2 at 2x on the
-    single-footprint contexts. looks: collect_v5's (estimator "edge" = the fallback); trials: E2's (e2_trial); native: E2's native contexts
+    """The edge fallback is admitted after >= EDGE_MIN single-footprint cases (steps an edge estimate steered) whose errors join the pool and that pass
+    E2 at 2x on the single-footprint contexts. looks: collect_v5's STEPS (estimator "edge" = the fallback steered it; the pool vector is the step's); trials: E2's (e2_trial); native: E2's native contexts
     ([[name, step], ...]). The E2 pass is over the included single-footprint scale-2 trials whose injected vector is scale2 of an edge
     vector. qualified: False (fewer than EDGE_MIN cases, or the pass rate < 95 % or no E2 trial used an edge vector), None (E2 unavailable)."""
     edge = [l for l in looks if l["accepted"] and l["estimator"] == "edge" and l["type"] == "single"]
     if not edge:
-        return {"unavailable": "no accepted edge-fallback single-footprint look in the rows", "qualified": None}
+        return {"unavailable": "no single-footprint step steered by an edge-fallback estimate in the rows", "qualified": None}
     vecs = [[round(x, 4) for x in l["vec"]] for l in edge]
     out = {"n_cases": len(edge), "n_steps": len({(l["src"], l["arm"], l["shape"], l["step"]) for l in edge}),
            "rel_radial_mm_p95": p95_ci([l["radial"] for l in edge], "edgeradial"), "rel_yaw_deg_p95": p95_ci([abs(l["vec"][2]) for l in edge], "edgeyaw"),
@@ -819,9 +843,7 @@ def compute_tables(root):
     stale = sorted({e.get("params_hash") for ents in (e1, e1b, e2, e2b, sw) for e, _ in ents or [] if e.get("params_hash") not in (None, V.PARAMS_HASH)})
     T = {"params_hash": V.PARAMS_HASH, "git_head": git_head(), "complete": full, "stale_params_hashes": stale,
          "pool_hash": pool and pool["hash"], "pool_partial": pool and pool.get("partial")}
-    # T-V1a
-    T["T_V1a_builds"] = t_v1a(e1) if e1 else {"unavailable": "e1 has not run"}
-    # T-V1b (the summary is made below, once the edge fallback's qualification is known)
+    # T-V1a and T-V1b are made below, once the edge fallback's qualification is known (an unqualified edge estimate fails its fk_vision build)
     have_v5 = e1 is not None or e1b is not None
     steps, looks = collect_v5([([x for x in e1 or [] if x[0]["meta"]["rr"] == latest_rr(e1, x[0]["meta"]["shape"])], "e1"), (e1b, "e1b")]) if have_v5 else ([], [])
     T["T_V1b_pool"] = None if pool is None else {k: pool[k] for k in ("hash", "partial", "n_steps", "n_looks", "n_accepted", "drift_max_mm", "drift_xy_max_mm",
@@ -834,9 +856,11 @@ def compute_tables(root):
     if B2:
         B2["n_native_steps_included"] = sum(1 for s in e2b_steps_of(e2b) if s[3] and [s[0], s[2]] in (A2 or {}).get("native", []))
     T["F_V1_e2"] = A2 or {"unavailable": "e2 has not run"}
-    T["T_V1b_edge_fallback"] = edge_qualification(looks, pool, trials, A2["native"]) if have_v5 and A2 else \
-        edge_qualification(looks, pool, [], []) if have_v5 else {"unavailable": "e1 and e1b have not run", "qualified": None}
-    edge_ok = T["T_V1b_edge_fallback"]["qualified"] is True        # edge-accepted steps count in the yield (and the accuracy) only if qualified
+    T["T_V1b_edge_fallback"] = edge_qualification(steps, pool, trials, A2["native"]) if have_v5 and A2 else \
+        edge_qualification(steps, pool, [], []) if have_v5 else {"unavailable": "e1 and e1b have not run", "qualified": None}
+    edge_ok = T["T_V1b_edge_fallback"]["qualified"] is True        # edge-steered steps count in the yield (and the accuracy) only if qualified, and
+                                                                   # an fk_vision build they steered fails (T-V1a, criterion 4) only if not
+    T["T_V1a_builds"] = t_v1a(e1, edge_ok) if e1 else {"unavailable": "e1 has not run"}
     T["T_V1b_v5"] = dict(v5_summary(steps, looks, edge=edge_ok), edge_counted=edge_ok) if have_v5 else {"unavailable": "e1 and e1b have not run"}
     nsw = json.loads((root / "sweep" / "manifest.json").read_text())["jobs"] if (root / "sweep" / "manifest.json").exists() else None
     T["F_V1_sweep"] = dict(sweep_analysis([sweep_trial(e, r) for e, r in sw if r and r["row"]]), complete=complete(ssw, nsw)) if sw and nsw else \
@@ -856,7 +880,7 @@ def compute_tables(root):
     ok2b = full["e2b"] and B2 is not None and B2["frac"] is not None and B2["no_e2_match"] == 0 and ok2
     validity["d_e2_e2b_agreement_ge_90"] = tri(B2["frac"] >= 0.9, "%s of %s scored steps agree (pre-failure only: %s of %s)" % (B2["agree"], B2["observed"], B2["pre_failure"]["agree"], B2["pre_failure"]["observed"])) if ok2b else tri(None, "e2b unavailable")
     c1, why1 = e1_criterion(e1, "fk_oracle") if e1 and full["e1"] else (None, "e1 unavailable")
-    c4, why4 = e1_criterion(e1, "fk_vision") if e1 and full["e1"] else (None, "e1 unavailable")
+    c4, why4 = e1_criterion(e1, "fk_vision", edge_ok) if e1 and full["e1"] else (None, "e1 unavailable")
     crit[1], crit[4] = tri(c1, why1), tri(c4, why4)
     m2 = []
     if ok2 and ok2b:

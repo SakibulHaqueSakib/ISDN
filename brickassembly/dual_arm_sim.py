@@ -41,7 +41,7 @@ them as one episode (no plans/ or results/proto_episodes.jsonl writes; the row, 
     bash scripts/run.sh dual_arm_sim.py --spec ep.json --viewer null --test --num-frames 40000
 
 Perception-phase hooks (plan_v4_perception S1.3, §2.2a; all off by default): --seed N seeds the cameras and the per-step V4
-prior; --look adds a look waypoint (and, over a single-footprint target, a second one with the hand turned 180 deg) between
+prior; --look adds a look waypoint and a second one with the hand turned 180 deg (every step; the estimates are averaged) between
 transport and pre-insert; --aim gt|fk_oracle|fk_vision picks the aim controller (gt: today's GT servo; fk_*: the FK aim
 controller on the estimate pair, oracle = the plan target and the GT brick, vision = V5); --aim-inject JSON adds a persistent
 setpoint to fk_oracle's target; --shadow-vision runs V5 at every look in the gt and fk_oracle modes, logged only. snap()
@@ -149,11 +149,13 @@ ALIGN_GAIN = 4.0              # 1/s, integral gain of the brick-on-target servo
 GATE = {"lateral_mm": 2.0, "dz_mm": 1.5, "yaw_deg": 5.0}
 # The pre-weld screen (plan_v4_perception D6, scorer only): plan_v4's r4 pose thresholds on the state snap() reads, no at-rest clause.
 SCREEN = {"lateral_mm": 1.2, "dz_mm": (-0.5, 0.3), "tilt_deg": 4.0, "yaw_deg": 5.0}
-# Look schedule (plan_v4_perception §2.2a): the brick bottom H_LOOK above the target's stud tops (P2's h_look), the move, the 180 deg
-# wrist turn, and the dwell before a capture (the arm sways ~2 mm for a moment after a move) [A].
-H_LOOK = 0.045
+# Look schedule (plan_v4_perception §2.2a): the brick bottom H_LOOK above the target's stud tops (P2's lookpose: 35 mm after the ACC re-freeze,
+# 24/24 best of two flips at the 60 mm offset), the move, the 180 deg wrist turn (every step: the second look), and the dwell before a capture (the
+# arm sways ~2 mm for a moment after a move) [A].
+H_LOOK = V.PARAMS["h_look"]
 LOOK_MOVE_S, LOOK_TURN_S, LOOK_DWELL_S = 0.8, 1.2, 0.3
 PRIOR_XY, PRIOR_YAW_DEG = 0.4e-3, 0.25    # V4-fine's pose error on the plan lattice (P2), 1 sigma
+assert H_LOOK + 0.0017 < TRAVEL           # the look is capped below the travel height (it must not meet taller neighbours)
 # Break rule (plan_v4 r5-3, class JointBreaker): u >= U_BREAK on BREAK_SAMPLES consecutive end-of-frame
 # samples, enforced from BREAK_SETTLE_S after that weld fired.
 U_BREAK = 1.0
@@ -221,6 +223,15 @@ def exposed_cells(order, n, NI, NJ):
     cs = sorted(c for c in below - cover if i0 - 3 <= c[0] < i0 + nx + 3 and j0 - 3 <= c[1] < j0 + ny + 3)
     foot = {(i0 + a, j0 + b) for a in range(nx) for b in range(ny)}
     return cs, bool(k > 0 and cs and set(cs) <= foot)
+
+
+def drop_sides(order, n, NI, NJ, cells):
+    """The edge fallback's outline (plan_v4_perception §2.4) for a single-footprint step n: the sides of its exposed cells whose neighbour cell is not
+    part of the support course (lower ground, a drop), as (index into `cells`, direction 0 +i, 1 -i, 2 +j, 3 -j). A neighbour that is part of the
+    support but covered by a brick of the target's course is a rise, not a drop: not an outline side."""
+    k = order[n][4]
+    below = {(i, j) for i in range(-2, NI + 2) for j in range(-2, NJ + 2)} if k == 0 else {c for b in order[:n] if b[4] == k - 1 for c in P.cells(b)[0]}
+    return tuple((a, d) for a, (i, j) in enumerate(cells) for d, (di, dj) in enumerate(((1, 0), (-1, 0), (0, 1), (0, -1))) if (i + di, j + dj) not in below)
 
 
 def fk_bias(R_hand, d_h, T_xy, tgt_xy, i_xy):
@@ -965,23 +976,20 @@ class Example:
 
     # -- looks (--look, plan_v4_perception §2.2a) -----------------------------------------------
     def queue_look(self, s, tgt, yaw, g):
-        """The scheduled looks of step s, between transport and pre-insert: the hand over the target with the brick bottom
-        H_LOOK above its stud tops, a dwell, then the capture (on_look). A single-footprint target (exposed_cells) gets a second
-        look with the wrist turned 180 deg (the camera sits on the hand's +x side, so it sees the other side) and the wrist
-        turned back. A pure function of the plan: the same in every aim mode. Takes the nearer-wrist choice once, here:
-        yaw_shift (see step())."""
+        """The scheduled looks of step s, between transport and pre-insert: the hand over the target with the brick bottom H_LOOK above its stud
+        tops, a dwell, then the capture (on_look); then, on EVERY step (ACC), a second look with the wrist turned 180 deg (the camera sits on
+        the hand's +x side, so it sees the other side) and the wrist turned back; the two estimates are averaged (look_done). A pure function of
+        the plan: the same in every aim mode. Takes the nearer-wrist choice once, here: yaw_shift (see step())."""
         B, n = self.B, s["step"]
         self.yaw_shift = round((ARM_B[1] + wrap(yaw - ARM_B[1], math.pi) - yaw) / math.pi) * math.pi
         self.grasp_yaw = yaw + self.yaw_shift                     # the hand's world yaw at the grasp
-        _, single = exposed_cells(P.sequence(P.STRUCTURES[self.name]), n, *self.NIJ)
         p = tgt + [0, 0, ex.STUD_HEIGHT + H_LOOK + GRASP_DZ]
         turn = (-1 if self.grasp_yaw - ARM_B[1] > 0 else 1) * (math.pi - 1e-6)   # toward the wrist's middle; a hair under pi so Arm.update picks this way round
         B.push("look", p, yaw, g, LOOK_MOVE_S)
-        B.push("look", p, yaw, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 0, not single))
-        if single:
-            B.push("look", p, yaw + turn, g, LOOK_TURN_S)
-            B.push("look", p, yaw + turn, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 1, True))
-            B.push("look", p, yaw, g, LOOK_TURN_S, then=lambda: setattr(self, "hand_off", None))   # gt: re-measure once the wrist is back
+        B.push("look", p, yaw, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 0, False))
+        B.push("look", p, yaw + turn, g, LOOK_TURN_S)
+        B.push("look", p, yaw + turn, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 1, True))
+        B.push("look", p, yaw, g, LOOK_TURN_S, then=lambda: setattr(self, "hand_off", None))   # gt: re-measure once the wrist is back
 
     def on_look(self, s, k, final):
         """A scheduled look: the capture (V5 when it is wanted), logged; at the final one (t_L) the aim controller is set up."""
@@ -993,7 +1001,7 @@ class Example:
         res = self.v5_look(s, rec, ee, q) if self.sees else None
         v["looks"].append(rec)
         if res is not None and res.accepted:
-            self.cand[n] = (res, ee, self.frame, self.B.cmd[1] + self.yaw_shift)   # the last accepted look (+ the hand's commanded yaw then): what fk_vision aims with
+            self.cand.setdefault(n, []).append((res, ee, self.frame, self.B.cmd[1] + self.yaw_shift))   # every accepted look (+ the hand's commanded yaw then): look_done averages them
         if final:
             self.look_done(s, v, ee, q)
 
@@ -1014,7 +1022,7 @@ class Example:
         I, t1 = cap["intrinsics"], time.perf_counter()
         ctx, prior = self.v5_inputs(s)
         res = V.v5_estimate(cap["depth"], dict(w=I["width"], h=I["height"], vfov=I["vfov_deg"]), (cap["pos"], camR), hand, ctx, prior, mask)
-        rec.update(accepted=res.accepted, reject_reason=res.reject_reason, n_target_studs=res.n_target_studs, n_held_studs=res.n_held_studs,
+        rec.update(accepted=res.accepted, estimator=res.estimator, reject_reason=res.reject_reason, n_target_studs=res.n_target_studs, n_held_studs=res.n_held_studs,
                    target_noncollinear=res.target_noncollinear, T_hat=res.T_hat, B_hat=res.B_hat, dpsi_deg=math.degrees(res.dpsi),
                    t_rms_um=res.t_rms * 1e6, h_rms_um=res.h_rms * 1e6, diag=res.diag,
                    render_ms=cap["render_ms"], sense_ms=cap["sense_ms"], vision_ms=(time.perf_counter() - t0) * 1e3,
@@ -1029,7 +1037,7 @@ class Example:
         n, bid = s["step"], s["brick_id"]
         order = P.sequence(P.STRUCTURES[self.name])
         assert order[n][0] == bid, "plan order differs from planner.sequence"
-        cells, _ = exposed_cells(order, n, *self.NIJ)
+        cells, single = exposed_cells(order, n, *self.NIJ)
         ox, oy, _ = self.plan["voxel_origin"]
         nodes = np.array([(ox + (i + .5) * P.PITCH, oy + (j + .5) * P.PITCH) for i, j in cells]).reshape(-1, 2)
         tgt, yaw_t, _ = self.target[bid]
@@ -1039,15 +1047,27 @@ class Example:
         f = lambda x: (x - c) @ Rp.T + c + t
         held = (np.array([0.0, 0.0, GRASP_DZ]), RX_PI * Rot.from_euler("z", yaw_t - self.grasp_yaw))   # brick origin in the hand frame, brick <- hand
         btype = next(b["type"] for b in self.plan["bricks"] if b["id"] == bid)
-        return V.StepCtx(btype, float(tgt[2]), np.array(cells).reshape(-1, 2), held), V.Prior(f(nodes), f(tgt[:2]), yaw_t + dpsi)
+        outline = drop_sides(order, n, *self.NIJ, cells) if single else ()      # the edge fallback is for single-footprint targets only
+        return V.StepCtx(btype, float(tgt[2]), np.array(cells).reshape(-1, 2), held, outline=outline), V.Prior(f(nodes), f(tgt[:2]), yaw_t + dpsi)
 
     def look_done(self, s, v, ee, q):
-        """t_L: the final scheduled look. gt re-measures its GT hand offset; fk_oracle / fk_vision take their estimate pair,
-        store d_h (the full hand-frame vector at the estimate frame t_E), and add delta-psi to every remaining waypoint."""
+        """t_L: the final scheduled look. gt re-measures its GT hand offset; fk_oracle / fk_vision take their estimate pair, store d_h (the full
+        hand-frame vector), and add delta-psi to every remaining waypoint. fk_vision (and the shadow arms, logged only) average the accepted looks
+        (V.fuse_looks: d_h, in-hand yaw and T averaged, delta-psi from the averages; one accepted look is used alone, none is perception_v5).
+        v["used"] is the estimate steered with (or, in a shadow arm, that would be) and its errors against the ground truth, scorer side."""
         n, bid = s["step"], s["brick_id"]
         tgt, yaw_t, _ = self.target[bid]
         t0 = self.b_phase_t.get((n, "look"))
         v.update(n_looks=len(v["looks"]), t_L_frame=self.frame, t_L_sim_s=self.sim_time, look_sim_s=None if t0 is None else self.sim_time - t0)
+        fz = None
+        if self.sees:
+            ks = self.cand.get(n, [])
+            v["used"] = dict(n_used=len(ks), estimators=[r.estimator for r, *_ in ks])
+            if ks:
+                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc in ks],
+                                  ref=(ee[:3], Rot.from_quat(ee[3:7])))      # B at the hand's pose now (t_L), where q is the ground truth
+                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]),
+                                 e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q))
         if self.aim == "gt":
             self.hand_off = None                                  # aim_brick measures it again, at the final look's pose
             return
@@ -1055,25 +1075,25 @@ class Example:
             j = self.inject_for(n)
             c, sn = math.cos(yaw_t), math.sin(yaw_t)
             T = np.array([*(tgt[:2] + [c * j[0] - sn * j[1], sn * j[0] + c * j[1]]), yaw_t + math.radians(j[2])])
-            B_pos, B_yaw, ee_E, src, t_E, psi_cmd = q[:3], yaw_of(q[3:]), ee, "oracle", self.frame, self.B.cmd[1] + self.yaw_shift
+            fo = V.fuse_looks([dict(T=T, B=[*q[:3], yaw_of(q[3:])], ee=ee[:3], R=Rot.from_quat(ee[3:7]), psi_cmd=self.B.cmd[1] + self.yaw_shift)])
+            src, ee_L, t_E, psi_cmd, used = "oracle", ee, self.frame, self.B.cmd[1] + self.yaw_shift, 1
             v["inject"] = dict(dx_mm=j[0] * 1e3, dy_mm=j[1] * 1e3, dyaw_deg=j[2])
-        else:                                                     # fk_vision: the last accepted look
-            if n not in self.cand:
+        else:                                                     # fk_vision: the accepted looks, averaged
+            if fz is None:
                 v["failure"] = "perception_v5"
                 self.fail("perception_v5")
                 return
-            res, ee_E, t_E, psi_cmd = self.cand[n]
-            T, B_pos, B_yaw, src = res.T_hat, res.B_hat[:3], res.B_hat[3], "v5"
-        d_h = V.hand_offset(ee_E[:3], Rot.from_quat(ee_E[3:7]), B_pos)
-        # B_yaw was measured with the hand at its FK yaw, not its commanded one; the remaining waypoints are commanded, so the hand's
-        # tracking offset at t_E is added back (the brick's final yaw is then T_yaw once the hand reaches its commanded yaw)
-        d_psi_hand = wrap(yaw_of(ee_E[3:7]) - psi_cmd, math.pi)
-        dpsi = wrap(T[2] - B_yaw + d_psi_hand, math.pi)
+            fo, src, (_, ee_L, t_E, psi_cmd), used = fz, "v5", self.cand[n][-1], fz["n"]
+        # The yaw: the brick's yaw in the hand (phi = B_yaw - the hand's FK yaw) is what is measured; the remaining waypoints are commanded, so the
+        # dpsi that puts the brick at T_yaw once the hand reaches its commanded yaw is T_yaw - phi - psi_cmd (fuse_looks; a look's hand-tracking offset
+        # at t_E is inside phi). The hand's tracking offset at the last accepted look is logged.
+        d_h, dpsi, T = fo["d_h"], fo["dpsi"], fo["T"]
+        d_psi_hand = wrap(yaw_of(ee_L[3:7]) - psi_cmd, math.pi)
         self.fk = dict(d_h=d_h, T=np.asarray(T[:2]), i_xy=np.zeros(2))
         add_dpsi([m for m in self.B.moves if m["phase"] != "look"], dpsi)    # not the wrist's turn-back: it must stay exactly pi from the turned look,
                                                                              # or Arm.update's 2*pi wrap sends the wrist round the other way (past its limit)
-        v.update(aim=dict(src=src, T_hat=T, B_hat=[*B_pos, B_yaw], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E,
-                      hand_yaw_track_deg=math.degrees(d_psi_hand)))
+        v.update(aim=dict(src=src, T_hat=T, B_hat=fo["B"], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E, n_looks_used=used,
+                          hand_yaw_track_deg=math.degrees(d_psi_hand), **({"used_errors": v["used"]["errors"]} if src == "v5" else {})))
 
     def inject_for(self, n):
         """(dx m, dy m, dyaw deg) of --aim-inject for step n, in the target brick's frame: one vector, or {"<step>": vector}."""
@@ -1579,7 +1599,7 @@ class Example:
             ms = lambda key: sum(r.get(key, 0.0) for r in v["looks"])
             by[n] = dict(v, render_ms=ms("render_ms"), sense_ms=ms("sense_ms"), vision_ms=ms("vision_ms"), mask_ms=ms("mask_ms"))
         return jsonable(dict(perception={"gt": "ground_truth"}.get(self.aim, self.aim), aim=self.aim, seed=self.seed, shadow_vision=self.shadow,
-                             params_hash=V.PARAMS_HASH, aim_inject=self.inject, h_look_m=H_LOOK, dwell_s=LOOK_DWELL_S, by_step=by))
+                             params_hash=V.PARAMS_HASH, aim_inject=self.inject, h_look_m=H_LOOK, wrist_px=[V.PARAMS["wrist_w"], V.PARAMS["wrist_h"]], dwell_s=LOOK_DWELL_S, by_step=by))
 
     def episode_row(self, events):
         """The step-episode records (plan_v4_rl_brace 2.5, A2): outcome, two-sample u, B's onsets, start-up, spec echo."""
@@ -1827,8 +1847,8 @@ if __name__ == "__main__":
                         help="A's executor setting (tasks/brace_bandit.EXE): E0 committed, E1 stiff hold")
     parser.add_argument("--seed", type=int, default=0, help="seeds the cameras (hidden extrinsics, lighting, noise) and the per-step V4 prior draw")
     parser.add_argument("--look", action="store_true",
-                        help="plan_v4_perception: a look waypoint between transport and pre-insert (brick bottom 45 mm over the target's "
-                             "stud tops), a second one with the hand turned 180 deg over a single-footprint target; default: off")
+                        help="plan_v4_perception: a look waypoint between transport and pre-insert (brick bottom 35 mm over the target's "
+                             "stud tops) and, on every step, a second one with the hand turned 180 deg; default: off")
     parser.add_argument("--aim", choices=["gt", "fk_oracle", "fk_vision"], default="gt",
                         help="aim controller: gt (today's GT servo), fk_oracle (FK aim on the plan target and the GT brick pose), "
                              "fk_vision (FK aim on V5's estimate pair; none accepted -> perception_v5); fk_* need --look")

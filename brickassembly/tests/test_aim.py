@@ -2,8 +2,11 @@
 
   - rigid grasp, hand yawed and tilted: B_est = ee_FK - R_hand d_h equals the brick's position to < 0.05 mm as the hand moves;
   - the bias formula puts B_est on T_hat + [i_xy, 0] (xy) and on the target's z, for any hand yaw and tilt (the 13 mm lever cancels);
-  - the look schedule: look waypoints between transport and pre-insert, a second one with the wrist turned 180 deg iff the target
-    is single-footprint, the wrist turned back; the schedule does not depend on the aim mode;
+  - the look schedule: look waypoints between transport and pre-insert, a second one with the wrist turned 180 deg on EVERY step (ACC),
+    the wrist turned back; the schedule does not depend on the aim mode; the look is H_LOOK = 35 mm up, below the travel height;
+  - averaging (V.fuse_looks, the derivation is its docstring): two looks at different hand yaws and tracking offsets give the same d_h, delta-psi
+    and T as one perfect look; errors average; one accepted look is used alone; none is perception_v5; look_done records v["used"] and
+    v["aim"]["used_errors"];
   - look_done (fk_oracle): delta-psi is added to the yaw of every remaining waypoint of the step (pre-insert, insert, release,
     retract), once; the wrist's turn-back is left exactly pi from the turned look (Arm.update wraps yaw differences at 2 pi);
   - the pre-weld screen thresholds are the r4 ones.
@@ -71,11 +74,12 @@ def test_integral_gain_and_clip():
 
 
 # --- the look schedule and delta-psi on the stub Example --------------------------------------------------------
-def look_stub(name="S3", aim="gt"):
+def look_stub(name="S3", aim="gt", shadow=False):
     plan = load(name)
     e = stub(plan)
     e.args = SimpleNamespace(legacy_brace=False, continue_=False, look=True)
     e.name, e.aim, e.look, e.yaw_shift, e.grasp_yaw = name, aim, True, None, 0.0
+    e.sees = aim == "fk_vision" or shadow
     e.NIJ = (max(b["grid_pos"][0] + D.P.footprint(b["type"], b["yaw_index"])[0] for b in plan["bricks"]),
              max(b["grid_pos"][1] + D.P.footprint(b["type"], b["yaw_index"])[1] for b in plan["bricks"]))
     e.vis, e.cand, e.fk, e.inject, e.b_phase_t, e.frame = {}, {}, None, None, {}, 0
@@ -93,20 +97,20 @@ def test_look_schedule():
     order = D.P.sequence(D.P.STRUCTURES["S3"])
     singles = [n for n in range(len(order)) if D.exposed_cells(order, n, *e.NIJ)[1]]
     assert singles and len(singles) < len(order), singles               # S3 has piers: some single-footprint targets, not all
+    assert D.H_LOOK == 0.035 and D.H_LOOK + D.ex.STUD_HEIGHT < D.TRAVEL
     for n in range(len(order)):
         moves = queue(e, plan, n)
         ph = [m["phase"] for m in moves]
         i, j = ph.index("transport"), ph.index("pre-insert")
         assert set(ph[i + 1:j]) == {"look"} and ph[j:] == ["pre-insert", "insert", "release", "retract"], ph
         looks = moves[i + 1:j]
-        assert len(looks) == (5 if n in singles else 2), (n, len(looks))
+        assert len(looks) == 5, (n, len(looks))                             # every step: look, turn, look, turn back (and the first move)
         assert all(np.allclose(m["pos"], looks[0]["pos"]) for m in looks)    # the hand stays over the target
         h = looks[0]["pos"][2] - e.target[plan["sequence"][n]["brick_id"]][0][2] - D.GRASP_DZ
         assert abs(h - (D.ex.STUD_HEIGHT + D.H_LOOK)) < 1e-9, h             # brick bottom H_LOOK above the stud tops
         y = [m["yaw"] for m in looks]
-        if n in singles:                                                  # turned 180 deg, then back
-            assert abs(abs(y[2] - y[0]) - math.pi) < 1e-5 and y[3] == y[2] and y[4] == y[0], y
-            assert looks[1]["then"] is not None and looks[3]["then"] is not None
+        assert abs(abs(y[2] - y[0]) - math.pi) < 1e-5 and y[3] == y[2] and y[4] == y[0], y      # turned 180 deg, then back
+        assert looks[1]["then"] is not None and looks[3]["then"] is not None
         # the nearer-wrist choice is taken once, at the grasp: raw yaw + yaw_shift is where the hand points
         assert abs(e.yaw_shift / math.pi - round(e.yaw_shift / math.pi)) < 1e-9
         assert abs(y[0] + e.yaw_shift - (D.ARM_B[1] + D.wrap(y[0] - D.ARM_B[1], math.pi))) < 1e-9
@@ -120,7 +124,7 @@ def test_dpsi_on_every_remaining_waypoint():
         moves = queue(e, plan, n)
         single = D.exposed_cells(order, n, *e.NIJ)[1]
         first = [m["phase"] for m in moves].index("transport") + 1
-        e.B.moves[:] = moves[first + (4 if single else 2):]            # the final look's dwell has ended: what is left of the step
+        e.B.moves[:] = moves[first + 4:]                               # the final look's dwell has ended: what is left of the step
         before = [m["yaw"] for m in e.B.moves]
         bid = plan["sequence"][n]["brick_id"]
         tgt, yaw_t, _ = e.target[bid]
@@ -131,7 +135,7 @@ def test_dpsi_on_every_remaining_waypoint():
         # the pre-insert, insert, release and retract waypoints get delta-psi; the wrist's turn-back (phase look) keeps its yaw
         assert e.fk is not None and len(e.B.moves) == len(before) and all(
             abs((m["yaw"] - b) - (0.0 if m["phase"] == "look" else math.radians(-2.5))) < 1e-9 for m, b in zip(e.B.moves, before)), (n, [m["yaw"] - b for m, b in zip(e.B.moves, before)])
-        assert sum(m["phase"] == "look" for m in e.B.moves) == (1 if single else 0)
+        assert sum(m["phase"] == "look" for m in e.B.moves) == 1
         assert [m["phase"] for m in e.B.moves][-4:] == ["pre-insert", "insert", "release", "retract"]
         assert np.allclose(e.fk["T"], tgt[:2])
     print("delta-psi on all remaining waypoints: ok")
@@ -197,6 +201,147 @@ def test_fk_vision_without_an_accepted_look_fails():
     queue(e, plan, n)
     e.look_done(plan["sequence"][n], dict(looks=[]), np.r_[0.0, 0.0, 0.1, D.RX_PI.as_quat()], np.array([0, 0, 0.1, 0, 0, 0, 1.0]))
     assert e.failure == "perception_v5" and e.fk is None and e.failed_at_step == e.b_step
+
+
+# --- averaging the two looks (V.fuse_looks) ----------------------------------------------------------------------
+def rigid_looks(rng, psi_cmd=(0.4, 0.4 + math.pi - 1e-6), track_deg=(0.37, -0.52), phi0=0.9, p_b=(0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM),
+                T=(0.012, -0.034, 1.3), noise=None, e_cm=None):
+    """Two looks of a rigid grasp (brick pose in the hand fixed): the hand at a commanded yaw plus a tracking offset, tilted a little, over the
+    target. Estimates exact, or with `noise` = (sigma xy m, sigma yaw rad) added to T and B in the world. -> list of fuse_looks inputs, the true brick pose
+    in the hand (p_b, phi0)."""
+    out = []
+    for pc, tr in zip(psi_cmd, track_deg):
+        psi = pc + math.radians(tr)
+        R = Rot.from_euler("z", psi) * D.RX_PI * Rot.from_rotvec(np.radians(rng.normal(0, 1.5, 3)) * [1, 1, 0])
+        ee = np.array([T[0] + rng.normal(0, 1 * MM), T[1] + rng.normal(0, 1 * MM), 0.06])
+        B = np.r_[ee + R.apply(p_b), V._yaw(R) + phi0]
+        Tk = np.array(T, float)
+        if noise:
+            B = B + np.r_[rng.normal(0, noise[0], 3) * [1, 1, 0], rng.normal(0, noise[1])]
+            Tk = Tk + np.r_[rng.normal(0, noise[0], 2), rng.normal(0, noise[1])]
+        if e_cm is not None:                                                   # the camera's hand-fixed offset: shifts T and B alike, R_k e in the world
+            B[:3], Tk[:2] = B[:3] + R.apply([*np.asarray(e_cm, float), 0.0]), Tk[:2] + R.as_matrix()[:2, :2] @ np.asarray(e_cm, float)
+        out.append(dict(T=Tk, B=B, ee=ee, R=R, psi_cmd=pc))
+    return out
+
+
+def test_two_looks_equal_one_perfect_look():
+    """Two looks, hand yawed 180 deg apart with different tracking offsets and tilts: d_h, delta-psi and T equal what ONE perfect look at
+    any hand yaw gives (and each look alone gives the same, the estimates being exact)."""
+    rng = np.random.default_rng(3)
+    p_b, phi0, T = np.array([0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM]), 0.9, (0.012, -0.034, 1.3)
+    looks = rigid_looks(rng)
+    fz = V.fuse_looks(looks)
+    # the true hand-frame offset d_h = R^T (ee - B) = -p_b for any hand pose; the one-perfect-look reference at the commanded yaw
+    assert np.abs(fz["d_h"] - (-p_b)).max() < 1e-12, fz["d_h"]
+    want = D.wrap(T[2] - phi0 - 0.4, math.pi)                                  # T - phi - psi_cmd, the pre-ACC single-look formula
+    assert abs(D.wrap(fz["dpsi"] - want, math.pi)) < 2e-6 and np.allclose(fz["T"][:2], T[:2]) and abs(fz["T"][2] - T[2]) < 1e-12   # 2e-6: the turned look's command is pi - 1e-6
+    for l in looks:
+        one = V.fuse_looks([l])
+        assert np.abs(one["d_h"] - fz["d_h"]).max() < 1e-12 and abs(D.wrap(one["dpsi"] - fz["dpsi"], math.pi)) < 2e-6
+        # the pre-ACC formula of look_done: wrap(T - B_yaw + (psi_FK - psi_cmd))
+        old = D.wrap(T[2] - l["B"][3] + D.wrap(V._yaw(l["R"]) - l["psi_cmd"], math.pi), math.pi)
+        assert abs(D.wrap(one["dpsi"] - old, math.pi)) < 1e-12
+    # the brick at an arbitrary reference hand pose is the rigid brick there
+    ee2, R2 = rand_hand(rng)
+    fz2 = V.fuse_looks(looks, ref=(ee2, R2))
+    assert np.abs(fz2["B"][:3] - (ee2 + R2.apply(p_b))).max() < 1e-12 and abs(D.wrap(fz2["B"][3] - (V._yaw(R2) + phi0), math.pi)) < 1e-12
+    # applied: the brick ends on T_yaw once the hand tracks its commanded yaw (+ dpsi): psi_cmd + dpsi + phi = T_yaw (mod pi)
+    assert abs(D.wrap(0.4 + fz["dpsi"] + phi0 - T[2], math.pi)) < 2e-6
+
+
+def test_common_mode_camera_offset_is_removed_across_the_turn():
+    """The camera's hidden extrinsic error is a hand-frame xy offset e (0.2, -0.3 mm), the same in T_k and B_k. Plain averaging (T in the world, d_h
+    in the hand) cancels it in T but keeps it in d_h: the brick misses by R e. fuse_looks' common-mode step finds e from the T_k disagreement across the
+    turned looks (the target is fixed in the world) and removes it: exact. One look, or looks 30 deg apart: no correction."""
+    rng = np.random.default_rng(6)
+    p_b, e = np.array([0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM]), np.array([0.2 * MM, -0.3 * MM])
+    looks = rigid_looks(rng, e_cm=e)
+    plain, cm = V.fuse_looks(looks, common_mode=False), V.fuse_looks(looks, common_mode=True)
+    assert np.abs(cm["d_h"] - (-p_b)).max() < 1e-12 and np.allclose(cm["T"][:2], (0.012, -0.034), atol=1e-12) and np.allclose(cm["e_h"], e, atol=1e-12)
+    assert np.allclose(plain["d_h"][:2] - (-p_b)[:2], -e) and plain["e_h"] is None           # plain: d_h keeps -e (hand frame), T has lost it
+    assert np.allclose(plain["T"][:2], (0.012, -0.034), atol=1e-5)            # (the hands' tilts leave a few um)
+    assert abs(D.wrap(cm["dpsi"] - plain["dpsi"], math.pi)) < 1e-12                          # yaw is unaffected (a camera yaw error shifts T and B alike)
+    ee2, R2 = rand_hand(rng)
+    assert np.abs(V.fuse_looks(looks, ref=(ee2, R2))["B"][:3] - (ee2 + R2.apply(p_b))).max() < 1e-12
+    assert np.abs(np.hypot(*(V.fuse_looks(looks, ref=(ee2, R2), common_mode=False)["B"][:2] - (ee2 + R2.apply(p_b))[:2])) - np.hypot(*e)) < 1e-5   # plain: |e| off (to the hand tilt)
+    one = V.fuse_looks(looks[:1], common_mode=True)
+    assert one["e_h"] is None and np.allclose(one["d_h"][:2], (-p_b)[:2] - e)                  # one look: the camera offset stays (and cancels against T in rel)
+    near = rigid_looks(rng, psi_cmd=(0.4, 0.4 + math.radians(30)), track_deg=(0.0, 0.0), e_cm=e)
+    assert V.fuse_looks(near, common_mode=True)["e_h"] is None                                 # 30 deg apart: e is not observable well enough
+    three = rigid_looks(rng, e_cm=e)
+    three.append(dict(three[0], R=Rot.from_euler("z", 0.4 + math.pi / 2) * D.RX_PI))         # a third look at 90 deg: lstsq over both differences
+    assert V.fuse_looks(rigid_looks(rng, e_cm=e), common_mode=True)["e_h"] is not None
+
+
+def test_averaging_reduces_error_and_handles_the_circular_wrap():
+    rng = np.random.default_rng(4)
+    e1, e2 = [], []
+    for _ in range(200):
+        looks = rigid_looks(rng, noise=(0.1 * MM, math.radians(0.15)))
+        fz, f1 = V.fuse_looks(looks), V.fuse_looks(looks[:1])
+        e1.append(D.wrap(f1["dpsi"] - D.wrap(1.3 - 0.9 - 0.4, math.pi), math.pi))
+        e2.append(D.wrap(fz["dpsi"] - D.wrap(1.3 - 0.9 - 0.4, math.pi), math.pi))
+    assert np.std(e2) < 0.8 * np.std(e1), (np.std(e1), np.std(e2))              # about 1/sqrt(2) of one look
+    # the yaws sit across the +-pi/2 cut of a mod-pi angle: still the mean of two close angles
+    looks = rigid_looks(rng, phi0=math.pi / 2 - 0.001, T=(0.0, 0.0, math.pi / 2 - 0.002))
+    looks[1]["T"] = looks[1]["T"] + [0, 0, 0.004]                               # T yaws pi/2 -0.002 and +0.002, across the cut
+    assert abs(D.wrap(V.fuse_looks(looks)["T"][2] - (math.pi / 2), math.pi)) < 1e-9
+
+
+def test_drop_sides_of_a_one_stud_wall():
+    """hollow_box step 7 (a 1x4 on a one-stud-wide wall, exposed cells (5, 1..4)): the two long sides drop to the ground (8 sides); the ends meet
+    the wall's course-1 neighbours at (5, 0) and (5, 5), already placed: a rise, not a drop."""
+    bricks = D.P.sequence(list(__import__("blueprint").load("hollow_box")))
+    cells, single = D.exposed_cells(bricks, 7, 8, 8)
+    assert single and cells == [(5, 1), (5, 2), (5, 3), (5, 4)]
+    sd = D.drop_sides(bricks, 7, 8, 8, cells)
+    assert sorted(sd) == [(a, d) for a in range(4) for d in (0, 1)], sd
+
+
+def fake_res(look, est="studs"):
+    return SimpleNamespace(T_hat=look["T"], B_hat=look["B"], estimator=est)
+
+
+def fused_step(accepted, aim="fk_vision", n=0, est=("studs", "studs")):
+    """look_done on the stub with `accepted` of the two rigid looks accepted. -> (example, v, truth q)."""
+    e, plan = look_stub(aim=aim, shadow=aim != "fk_vision")
+    e.welds = {}
+    queue(e, plan, n)
+    bid = plan["sequence"][n]["brick_id"]
+    tgt, yaw_t, _ = e.target[bid]
+    rng = np.random.default_rng(5)
+    psi0 = 1.0 - e.yaw_shift
+    looks = rigid_looks(rng, psi_cmd=(1.0, 1.0 + math.pi - 1e-6), T=(*tgt[:2], yaw_t), phi0=0.3)
+    e.B.cmd = (e.B.cmd[0], psi0, *e.B.cmd[2:])
+    e.cand = {n: [(fake_res(looks[k], est[k]), np.r_[looks[k]["ee"], looks[k]["R"].as_quat()], 100 + 10 * k, looks[k]["psi_cmd"]) for k in accepted]}
+    ee, R = looks[1]["ee"], looks[1]["R"]                                       # the final look's hand pose; the brick is rigid in it
+    q = np.r_[ee + R.apply([0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM]), Rot.from_euler("z", V._yaw(R) + 0.3).as_quat()]
+    v = dict(looks=[{}, {}])
+    e.look_done(plan["sequence"][n], v, np.r_[ee, R.as_quat()], q)
+    return e, v, (tgt, yaw_t)
+
+
+def test_look_done_averages_two_looks_and_uses_one_alone():
+    for accepted, nu in (((0, 1), 2), ((0,), 1), ((1,), 1)):
+        e, v, (tgt, yaw_t) = fused_step(accepted)
+        assert e.failure is None and e.fk is not None
+        a, u = v["aim"], v["used"]
+        assert a["src"] == "v5" and a["n_looks_used"] == nu == u["n_used"] and a["used_errors"] == u["errors"]
+        assert np.allclose(e.fk["d_h"], [-0.4 * MM, 0.7 * MM, D.GRASP_DZ - 0.2 * MM], atol=1e-12) and np.allclose(e.fk["T"], tgt[:2])
+        er = u["errors"]                                                          # exact looks: zero error against the truth, whichever were used
+        assert er["rel_radial_mm"] < 1e-6 and abs(er["rel_yaw_deg"]) < 1e-6 and abs(er["held_z_mm"]) < 1e-6, er
+        assert abs(D.wrap(math.radians(a["dpsi_deg"]) - D.wrap(yaw_t - 0.3 - 1.0, math.pi), math.pi)) < 2e-6
+        assert abs(a["hand_yaw_track_deg"] - (0.37 if accepted == (0,) else -0.52)) < 0.05          # the last accepted look's tracking offset (the hand tilt moves its atan2 yaw a hair)
+    e, v, _ = fused_step(())                                                      # none accepted: perception_v5
+    assert e.failure == "perception_v5" and e.fk is None and v["failure"] == "perception_v5" and v["used"]["n_used"] == 0
+
+
+def test_used_estimators_are_recorded_and_shadow_arms_log_but_do_not_steer():
+    _, v, _ = fused_step((0, 1), est=("studs", "edge"))
+    assert v["used"]["estimators"] == ["studs", "edge"]
+    e, v, _ = fused_step((0, 1), aim="gt")                                        # a shadow arm: v["used"] is logged, the aim is the GT servo
+    assert v["used"]["n_used"] == 2 and "aim" not in v and e.fk is None
 
 
 def test_inject_for():
