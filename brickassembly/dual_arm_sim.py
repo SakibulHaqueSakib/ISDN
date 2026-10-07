@@ -57,6 +57,7 @@ import functools
 import inspect
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -232,6 +233,26 @@ def drop_sides(order, n, NI, NJ, cells):
     k = order[n][4]
     below = {(i, j) for i in range(-2, NI + 2) for j in range(-2, NJ + 2)} if k == 0 else {c for b in order[:n] if b[4] == k - 1 for c in P.cells(b)[0]}
     return tuple((a, d) for a, (i, j) in enumerate(cells) for d, (di, dj) in enumerate(((1, 0), (-1, 0), (0, 1), (0, -1))) if (i + di, j + dj) not in below)
+
+
+FINGER_CLEAR = 0.2e-3         # m: a hand offset toward a flush neighbour beyond this puts the fingertip over its top edge (the pad is as wide as the 2-stud brick face)
+
+
+def flush_normals(order, n):
+    """Unit world normals (x, y of the plan lattice) of the sides of step n's footprint that a brick of the SAME course, already placed, touches edge to
+    edge: (di, dj) of every footprint cell with a placed same-course neighbour cell."""
+    k = order[n][4]
+    mine = set(P.cells(order[n])[0])
+    other = {c for b in order[:n] if b[4] == k for c in P.cells(b)[0]}
+    return sorted({(di, dj) for (i, j) in mine for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (i + di, j + dj) in other and (i + di, j + dj) not in mine})
+
+
+def finger_overhang(shift, normals):
+    """None, or a dict(why, mm) when the hand's offset from the brick `shift` (world, ee - B = R d_h) points toward a flush neighbour (normal (di, dj)) by more
+    than FINGER_CLEAR."""
+    over = [(float(np.dot(shift[:2], n)), n) for n in normals]
+    over = [(o, n) for o, n in over if o > FINGER_CLEAR]
+    return dict(mm=max(o for o, _ in over) * 1e3, normal=max(over)[1], why="the hand sits %.2f mm toward the flush same-course neighbour at (%d, %d)" % (max(o for o, _ in over) * 1e3, *max(over)[1])) if over else None
 
 
 def fk_bias(R_hand, d_h, T_xy, tgt_xy, i_xy):
@@ -1071,28 +1092,41 @@ class Example:
         tgt, yaw_t, _ = self.target[bid]
         t0 = self.b_phase_t.get((n, "look"))
         v.update(n_looks=len(v["looks"]), t_L_frame=self.frame, t_L_sim_s=self.sim_time, look_sim_s=None if t0 is None else self.sim_time - t0)
-        ks, dropped = (self.cand.get(n, []) if self.sees else []), []
-        stud = [c for c in ks if c[0].estimator != "edge"]
-        if stud and len(stud) < len(ks):                          # a stud look exists: the edge looks are only the fallback
-            dropped = [dict(k=c[4], estimator="edge", why="edge is a fallback: %d stud-accepted look(s) of the step" % len(stud)) for c in ks if c[0].estimator == "edge"]
-            ks = stud
-        k_ins, why = (ks[0][4], "single used look %d: inserted at its own hand yaw" % ks[0][4]) if len(ks) == 1 else \
-            (0, "fused pair: look 0's yaw") if ks else (0, "no accepted look: look 0's yaw" if self.sees else "no V5 in this arm: look 0's yaw")
-        turned = k_ins == 1
-        psi_ins = self.look_psi.get(n, {}).get(k_ins, self.B.cmd[1] + self.yaw_shift)     # the commanded hand yaw of the insertion look
-        R_L = Rot.from_quat(ee[3:7])
-        # The hand at the insertion: the final look's pose (turned) if the step is inserted at the turned yaw, else turned back (Rz(pi)). The used
-        # estimate is scored there: B from d_h at that hand pose, the ground truth carried to it rigidly (its hand-frame offset and yaw at t_L).
-        R_ref = R_L if turned else Rot.from_euler("z", math.pi) * R_L
+        all_ks, R_L = (self.cand.get(n, []) if self.sees else []), Rot.from_quat(ee[3:7])
         d_gt, phi_gt = V.hand_offset(ee[:3], R_L, q[:3]), yaw_of(q[3:]) - yaw_of(ee[3:7])
-        q_ref = np.r_[V.brick_from_hand(ee[:3], R_ref, d_gt), qz(yaw_of(R_ref.as_quat()) + phi_gt)]
-        fz = None
-        if self.sees:
-            v["used"] = dict(n_used=len(ks), estimators=[c[0].estimator for c in ks], dropped=dropped)
-            if ks:
-                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc, _ in ks], ref=(ee[:3], R_ref))
-                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]), scored_at="the insertion hand pose",
-                                 e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q_ref))
+        normals, blocked_note = flush_normals(P.sequence(P.STRUCTURES[self.name]), n), None
+        for use_all in (False, True):
+            ks, dropped = list(all_ks), []
+            stud = [c for c in ks if c[0].estimator != "edge"]
+            if not use_all and stud and len(stud) < len(ks):          # a stud look exists: the edge looks are only the fallback
+                dropped = [dict(k=c[4], estimator="edge", why="edge is a fallback: %d stud-accepted look(s) of the step" % len(stud)) for c in ks if c[0].estimator == "edge"]
+                ks = stud
+            k_ins, why = (ks[0][4], "single used look %d: inserted at its own hand yaw" % ks[0][4]) if len(ks) == 1 else \
+                (0, "fused pair: look 0's yaw") if ks else (0, "no accepted look: look 0's yaw" if self.sees else "no V5 in this arm: look 0's yaw")
+            if use_all:
+                why += " (the turned insertion is blocked: %s)" % blocked_note["why"]
+            turned = k_ins == 1
+            psi_ins = self.look_psi.get(n, {}).get(k_ins, self.B.cmd[1] + self.yaw_shift)     # the commanded hand yaw of the insertion look
+            # The hand at the insertion: the final look's pose (turned) if the step is inserted at the turned yaw, else turned back (Rz(pi)). The used
+            # estimate is scored there: B from d_h at that hand pose, the ground truth carried to it rigidly (its hand-frame offset and yaw at t_L).
+            R_ref = R_L if turned else Rot.from_euler("z", math.pi) * R_L
+            q_ref = np.r_[V.brick_from_hand(ee[:3], R_ref, d_gt), qz(yaw_of(R_ref.as_quat()) + phi_gt)]
+            fz = None
+            if self.sees:
+                v["used"] = dict(n_used=len(ks), estimators=[c[0].estimator for c in ks], dropped=dropped)
+                if ks:
+                    fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc, _ in ks], ref=(ee[:3], R_ref))
+                    v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]), scored_at="the insertion hand pose",
+                                     e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q_ref))
+            # The fingers are as wide as the brick (a 2-stud face), so a hand offset along the pad toward a flush neighbour of the same course puts the
+            # fingertip on that neighbour's top edge (cube step 5: the in-hand offset of 0.75 mm along the pad flips with the 180 deg turn). From the shadow /
+            # fk_vision estimate d_h, the same in every arm: if the turned insertion would overhang a flush neighbour and look 0 is accepted, insert at look 0's
+            # yaw with all the accepted looks (the pair) instead.
+            blocked = finger_overhang(R_ref.as_matrix() @ fz["d_h"], normals) if turned and fz is not None else None
+            if blocked and not use_all and any(c[4] == 0 for c in all_ks):
+                blocked_note = blocked
+                continue
+            break
         if self.aim == "fk_vision" and fz is None:
             v["failure"] = "perception_v5"
             self.fail("perception_v5")
@@ -1129,7 +1163,8 @@ class Example:
                                                                    # sends the wrist round the other way (past its limit)
         if turned:                                                 # after the retract: back the way it came (exactly pi - 1e-6), so the next step starts as before
             self.B.push("look", rest[-1]["pos"], rest[-1]["yaw"] - self.look_turn, rest[-1]["grip"], LOOK_TURN_S)
-        v["insert"] = dict(look=k_ins, turned=turned, yaw_deg=math.degrees(psi_ins + dpsi), cmd_yaw_look_deg=math.degrees(psi_ins), reason=why)
+        v["insert"] = dict(look=k_ins, turned=turned, yaw_deg=math.degrees(psi_ins + dpsi), cmd_yaw_look_deg=math.degrees(psi_ins), reason=why,
+                           **({"turned_blocked": blocked_note} if blocked_note else {}))
         self.hand_off = None                                       # gt: measured again from here (the turn-back that did it is gone when turned)
 
     def inject_for(self, n):

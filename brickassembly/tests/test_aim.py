@@ -422,6 +422,40 @@ def test_every_arm_picks_the_same_insertion_yaw():
         assert v["aim"]["src"] == "oracle" and v["insert"]["turned"] is (acc == (1,)) and v["aim"]["t_E_frame"] == (110 if acc == (1,) else 100)
 
 
+def test_finger_overhang_guard():
+    """The pads are as wide as the brick face: a hand offset toward a flush same-course neighbour (normal (di, dj)) beyond FINGER_CLEAR puts a fingertip on its
+    top edge (cube step 5, in-hand offset 0.75 mm, flips with the 180 deg turn). finger_overhang says so; flush_normals reads the neighbours from the plan."""
+    assert D.finger_overhang(np.array([-0.73e-3, 0.0, 0.0]), [(-1, 0)])["mm"] > 0.7
+    assert D.finger_overhang(np.array([0.79e-3, 0.0, 0.0]), [(-1, 0)]) is None                 # the offset points away from it
+    assert D.finger_overhang(np.array([-0.73e-3, 0.0, 0.0]), [(0, 1), (0, -1)]) is None        # neighbours on the other axis: no overhang along x
+    assert D.finger_overhang(np.array([-0.1e-3, 0.0, 0.0]), [(-1, 0)]) is None                 # under the clearance
+    order = D.P.sequence(list(__import__("blueprint").load("cube")))
+    assert D.flush_normals(order, 5) == [(-1, 0)]                                              # cube step 5 (2, 0): b_004 touches its -x side on course 1
+    assert D.flush_normals(order, 0) == [] and D.flush_normals(order, 3) == [(0, -1)]          # nothing beside step 0; step 3 touches a course-1 brick on its -y side
+
+
+def test_turned_insertion_blocked_by_a_flush_neighbour_falls_back_to_look_0():
+    """Single stud look 1 (look 0 only an edge look) would insert turned; with a flush neighbour the hand overhangs, the step uses all accepted looks
+    (the pair) at look 0's yaw instead, and says why. Without a neighbour it stays turned. Every arm decides alike (from the shadow V5's d_h)."""
+    saved = D.flush_normals
+    try:
+        for normals, turned in (([(1, 0), (-1, 0), (0, 1), (0, -1)], False), ([], True)):
+            D.flush_normals = lambda order, n, nn=normals: nn
+            for aim in ("fk_vision", "fk_oracle", "gt"):
+                ex, v, _ = fused_step((0, 1), aim=aim, est=("edge", "studs"))
+                assert v["insert"]["turned"] is turned, (aim, normals, v["insert"])
+                if turned:
+                    assert v["used"]["estimators"] == ["studs"] and "turned_blocked" not in v["insert"]
+                else:
+                    assert v["used"]["estimators"] == ["edge", "studs"] and v["used"]["dropped"] == [] and "blocked" in v["insert"]["reason"]
+                    assert v["insert"]["turned_blocked"]["mm"] > 0.2 and [m["phase"] for m in ex.B.moves][0] == "look"
+        D.flush_normals = lambda order, n: [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        ex, v, _ = fused_step((1,), est=("edge", "studs"))                                    # look 0 not accepted: nothing to fall back to, stays turned
+        assert v["insert"]["turned"] is True
+    finally:
+        D.flush_normals = saved
+
+
 def test_turned_insertion_stays_inside_the_wrist_range_both_ways():
     """Run a step through Arm.update with the turned look as the only used look, for delta-psi of either sign: the commanded yaw never leaves
     [psi - pi, psi] (+ a few deg), the unturn goes back the way it came, and it ends at psi + delta-psi."""
