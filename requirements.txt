@@ -1,0 +1,42 @@
+# One environment for everything except BrickSim / Isaac Sim 5.1 (see SETUP.md).
+# Python 3.12.  `bash setup_env.sh` installs this plus torch (CUDA index picked
+# from the driver) and, with --with-curobo, cuRobo.  torch is NOT listed here:
+# it comes from the PyTorch index, see TORCH in setup_env.sh.
+
+# --- v4 simulator: standalone Newton + MuJoCo-Warp -------------------------
+newton==1.2.1              # requires warp-lang>=1.13,<1.14
+warp-lang==1.13.0
+mujoco==3.8.0              # mujoco-warp 3.8.0.3 needs mujoco~=3.8.0 (the frozen twin pinned 3.3.7)
+mujoco-warp==3.8.0.3
+newton-actuators==0.1.0
+absl-py==2.4.0
+etils==1.13.0
+requests==2.32.3           # newton.utils.download_asset
+GitPython==3.1.59          # newton.utils.download_asset (asset repo clone)
+cbor2==5.9.0
+
+# --- Newton viewer (ViewerGL), USD export ----------------------------------
+pyglet==2.1.16
+imgui-bundle==1.92.601
+usd-core==25.11            # pxr: --viewer usd, viz/to_usd.py
+
+# --- numerics, vision, tests -----------------------------------------------
+numpy==2.5.2
+scipy==1.17.0
+opencv-python-headless==4.13.0.90
+pillow==12.1.1
+pytest==9.1.1
+PyYAML==6.0.3
+matplotlib==3.10.8
+pandas==3.0.6
+trimesh==4.11.1
+networkx==3.6.1
+shapely==2.1.2
+tqdm==4.67.1
+
+# --- planning / behaviour trees / viewer -----------------------------------
+py_trees==2.6.0
+viser==1.1.0
+yourdfpy==0.0.60
+numpy-quaternion==2024.0.13
+pydot==4.0.1

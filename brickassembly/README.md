@@ -12,12 +12,30 @@ gate, decision, deviation and failure — read it before `git log`.
 **Results: [`Docs/results_report.md`](../Docs/results_report.md).**
 Full instructions in [PROGRESS.md](PROGRESS.md).
 
+## Setup
+
+One environment runs everything except the BrickSim / Isaac Sim 5.1 physics runs:
+
+```bash
+bash setup_env.sh                 # from the repo root -> .venv (add --with-curobo for cuRobo)
+bash brickassembly/scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 40000
+```
+
+Full instructions, verification and troubleshooting: [`../SETUP.md`](../SETUP.md).
+`scripts/run.sh` uses `<repo>/.venv` (or `ROBOFAB_PY`) when it exists; the
+multi-environment setup below keeps working when it does not.
+
 ## v3.1 — the MuJoCo twin (CPU)
 
 WP3–WP8 were executed in a CPU MuJoCo twin of the cell (master_report §0.6,
 amendments §7.7). No Isaac or Docker is needed. Physics is CPU MuJoCo, one
 process per core (`--workers`, default = physical cores for the runner, 8 for
-PPO); the PPO update runs on CUDA when torch sees a GPU (`--device`):
+PPO); the PPO update runs on CUDA when torch sees a GPU (`--device`).
+
+### Legacy multi-environment setup
+
+Before `setup_env.sh` the twin had its own Python 3.11 environment (the v4 code
+used the Isaac Sim 6.0 interpreter and cuRobo a third one, see `scripts/run.sh`):
 
 ```bash
 uv venv ../mjenv --python 3.11

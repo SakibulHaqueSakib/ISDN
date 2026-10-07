@@ -26,8 +26,10 @@ def add_overlay():
     global _added
     if _added:
         return
+    # In the single env (setup_env.sh) these are pip-installed and neither dir
+    # need exist; an installed cuRobo wins over the checkout, which stays last.
     for p in (VENDOR_DIR, CUROBO_DIR):
         p = str(p)
-        if p not in sys.path:
+        if Path(p).is_dir() and p not in sys.path:
             sys.path.append(p)
     _added = True

@@ -1,0 +1,8 @@
+# Extra pins for cuRobo (setup_env.sh --with-curobo); the checkout itself is installed -e with --no-build-isolation.
+cuda-core==1.2.1
+cuda-bindings==12.9.4
+nvidia-cuda-runtime-cu12==12.9.79
+setuptools-scm==9.2.2
+setuptools>=77
+wheel
+importlib_resources

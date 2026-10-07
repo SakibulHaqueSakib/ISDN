@@ -16,6 +16,10 @@
 #                                               tasks/*, stability.py, bracing.py,
 #                                               planner.py --frame twin
 #                    (MJ_PY overrides the interpreter; requirements-twin.txt)
+#
+# Single environment: if <repo>/.venv exists (setup_env.sh, SETUP.md) or
+# ROBOFAB_PY is set, every pattern below except the BrickSim physics runs uses
+# that one interpreter. Without it the four-interpreter routing is unchanged.
 set -eu
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,7 +27,13 @@ REPO="$(dirname "$HERE")"
 BRICKSIM_PY="$REPO/BrickSim/.venv/bin/python"
 ISDN_PY="$HERE/../isdnenv/bin/python"
 ISAAC_PY="$HOME/Codes/CAIRSS/Issac/bin/python"
-MJ_PY="${MJ_PY:-$HERE/../mjenv/bin/python}"
+ONE_PY="${ROBOFAB_PY:-}"
+[ -n "$ONE_PY" ] || [ ! -x "$REPO/.venv/bin/python" ] || ONE_PY="$REPO/.venv/bin/python"
+if [ -n "$ONE_PY" ]; then
+    ISDN_PY="$ONE_PY"; ISAAC_PY="$ONE_PY"; MJ_PY="${MJ_PY:-$ONE_PY}"
+else
+    MJ_PY="${MJ_PY:-$HERE/../mjenv/bin/python}"
+fi
 
 [ $# -ge 1 ] || { sed -n '2,12p' "$0"; exit 1; }
 script="$1"; shift
