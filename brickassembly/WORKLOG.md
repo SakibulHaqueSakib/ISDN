@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-232 entries. Later entries supersede earlier ones; retractions are marked.
+237 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -327,6 +327,23 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **deviated** `v4_pick_settle_hover`
     - rationale: S3 fails at step 1 in every E1 arm including gt: at the 2x2 pick the hand touches down about (+2.2, +1.5) mm off against about 2.1 mm finger-pad clearance and the brick pops up (v4_s3_pick_marginal_2x2, cause implementer-reported). A settle hover was the first of the listed fix candidates.
+
+- **result** `v4_pick_settle_hover_regression`
+    - result: Settle hover (commit 9d551ad): descend to 9 mm above the grasp pose, wait until the hand xy error is below 0.5 mm (max 0.6 s), then a 0.3 s final descent. Orchestrator verified from run rows (results/v4/vision/pick_fix/rows, untracked). Before (HEAD 713acad): S3 without --look 1/16, gate_miss at step 1. After: S3 --look --aim gt 16/16, S3 without --look 16/16, cube 8/8, arch 11/11, hollow_box 12/1…
+    - finding: The regression check required by v4_pick_settle_hover passes: no acceptance shape regresses and S3 now builds 16/16 with and without --look. The implementer also found that HEAD's S3 without --look failed at step 1 (1/16), not 15/16 as in Phase 2's acceptance runs; the commits differ, and the fix cures it.
+
+- **result** `v4_v1_acc_sweep`
+    - result: ACC first diagnostic: experiments/v4_vision.py sweep on commit 9d551ad, results/v4/vision/v1_acc/ (tables.json F_V1_sweep): 372 fk_oracle step-episodes, 31 included E2 contexts (natives S5p13 step 12 and arch step 10 excluded), persistent injected offsets along the target's long and short axis, both signs, at 0.3 / 0.6 / 1.0 mm; 0 lost, 0 errors. Pass at 0.3 / 0.6 / 1.0 mm, all 31 contexts: long+ …
+    - finding: The executor's insertion tolerates about 0.3 mm of persistent offset, half the 0.6 mm cavity clearance. This is consistent with Codex's G-V1 reading (v4_G_V1_review) that the scale-2 failure is an insertion-margin limitation of the cell and not only perception accuracy, so perception-side remedies may not reach criterion 2.
+
+- **problem** `v4_v1_e5_drift_contaminated`
+    - finding: E5's drift_max (0.355 mm 3-D, 0.308 mm xy; results/v4/vision/v1_r1/pool.json) comes from arch step 10, fk_vision seeds 0 and 2, the snaps that jammed (screen fail, gate_miss; v4_v1_builds), so it is support displacement caused by the insertion itself. The next-worst record is 0.095 mm xy (arch step 9, b_007, seed 1); the median is 0.010 mm. Because the plan's capture-to-snap window includes insert…
+
+- **deviated** `v4_v1_e5_drift_to_insert_start`
+    - rationale: v4_v1_e5_drift_contaminated: the capture-to-snap window includes insertion contact, so a jammed insertion inflates drift_max and with it every E2 scale-2 vector.
+
+- **decided** `v4_v1_acc_camera_only`
+    - outcome: The ACC round stays the pre-registered branch with camera fixes only (v4_v1_acc_branch); no insertion search is added now. If the margin still fails after the round, the user chooses then among a lower success criterion, an insertion search, or stop.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 

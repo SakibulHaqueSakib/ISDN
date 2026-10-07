@@ -1,0 +1,34 @@
+{
+ "exp": "sweep",
+ "params_hash": "0f312821b7c8c394",
+ "git_head": "9d551ade0a077c19a1c260ca0e9107bfc9a05eb5",
+ "dirty_py": [],
+ "time": "2026-10-07 07:55:58",
+ "jobs": 372,
+ "stats": {
+  "unique": 372,
+  "to_run": 372,
+  "ran": 372,
+  "errors": 0,
+  "wall_s": 4415.5
+ },
+ "merge": {
+  "entries": 372,
+  "with_record": 372,
+  "lost": 0,
+  "missing": 0,
+  "unique_ids": 372
+ },
+ "workers": 4,
+ "natives": [
+  [
+   "S5p13",
+   12
+  ],
+  [
+   "arch",
+   10
+  ]
+ ],
+ "natives_from": "/home/bakasakib/Documents/ISDN_Robofab/brickassembly/results/v4/vision/v1_r1/tables.json"
+}
