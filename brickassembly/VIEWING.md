@@ -36,6 +36,47 @@ What it is not: the clutch is a stiff weld switched on when the §2.3.3 gate
 passes, not BrickSim's force model, and motion is IK between waypoints, not
 cuRobo. Joint-failure physics stays with the BrickSim runs below.
 
+### Camera feeds, a camera-guided run, manual control (OpenGL viewer)
+
+```bash
+cd ~/Documents/ISDN_Robofab/brickassembly
+# 1. a camera-guided build, with every camera feed on screen
+bash scripts/run.sh dual_arm_sim.py --shape cube --look --aim fk_vision --show-cameras
+# 2. drive the arms yourself (no build queue; feeder bricks and plate are there)
+bash scripts/run.sh dual_arm_sim.py --shape cube --manual
+# 3. the same, with the feeds (the wrist feed follows the hand you move)
+bash scripts/run.sh dual_arm_sim.py --shape cube --manual --show-cameras
+```
+
+All three are off unless asked for: the physics, the build and the vision results are the same with the panels on (the live feeds are
+separate noise-free renders that touch no random stream, so V5 sees what it saw before). `--show-cameras` and `--manual` hold the loop to 60 frames/s so the looks play at their real
+duration. They need `--viewer gl` (the default); on the null viewer `--show-cameras` renders and shows nothing.
+
+**Camera window** (`--show-cameras`): one window, titled `cameras: ...`, tiles in two rows: RGB on top, depth below (colour-mapped, near = blue,
+black = no return), columns top camera, wrist_B, and, with `--look --aim fk_vision` (or `--shadow-vision`), the **last look**. Drag its corner to
+resize; the side panel's *Logged Images* dropdown hides or reopens it. The live feeds refresh every `--camera-every N` frames (default 10, about 6 Hz, ~30 ms a refresh;
+a larger N is lighter) and are shown at half size, without the sensor noise. The wrist feed is rendered from B's FK pose. The look tile is
+the real thing: the full noised frame V5 was given. The **last look** tile is the wrist frame at the scheduled look, with V5's result drawn on it: the estimated target
+footprint (cyan) and held-brick footprint (magenta), a green frame and "ACCEPTED studs" or a red one and "REJECTED <reason>", and the target / held
+stud counts. In the side panel, under the usual step lines: per step (the last three) each look's verdict and estimator, the looks the aim used
+(and "EDGE-steered"), and the aim source: `fk_vision (V5)`, `fk_oracle` or `gt (ground-truth servo)`.
+
+**Manual control** (`--manual`): a floating *Manual control* window beside the side panel. Pick arm A or B, then
+- sliders `x y z` (mm, world), `yaw` (deg, relative to the arm's base; 0 = parked, the gripper is 180-degree symmetric), `grip` (mm per finger,
+  0 = shut, 40 = the joint limit), and `-`/`+` buttons that move the target by the `step` sliders (mm, deg);
+- `Open` (30 mm), `Close` (0 mm: it squeezes whatever is between the fingers; use the slider for a gentler grip), `Home (park)`;
+- readouts: the hand's measured pose and finger opening, the target, the **tracking error** (hand vs the command it is following) and the **IK
+  residual** (how far the IK solution is from the commanded hand: it grows at the workspace or joint limits).
+- keys (hold = 10 steps a second; none of them is a viewer key): `1` / `2` select arm A / B, `J` `L` x -/+, `K` `I` y -/+, `G` `T` z -/+,
+  `Z` `X` yaw +/-, `C` `V` close / open the fingers, `R` home. The camera keys (WASD/QE, space, `.`, `H`, `F`) work as before.
+
+A cross in the scene marks each arm's target (orange = A, cyan = B). Targets are clamped to the workspace (hand 12-550 mm up, within 0.76 m of the
+shoulder, 0.18 m from the base column, no more than 0.12 m past the mid-plane) and the command follows the target at a limited speed and never
+more than 15 mm ahead of the hand, so a target the arm cannot reach does not wind up. To pick a brick by hand: B is on the right (+x); the feeder
+bricks lie on its -y side (the first at x 170, y -290 mm); a 2x4 brick lies along x, so turn the hand to yaw 90 deg to close across its short
+side, hover at z about 100 mm, go down to z 13.5 mm, `Close`, lift. Not done in manual mode: the clutch snap (a brick pressed onto the plate
+rests on its studs under the physics, but is not welded) and the build queue.
+
 ## BrickSim physics runs — recorded, then played back
 
 **You can watch BrickSim runs — recorded, then played back two ways.**

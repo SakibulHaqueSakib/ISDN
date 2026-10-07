@@ -47,6 +47,12 @@ controller on the estimate pair, oracle = the plan target and the GT brick, visi
 setpoint to fk_oracle's target; --shadow-vision runs V5 at every look in the gt and fk_oracle modes, logged only. snap()
 always records the scorer-only pre-weld screen (plan_v4_perception D6). The row gets a "vision" block.
     bash scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 40000 --look --aim fk_vision
+
+Live-viewer aids (cell/liveview.py, VIEWING.md; off by default, the physics is unchanged): --show-cameras puts the top and wrist_B feeds
+(RGB, depth, and V5's result on each look) in a viewer image window, refreshed every --camera-every frames; --manual drives the two hands
+by hand from the side panel and the keyboard (no build queue); --pace holds the loop to 60 frames/s (implied by both).
+    bash scripts/run.sh dual_arm_sim.py --shape cube --look --aim fk_vision --show-cameras
+    bash scripts/run.sh dual_arm_sim.py --shape cube --manual --show-cameras
 """
 
 import time
@@ -78,6 +84,7 @@ import blueprint as B  # noqa: E402
 import bracing  # noqa: E402
 import planner as P  # noqa: E402
 import stability as ST  # noqa: E402
+from cell import liveview as LV  # noqa: E402
 import vision as V  # noqa: E402
 from tasks.brace_bandit import EXE  # noqa: E402
 
@@ -593,6 +600,13 @@ class Example:
         self.sees = self.look and (self.aim == "fk_vision" or self.shadow)     # V5 runs at the looks
         self.vis, self.cand, self.fk, self.yaw_shift, self.grasp_yaw = {}, {}, None, None, 0.0   # per-step records; the accepted V5 looks; the FK aim state; the wrist-yaw shift of a look step
         self.look_psi, self.look_frame = {}, {}   # per step and look: the hand's commanded yaw and the frame
+        # live-viewer aids (cell/liveview.py), all off by default and display-only
+        self.show_cams, self.manual_on = bool(getattr(args, "show_cameras", False)), bool(getattr(args, "manual", False))
+        self.cam_every = max(1, int(getattr(args, "camera_every", None) or 10))
+        self.realtime = (bool(getattr(args, "pace", False)) or self.show_cams or self.manual_on) and getattr(args, "viewer", None) != "null"
+        if self.manual_on and (self.look or getattr(args, "test", False) or getattr(args, "start_step", None) is not None):
+            raise SystemExit("--manual runs no build queue: it cannot be combined with --look, --test or --start-step")
+        self.rt_t, self.feed, self.look_feed, self.man_info = time.perf_counter(), None, None, {}
 
         self.plan, self.name = make_plan(args)
         self.failure = self.failed_at_step = self.built_at_failure = None   # end at the first failure (see fail())
@@ -743,6 +757,13 @@ class Example:
         self.parks = {self.A: park(ARM_A), self.B: park(ARM_B)}
         self.A.push("park", park(ARM_A), 0.0, 0.0, 1.5)
         self.B.push("park", park(ARM_B), 0.0, 0.01, 1.5)
+        self.man = None
+        if self.manual_on:                    # --manual: no queue; the hands are driven from liveview.ManualCtl (step)
+            for a in (self.A, self.B):
+                a.moves.clear()
+                a.phase = "manual"
+                a.cmd = (a.cmd[0], a.base[1], a.cmd[2], a.cmd[3])      # hand yaw = base yaw: the parked hand (what the park move's yaw 0 becomes through step()'s wrap)
+            self.man = LV.ManualCtl((ARM_A, ARM_B), [park(ARM_A), park(ARM_B)])
         self.next_step, self.b_step = n0, None
         self.legacy = bool(getattr(args, "legacy_brace", False))
         # hand-off protocol events (plan_v4 r5-5): B lifted its brick / A closed on the structure / B retracted
@@ -773,6 +794,10 @@ class Example:
 
         self.viewer.set_model(self.model)
         self.viewer.set_camera(pos=wp.vec3(0.35, -0.55, 0.40), pitch=-28.0, yaw=125.0)
+        if self.manual_on and hasattr(self.viewer, "register_ui_callback"):
+            self.viewer.register_ui_callback(self.gui_manual_window, position="free")
+        if self.show_cams:
+            LV.enlarge_image_window()
         self.fixture_setup(steps, n0)
         self.capture()
         self.cams, self.fk_state, self.spheres = None, None, None    # cell.cameras.Cameras (--save-captures, V5 at the looks), rendered outside the captured graphs
@@ -780,9 +805,11 @@ class Example:
         if self.save_caps:
             self.cap_dir, self.cap_step, self.cap_retract_step = Path(args.save_captures), None, None
             self.cap_dir.mkdir(parents=True, exist_ok=True)
-        if self.save_caps or self.sees:
+        if self.save_caps or self.sees or self.show_cams:
             from cell.cameras import Cameras
             self.cams = Cameras(self.model, seed=self.seed)
+            if self.show_cams:
+                self.push_feeds(np.zeros((480, 640, 3), np.uint8))       # the window exists from the first frame (the tiles' shape is fixed)
         self.wall0 = time.perf_counter()      # for the row's rtf
         self.startup_s = self.wall0 - _T0     # process start to here: plan, IK park, scene build, graph capture
         print("%s: %d bricks, %d braced (%s), %d clutch welds" % (
@@ -1034,6 +1061,8 @@ class Example:
                    mask_ms=(t1 - t0) * 1e3, mask_px=int(mask.sum()))      # vision_ms = mask (A's FK + spheres) + the plan inputs + V5
         if np.isfinite(res.T_hat).all() and np.isfinite(res.B_hat).all():
             rec["errors"] = v5_errors(self.target[bid][0][:2], self.target[bid][1], res.T_hat, res.B_hat, q)
+        if self.show_cams:
+            self.show_look(cap, rec, res, s)
         return res
 
     def v5_inputs(self, s):
@@ -1409,12 +1438,13 @@ class Example:
         print("  step %d %s %s  %s" % (s["step"], bid, "SNAP" if ok else "MISS", self.last_gate))
 
     # -- captures (--save-captures; read-only on the sim) ---------------------------------
-    def hand_fk(self, k):
-        """Arm k's TCP pose [x y z qx qy qz qw] in the world, from its joint angles alone (FK on the IK model)."""
+    def hand_fk(self, k, q=None):
+        """Arm k's TCP pose [x y z qx qy qz qw] in the world, from its joint angles alone (FK on the IK model); `q`: other joint angles
+        (the IK solution, for --manual's residual)."""
         if self.fk_state is None:
             self.fk_state = self.model_ik.state()
         base, yaw = (ARM_A, ARM_B)[k]
-        q = self.state_0.joint_q.numpy()[9 * k:9 * k + 9]
+        q = self.state_0.joint_q.numpy()[9 * k:9 * k + 9] if q is None else q
         newton.eval_fk(self.model_ik, wp.array(q, dtype=wp.float32), wp.zeros(9, dtype=wp.float32), self.fk_state)
         t = self.fk_state.body_q.numpy()[EE]
         return np.r_[rotate(qz(yaw), t[:3]) + base, qmul(qz(yaw), t[3:])]
@@ -1445,6 +1475,54 @@ class Example:
                             quat_xyzw=gt["quat_xyzw"], light_gain=gt["light_gain"], shape_body=self.cams.shape_body,
                             brick_ids=np.array(list(self.body)), brick_bodies=np.array(list(self.body.values())))
 
+    # -- live viewer aids (cell/liveview.py; display only) --------------------------------
+    def refresh_feeds(self):
+        """--show-cameras: a noise-free preview of both cameras of the current state (wrist_B from B's FK pose): the noise would cost 3x the render."""
+        top = self.cams.preview("top", state=self.state_0, stride=LV.SHOW_STRIDE)
+        wr = self.cams.preview("wrist_B", self.hand_fk(1), state=self.state_0, stride=LV.SHOW_STRIDE)
+        self.feed = [top["rgb"], wr["rgb"], LV.depth_rgb(top["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
+        self.push_feeds()
+
+    def push_feeds(self, blank=None):
+        """One log_image batch, a row of RGB over a row of depth: top, wrist_B, and (with V5 at the looks) the last look with V5's result."""
+        if blank is not None:
+            self.feed = [blank] * 4
+        look = [self.look_feed[0] if self.look_feed else np.zeros_like(self.feed[0])] if self.sees else []
+        ldep = [self.look_feed[1] if self.look_feed else np.zeros_like(self.feed[0])] if self.sees else []
+        self.viewer.log_image("cameras: top | wrist_B%s (RGB over depth)" % (" | last look" if self.sees else ""),
+                              np.stack(self.feed[:2] + look + self.feed[2:] + ldep))
+
+    def show_look(self, cap, rec, res, s):
+        """The look just taken, for the panel: the wrist frame with V5's estimated target and held-brick footprints and its verdict."""
+        bid = s["brick_id"]
+        L, W = self.dims[bid]
+        T, Bh = np.asarray(res.T_hat, float), np.asarray(res.B_hat, float)
+        T_box = LV.box_corners(T[0], T[1], self.target[bid][0][2], T[2], L, W) if np.isfinite(T).all() else None
+        B_box = LV.box_corners(Bh[0], Bh[1], Bh[2], Bh[3], L, W) if np.isfinite(Bh).all() else None
+        self.look_feed = (LV.overlay_look(LV.tile(cap["rgb"]), (cap["pos"], Rot.from_quat(cap["quat_xyzw"])), rec, T_box, B_box), LV.depth_rgb(cap["depth"]))
+        self.push_feeds()
+
+    def manual_step(self, body_q):
+        """--manual: the held keys move the selected arm's target, then both arms' commands follow their targets (rate-limited, leashed)."""
+        m, v = self.man, self.viewer
+        keys = getattr(v, "is_key_down", None)
+        if keys is not None and not (getattr(v, "_ui_is_capturing_keyboard", None) or (lambda: False))():
+            import pyglet.window.key as K
+            down = lambda *ks: sum(bool(keys(k)) for k in ks)
+            for key, k in ((K._1, 0), (K._2, 1)):
+                if keys(key):
+                    m.sel = k
+            if keys(K.R):
+                m.home(m.sel)
+            r = self.man_step_mm * 1e-3 * 10 * self.frame_dt          # held: ten steps a second
+            m.nudge(m.sel, (r * (down(K.L) - down(K.J)), r * (down(K.I) - down(K.K)), r * (down(K.T) - down(K.G))),
+                    math.radians(self.man_step_deg) * 10 * self.frame_dt * (down(K.Z) - down(K.X)),
+                    grip=m.tgt[m.sel]["grip"] + 0.03 * self.frame_dt * (down(K.V) - down(K.C)))
+        for k, arm in enumerate((self.A, self.B)):
+            arm.cmd = m.advance(k, arm.cmd, body_q[EE + k * self.n_arm_bodies][:3], self.frame_dt)
+
+    man_step_mm, man_step_deg = 5.0, 3.0
+
     # -- loop ---------------------------------------------------------------------
     def capture(self):
         self.graph = self.graph_ik = None
@@ -1472,18 +1550,23 @@ class Example:
             self.fail("divergence")
             raise RuntimeError("simulation diverged at t=%.2f s (step %s, B %s, A %s)"
                                % (self.sim_time, self.b_step, self.B.phase, self.A.phase))
-        self.schedule()
-        pos, rot, grip = [], [], []
+        if self.manual_on:
+            self.manual_step(body_q)
+        else:
+            self.schedule()
+        pos, rot, grip, cmd_w = [], [], [], []
         for arm, k in ((self.A, 0), (self.B, 1)):
             ee = body_q[EE + k * self.n_arm_bodies][:3]
             if arm is self.B:
                 self.aim_brick(ee, body_q)
             p, yaw, g, tilt = arm.update(self.frame_dt, ee)
+            cmd_w.append(p)
             (bx, by, bz), byaw = arm.base
             pos.append(rotate(qz(-byaw), p - [bx, by, bz]))
             # a parallel gripper is 180-degree symmetric: pick the nearer wrist. A look step (--look) takes that choice once,
             # at its grasp (yaw_shift), so the wrist can turn 180 deg for the second look and delta-psi cannot flip it
-            yaw = yaw + self.yaw_shift if arm is self.B and self.yaw_shift is not None else byaw + wrap(yaw - byaw, math.pi)
+            yaw = (yaw if self.manual_on else yaw + self.yaw_shift if arm is self.B and self.yaw_shift is not None
+                   else byaw + wrap(yaw - byaw, math.pi))     # --manual: the command is the hand's world yaw: no wrap, no wrist flip
             world = qmul(qrot(tilt), qmul(qz(yaw), Q_DOWN))
             rot.append(qmul(qz(-byaw), world))
             grip.append(g)
@@ -1507,6 +1590,9 @@ class Example:
         else:
             self.ik.step(self.ik_q, self.ik_q, iterations=24)
         q = self.ik_q.numpy()
+        if self.manual_on:                    # the IK solution's own miss of the commanded hand, for the panel
+            self.man_info["ik_mm"] = [1e3 * float(np.linalg.norm(self.hand_fk(k, q[k])[:3] - cmd_w[k]))
+                                      for k in range(2)]
         tgt = self.control.joint_target_pos.numpy()
         for k in range(2):
             tgt[9 * k:9 * k + 7] = q[k, :7]
@@ -1518,6 +1604,8 @@ class Example:
             self.simulate()
         self.sim_time += self.frame_dt
         self.frame += 1
+        if self.show_cams and self.frame % self.cam_every == 0:
+            self.refresh_feeds()
         self.breaker.update()
         self.brace_readout()
         if self.monitor:
@@ -1554,8 +1642,20 @@ class Example:
         self.viewer.log_lines("/targets", wp.array(np.array(starts or [[0, 0, 0]], np.float32), dtype=wp.vec3),
                               wp.array(np.array(ends or [[0, 0, 0]], np.float32), dtype=wp.vec3),
                               (0.1, 0.9, 0.3), hidden=not starts)
+        if self.manual_on:                    # the targets: a cross, orange = A, cyan = B (the hand follows it)
+            for k, col in ((0, (1.0, 0.55, 0.1)), (1, (0.1, 0.8, 1.0))):
+                c, d = self.man.tgt[k]["p"], 0.02 * np.eye(3)
+                self.viewer.log_lines("/manual_target_%d" % k, wp.array(np.array(c - d, np.float32), dtype=wp.vec3),
+                                      wp.array(np.array(c + d, np.float32), dtype=wp.vec3), col)
         self.viewer.log_contacts(self.contacts, self.state_0)
         self.viewer.end_frame()
+        if self.realtime:                     # hold the loop to the sim's 60 frames/s: the looks play at their real duration
+            self.rt_t += self.frame_dt
+            now = time.perf_counter()
+            if now < self.rt_t:
+                time.sleep(self.rt_t - now)
+            else:
+                self.rt_t = now               # behind: no banked lag
 
     def gui(self, ui):
         steps = self.plan["sequence"]
@@ -1575,6 +1675,97 @@ class Example:
                 self.last_gate["lateral_mm"], self.last_gate["dz_mm"], self.last_gate["yaw_deg"]))
         if self.done:
             ui.text("DONE")
+        if self.look:
+            self.gui_looks(ui)
+
+    def gui_looks(self, ui):
+        """Per step (the last three): each look's verdict, the looks and estimator the aim used, and where the aim came from."""
+        ui.separator()
+        ui.text_wrapped("perception: aim %s%s" % (self.aim, " (+ shadow V5)" if self.shadow else ""))
+        for n in sorted(self.vis)[-3:]:
+            v = self.vis[n]
+            ui.text("step %d" % n)
+            for r in v["looks"]:
+                if "accepted" in r:
+                    ui.text_wrapped("  look %d: %s %s, studs %s/%s%s" % (r["k"], "ACCEPT" if r["accepted"] else "REJECT", r["estimator"], r["n_target_studs"],
+                                                                     r["n_held_studs"], "" if r["accepted"] else " (%s)" % r["reject_reason"]))
+                else:
+                    ui.text("  look %d taken (no V5 in this mode)" % r["k"])
+            u, a = v.get("used"), v.get("aim")
+            if u:
+                ui.text_wrapped("  used looks %s (%s)%s" % (u["looks"], ",".join(u["estimators"]) or "none", "  EDGE-steered" if u["edge_steered"] else ""))
+            if a:
+                ui.text("  aim: %s, %d look(s)" % ({"v5": "fk_vision (V5)", "oracle": "fk_oracle"}.get(a["src"], a["src"]), a["n_looks_used"]))
+            elif v["looks"] and "used" not in v and "n_looks" in v:
+                ui.text("  aim: gt (ground-truth servo)")
+            if v.get("failure"):
+                ui.text("  FAILED: %s" % v["failure"])
+
+    def gui_manual_window(self, ui):
+        """--manual: its own floating window (the side panel is full), top left beside the side panel."""
+        ui.set_next_window_pos(ui.ImVec2(320, 10), ui.Cond_.once)
+        ui.set_next_window_size(ui.ImVec2(350, 640), ui.Cond_.once)
+        if ui.begin("Manual control"):
+            self.gui_manual(ui)
+        ui.end()
+
+    def gui_manual(self, ui):
+        """The --manual panel: arm select, target sliders and +/- steps, gripper, home, the hand's pose and the errors, the keys."""
+        m = self.man
+        for k, nm in enumerate("AB"):
+            if ui.radio_button("arm " + nm, m.sel == k):
+                m.sel = k
+            ui.same_line()
+        ui.new_line()
+        k = m.sel
+        t, arm = m.tgt[k], (self.A, self.B)[k]
+        ui.push_item_width(150)
+        _, self.man_step_mm = ui.slider_float("step (mm)", self.man_step_mm, 1.0, 20.0, "%.0f")
+        _, self.man_step_deg = ui.slider_float("yaw step (deg)", self.man_step_deg, 1.0, 15.0, "%.0f")
+        for i, nm in enumerate("xyz"):
+            ch, v = ui.slider_float("%s (mm)" % nm, float(t["p"][i]) * 1e3, -700.0, 700.0 if i < 2 else 550.0, "%.0f")
+            if ch:
+                d = np.zeros(3)
+                d[i] = v * 1e-3 - t["p"][i]
+                m.nudge(k, d)
+            ui.same_line()
+            if ui.button("-##" + nm):
+                d = np.zeros(3)
+                d[i] = -self.man_step_mm * 1e-3
+                m.nudge(k, d)
+            ui.same_line()
+            if ui.button("+##" + nm):
+                d = np.zeros(3)
+                d[i] = self.man_step_mm * 1e-3
+                m.nudge(k, d)
+        ch, v = ui.slider_float("yaw (deg)", math.degrees(t["yaw"]), -98.0, 98.0, "%.0f")
+        if ch:
+            m.nudge(k, dyaw=math.radians(v) - t["yaw"])
+        ui.same_line()
+        if ui.button("-##yaw"):
+            m.nudge(k, dyaw=-math.radians(self.man_step_deg))
+        ui.same_line()
+        if ui.button("+##yaw"):
+            m.nudge(k, dyaw=math.radians(self.man_step_deg))
+        ch, v = ui.slider_float("grip (mm/finger)", t["grip"] * 1e3, 0.0, 40.0, "%.1f")
+        if ch:
+            m.nudge(k, grip=v * 1e-3)
+        ui.pop_item_width()
+        if ui.button("Open"):
+            m.nudge(k, grip=LV.GRIP_OPEN)
+        ui.same_line()
+        if ui.button("Close"):
+            m.nudge(k, grip=LV.GRIP_SHUT)
+        ui.same_line()
+        if ui.button("Home (park)"):
+            m.home(k)
+        ee = self.hand_fk(k)
+        ui.text("hand  x %.1f  y %.1f  z %.1f mm" % tuple(1e3 * ee[:3]))
+        ui.text("hand yaw %.1f deg, fingers %.1f mm" % (math.degrees(wrap(yaw_of(ee[3:7]) - (ARM_A, ARM_B)[k][1])), 1e3 * self.state_0.joint_q.numpy()[9 * k + 7]))
+        ui.text("target %.1f  %.1f  %.1f mm" % tuple(1e3 * t["p"]))
+        ui.text("tracking error (hand vs command) %.1f mm" % (1e3 * np.linalg.norm(arm.cmd[0] - ee[:3])))
+        ui.text("IK residual %.2f mm" % self.man_info.get("ik_mm", [0.0, 0.0])[k])
+        ui.text_wrapped("keys: 1 / 2 arm, J L x, K I y, G T z, Z X yaw, C V grip, R home (hold = 10 steps/s)")
 
     def test_final(self):
         n = self.end_step
@@ -1894,6 +2085,14 @@ if __name__ == "__main__":
                              'brick\'s frame, or {"<step>": vector} for a full build')
     parser.add_argument("--shadow-vision", action="store_true",
                         help="with --look: run V5 at every look in the gt and fk_oracle modes too; logged only, never aborts or changes control")
+    parser.add_argument("--show-cameras", action="store_true",
+                        help="ViewerGL: an image window with the top and wrist_B feeds (RGB, depth; with --look --aim fk_vision/--shadow-vision the last "
+                             "look with V5's result), refreshed every --camera-every frames; display only, the physics and V5's noise are unchanged")
+    parser.add_argument("--camera-every", type=int, default=10, metavar="N", help="--show-cameras: refresh the feeds every N frames (default 10)")
+    parser.add_argument("--manual", action="store_true",
+                        help="ViewerGL: no build queue; drive the two hands by hand (side panel and keys: 1/2 arm, J L / K I / G T move, Z X yaw, "
+                             "C V grip, R home); the feeder bricks and the plate are there to be picked and placed")
+    parser.add_argument("--pace", action="store_true", help="hold the viewer loop to 60 frames/s (implied by --show-cameras and --manual)")
     parser.set_defaults(shape="arch", bricks=None)
     pre = argparse.ArgumentParser(add_help=False)
     pre.add_argument("--spec", type=Path)

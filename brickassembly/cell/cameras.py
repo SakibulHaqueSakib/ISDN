@@ -253,6 +253,13 @@ class Cameras:
         self.timing[cam].append(dict(render_ms=res["render_ms"], sense_ms=res["sense_ms"]))
         return res
 
+    def preview(self, cam, ee_pose=None, *, state, stride=2):
+        """Display only (--show-cameras): the render at 1/`stride` size with the capture's exposure but no sensor noise or dropout, and no draw
+        from the seed's noise stream. -> dict(rgb uint8, depth float32 [m])."""
+        out, _ = self._render(cam, ee_pose, state, False)
+        rgb = np.clip(1 - np.exp(-out["hdr"][::stride, ::stride] * self.gain), 0, 1)
+        return dict(rgb=(rgb * 255 + 0.5).astype(np.uint8), depth=out["depth"][::stride, ::stride].astype(np.float32))
+
     def ground_truth(self, cam, ee_pose=None, *, state):
         """Scoring only, never for acting: the same view with labels. -> dict(shape_index int32 (-1 = no hit), clean depth,
         normal, the TRUE camera pos / quat_xyzw, light_gain)."""
