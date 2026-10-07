@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-237 entries. Later entries supersede earlier ones; retractions are marked.
+242 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -344,6 +344,22 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **decided** `v4_v1_acc_camera_only`
     - outcome: The ACC round stays the pre-registered branch with camera fixes only (v4_v1_acc_branch); no insertion search is added now. If the margin still fails after the round, the user chooses then among a lower success criterion, an insertion search, or stop.
+
+- **result** `v4_v1_acc_remedies`
+    - result: The four WP3 remedies applied once on merge commit 6967bbc (worktree branch commits fbb1b4e to 509f877; PARAMS_HASH e346d590acba5201): wrist_B 1280x960 (same VFOV and mount); a second look (hand turned 180 degrees) on every step; H_LOOK 35 mm; the edge fallback (support top-face outline sides >= 2 plus 2-3 studs) for single-footprint targets with fewer than 4 matched or collinear studs, used only …
+    - finding: Smoke only, not the ACC gate run: cube builds 8/8 with all screens passing in fk_vision at two seeds, arch seed 0 stops at step 7 where look 0 is rejected and the build falls to perception_v5. The cube successes at steps 3, 5, 7 rely on the edge estimator.
+
+- **deviated** `v4_v1_common_mode_fusion`
+    - rationale: e flips sign in the target estimate across the 180 degree turn but not in the hand-frame d_h, so a plain average doubles it in the result. Implementer-measured on cube steps 0 and 1: plain average 0.29 to 0.30 mm versus 0.08 to 0.15 mm per look.
+
+- **problem** `v4_v1_turned_look_offset`
+    - finding: A single turned look's estimate carries about 2|e| (about 0.6 mm) error at the insertion pose after the turn-back, because the camera offset no longer cancels between target and brick; scoring at the turned pose (t_L) hid it. This explains G-V1's fk_vision jams (cube seed 0 steps 5 and 7, arch seeds 0 and 2 step 10 were aimed from the turned look alone). Fixed: used estimates are scored at the ins…
+
+- **problem** `v4_v1_turned_insertion`
+    - finding: Implementer-reported, from per-frame logs: inserting with the hand turned 180 degrees failed in two ways. (a) Cube step 5, with shallower seating at steps 3 and 7: the brick sits 0.75 mm off the pad centre in the hand frame, the turn points that offset at the flush neighbour, the fingertip lands on its edge, the hand is held 0.5 to 2.2 mm above its command, and at release the stored press (Fz -85.…
+
+- **decided** `v4_v1_never_insert_turned`
+    - outcome: Never insert turned. Every step is inserted at look 0's hand yaw. Selection: both looks stud-accepted -> fused pair; look 0 studs alone -> look 0; look 0 edge plus look 1 studs or edge -> fused pair, edge-steered; look 0 edge alone -> used, edge-steered; look 0 not accepted -> perception_v5 in fk_vision (look 1 is never used alone); gt and fk_oracle use the same selection via shadow V5 and never f…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
