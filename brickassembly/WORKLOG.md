@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-242 entries. Later entries supersede earlier ones; retractions are marked.
+251 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -360,6 +360,42 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **decided** `v4_v1_never_insert_turned`
     - outcome: Never insert turned. Every step is inserted at look 0's hand yaw. Selection: both looks stud-accepted -> fused pair; look 0 studs alone -> look 0; look 0 edge plus look 1 studs or edge -> fused pair, edge-steered; look 0 edge alone -> used, edge-steered; look 0 not accepted -> perception_v5 in fk_vision (look 1 is never used alone); gt and fk_oracle use the same selection via shadow V5 and never f…
+
+- **result** `v4_v1acc_builds`
+    - result: E1 builds (T-V1a, tables.json T_V1a_builds), 3 repeats per arm and shape, built steps per repeat. gt and fk_oracle: cube 8/8 x3, arch 11/11 x3, hollow_box 12/12 x3, S3 16/16 x3, no failures, every screen passing (cube 24/24, arch 33/33, hollow_box 36/36, S3 48/48 snaps, both arms). fk_vision: cube 8/8, 8/8, 8/8 (screens 22/24 pass, screen fails at seed 0 steps 3 and 7; cell gate 24/24) and hollow_…
+    - finding: Criterion 1 (fk_oracle) holds on the three gated shapes; criterion 4 (fk_vision) fails on all three. The seed-1 step-0 jams occur only in fk_vision (arch and S3), with an accurate estimate; cause not identified (under Codex review). The cube and hollow_box fk_vision builds are physically complete, and fail only the counting rule because the edge fallback is not qualified (v4_v1acc_edge_qualificati…
+
+- **result** `v4_v1acc_single_footprint`
+    - result: E1b single-footprint step-episodes (54, 0 lost, 0 errors, 27 per arm; shapes S1 6, S2A 3, S3 6, S3L 3 and S5 prefix 13 steps 8 per arm plus 1 failed). tables.json carries no E1b success table; computed by the doc-writer from e1b/episodes.jsonl joined to the rows (step n's snap). fk_oracle: 26/27 success, cell gate 26/27, screen pass 24/27. fk_vision: 26/27 success, cell gate 26/27, screen pass 24/…
+    - finding: The two arms are indistinguishable on single-footprint steps (26/27, 24/27 screens each), so the oracle arm fails the same prefix:S5:13 context; E1b feeds the V5 pool and the edge qualification, not a gate criterion.
+
+- **result** `v4_v1acc_v5_pool`
+    - result: V5 accuracy and yield (T_V1b_v5) over 436 steps (E1 plus E1b, edge fallback not counted): yield all 0.860 (375/436), course 1.000 (199/199), single 0.743 (176/237). Step-level used-estimate error, p95 [95% CI]: all radial 0.205 mm [0.174, 0.225], yaw 0.161 deg [0.149, 0.178]; course radial 0.209 mm [0.169, 0.249], yaw 0.177 deg [0.161, 0.188]; single radial 0.189 mm [0.160, 0.217], yaw 0.050 deg […
+    - finding: Yield 0.860 and yaw p95 0.161 deg are what criterion 3 reads (it fails: single-footprint yield 0.743 is the shortfall; course is complete). The pool's 221 single vectors exceed the 176 stud-yielded single steps by 45, which equals the 45 edge-fallback cases (v4_v1acc_edge_qualification): the pool includes the edge vectors while the yield does not count them.
+
+- **result** `v4_v1acc_edge_qualification`
+    - result: Edge-fallback qualification (T_V1b_edge_fallback): n_cases 45 over n_steps 15 (all in the pool). Relative error p95 [95% CI]: radial 0.154 mm [0.127, 0.169], yaw 0.051 deg [0.043, 0.099]. E2 scale-2 single-footprint screen with edge vectors: 6/9 pass. qualified = false. This is the ACC round of G-V1 (merge commit 6967bbc, PARAMS_HASH e346d590acba5201, tables from `experiments/v4_vision.py tables -…
+    - finding: The edge fallback does not qualify (the E2 scale-2 single-footprint pass is 6/9), so edge-steered steps are counted perception_v5: this is what turns the cube and hollow_box fk_vision builds into failures in v4_v1acc_builds and keeps the yield at 0.860 in v4_v1acc_v5_pool. The radial and yaw p95 of the edge vectors themselves are in the same range as the stud vectors.
+
+- **result** `v4_v1acc_drift`
+    - result: E5 drift (T_V1b_pool, 208 drift steps, drift measured to insert onset per v4_v1_e5_drift_to_insert_start): max 0.0 mm 3-D and 0.0 mm xy (the worst five are about 1e-6 mm, median 1.4e-7 mm; cube step 7 b_005 fk_oracle seed 1 the largest at 1.1e-6 mm). Drift to the snap: max 0.084 mm 3-D, 0.063 mm xy; worst cases arch step 9 (support b_007) fk_oracle seed 0 (0.084 mm 3-D, 0.063 mm xy) and seed 2 (0.…
+    - finding: Supports do not drift before insertion; the up-to-0.084 mm that appears by the snap is the insertion itself loading the structure. Drift is not a source of the perception shortfall.
+
+- **result** `v4_v1acc_margin`
+    - result: E2 matched injection (F_V1_e2): 33 contexts, 2 native (arch step 10, S5p13 step 12; the other 31 included). Screen pass at scale 1: all 119/124, course 74/76, single 45/48. At scale 2: all 110/124, course 69/76, single 41/48. Manipulation check 264/264 (rule |realised - mean(controls) - injected| <= max(0.1 mm, 10 %), >= 95 %). This is the ACC round of G-V1 (merge commit 6967bbc, PARAMS_HASH e346d…
+    - finding: Criterion 2 fails on the E2 half: 110/124 at scale 2. The failures are not confined to single-footprint contexts (course loses 7/76 at scale 2, single 7/48). Validity (b) native contexts 2 of 33 and (c) manipulation 264/264 hold.
+
+- **result** `v4_v1acc_transfer`
+    - result: E2b --continue (F_V1_e2b): 62 scored steps observed, 47 pass the screen, 57 agree with E2's scale-2 result (0.919); 0 unobserved, 0 without an E2 match. Pre-failure steps: 44 observed, 36 pass, 44 agree (1.000). After-failure steps: 18 observed, 11 pass, 13 agree (0.722). Two native steps included. This is the ACC round of G-V1 (merge commit 6967bbc, PARAMS_HASH e346d590acba5201, tables from `expe…
+    - finding: E2 transfers to built-structure steps before the first failure (44/44 agree); after a failure the agreement drops to 13/18, and the all-step agreement 57/62 is above the 90 % validity bar (d). The marginal E2b result is 47/62, which fails criterion 2.
+
+- **result** `v4_v1acc_cost`
+    - result: E4 cost (T_V1c_cost), 40 episodes per arm, 4 workers, 0 lost. gt: 269.0 episodes/h (wall 535.3 s, episode wall median 50.85 s, startup median 7.225 s, rtf median 0.2855). fk_vision: 227.2 episodes/h (wall 633.7 s, episode wall median 63.65 s, startup median 7.285 s, rtf median 0.2725; per-look medians render 59.1 ms, vision 391.0 ms, mask 132.2 ms, looks sim time 2.583 s). ratio fk_vision/gt 0.845…
+    - finding: Cost is not binding: vision costs 15.5 % of throughput (1 - 0.845, computed from the ratio).
+
+- **result** `v4_v1acc_gate_computed`
+    - result: G_V1 block as computed (tables.json G_V1, git_head 1d0f3d4, complete e1/e1b/e2/e2b true). Validity all pass: a E1 natives cube, arch, hollow_box clean; b native contexts 2 of 33; c manipulation check 264/264; d E2/E2b agreement 57 of 62 (pre-failure 44 of 44). Criteria: 1 pass (cube, arch, hollow_box all true); 2 fail (E2 110/124, E2b 47/62); 3 fail (yield 0.860, yaw p95 0.161 deg); 4 fail (cube, …
+    - finding: The stale flag comes from the 372 sweep rows (params hash 0f312821b7c8c394, run before the remedies, a pre-remedy diagnostic by design, v4_v1_acc_sweep); e1, e1b, e2, e2b and e4 rows are all e346d590acba5201, so the flag does not touch the gate inputs. Outcome ACC again: criterion 1 only. This entry is the computed block, not a gate decision; the gate entry follows the Codex review and the user's …
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 

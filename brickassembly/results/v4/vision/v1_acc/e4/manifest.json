@@ -1,0 +1,16 @@
+{
+ "exp": "e4",
+ "params_hash": "e346d590acba5201",
+ "git_head": "1d0f3d499ae4a5018a44f00192cc991748bd3e83",
+ "dirty_py": [],
+ "time": "2026-10-07 15:17:26",
+ "jobs": 80,
+ "merge": {
+  "entries": 80,
+  "with_record": 80,
+  "lost": 0,
+  "missing": 0,
+  "unique_ids": 80
+ },
+ "workers": 4
+}
