@@ -590,7 +590,8 @@ class Example:
         if self.shadow and not self.look:
             raise SystemExit("--shadow-vision needs --look")
         self.sees = self.look and (self.aim == "fk_vision" or self.shadow)     # V5 runs at the looks
-        self.vis, self.cand, self.fk, self.yaw_shift, self.grasp_yaw = {}, {}, None, None, 0.0   # per-step records; the last accepted V5 look; the FK aim state; the wrist-yaw shift of a look step
+        self.vis, self.cand, self.fk, self.yaw_shift, self.grasp_yaw = {}, {}, None, None, 0.0   # per-step records; the accepted V5 looks; the FK aim state; the wrist-yaw shift of a look step
+        self.look_psi, self.look_frame, self.look_turn = {}, {}, 0.0   # per step and look: the hand's commanded yaw and the frame; the commanded turn of the second look
 
         self.plan, self.name = make_plan(args)
         self.failure = self.failed_at_step = self.built_at_failure = None   # end at the first failure (see fail())
@@ -978,18 +979,21 @@ class Example:
     def queue_look(self, s, tgt, yaw, g):
         """The scheduled looks of step s, between transport and pre-insert: the hand over the target with the brick bottom H_LOOK above its stud
         tops, a dwell, then the capture (on_look); then, on EVERY step (ACC), a second look with the wrist turned 180 deg (the camera sits on
-        the hand's +x side, so it sees the other side) and the wrist turned back; the two estimates are averaged (look_done). A pure function of
+        the hand's +x side, so it sees the other side) and the wrist turned back; the two estimates are averaged (look_done), and look_done decides at
+        which of the two hand yaws the step is inserted (a single used look is inserted at its own yaw: no turn-back, an "unturn" after the retract). A pure function of
         the plan: the same in every aim mode. Takes the nearer-wrist choice once, here: yaw_shift (see step())."""
         B, n = self.B, s["step"]
         self.yaw_shift = round((ARM_B[1] + wrap(yaw - ARM_B[1], math.pi) - yaw) / math.pi) * math.pi
         self.grasp_yaw = yaw + self.yaw_shift                     # the hand's world yaw at the grasp
         p = tgt + [0, 0, ex.STUD_HEIGHT + H_LOOK + GRASP_DZ]
         turn = (-1 if self.grasp_yaw - ARM_B[1] > 0 else 1) * (math.pi - 1e-6)   # toward the wrist's middle; a hair under pi so Arm.update picks this way round
+        self.look_turn = turn
         B.push("look", p, yaw, g, LOOK_MOVE_S)
         B.push("look", p, yaw, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 0, False))
         B.push("look", p, yaw + turn, g, LOOK_TURN_S)
         B.push("look", p, yaw + turn, g, LOOK_DWELL_S, then=lambda: self.on_look(s, 1, True))
-        B.push("look", p, yaw, g, LOOK_TURN_S, then=lambda: setattr(self, "hand_off", None))   # gt: re-measure once the wrist is back
+        B.push("look", p, yaw, g, LOOK_TURN_S, then=lambda: setattr(self, "hand_off", None))   # gt: re-measure once the wrist is back (look_done drops this move
+                                                                                               # when the step is inserted at the turned look's yaw)
 
     def on_look(self, s, k, final):
         """A scheduled look: the capture (V5 when it is wanted), logged; at the final one (t_L) the aim controller is set up."""
@@ -1000,8 +1004,9 @@ class Example:
                    hand_yaw_cmd_deg=math.degrees(self.B.cmd[1] + self.yaw_shift))
         res = self.v5_look(s, rec, ee, q) if self.sees else None
         v["looks"].append(rec)
+        self.look_psi.setdefault(n, {})[k], self.look_frame.setdefault(n, {})[k] = self.B.cmd[1] + self.yaw_shift, self.frame
         if res is not None and res.accepted:
-            self.cand.setdefault(n, []).append((res, ee, self.frame, self.B.cmd[1] + self.yaw_shift))   # every accepted look (+ the hand's commanded yaw then): look_done averages them
+            self.cand.setdefault(n, []).append((res, ee, self.frame, self.B.cmd[1] + self.yaw_shift, k))   # every accepted look (+ the hand's commanded yaw then, k): look_done selects and averages them
         if final:
             self.look_done(s, v, ee, q)
 
@@ -1051,63 +1056,81 @@ class Example:
         return V.StepCtx(btype, float(tgt[2]), np.array(cells).reshape(-1, 2), held, outline=outline), V.Prior(f(nodes), f(tgt[:2]), yaw_t + dpsi)
 
     def look_done(self, s, v, ee, q):
-        """t_L: the final scheduled look. gt re-measures its GT hand offset; fk_oracle / fk_vision take their estimate pair, store d_h (the full
-        hand-frame vector), and add delta-psi to every remaining waypoint. fk_vision (and the shadow arms, logged only) average the accepted looks
-        (V.fuse_looks: d_h, in-hand yaw and T averaged, delta-psi from the averages; one accepted look is used alone, none is perception_v5).
-        The edge fallback is a fallback at step level (plan §2.4): when at least one look is stud-accepted the edge-estimated looks are dropped from
-        the average (v["used"]["dropped"] says which and why); edge looks are used only when no look is stud-accepted.
-        v["used"] is the estimate steered with (or, in a shadow arm, that would be) and its errors against the ground truth, scorer side."""
+        """t_L: the final scheduled look. Selects the looks the step is aimed with, takes the estimate pair, chooses the hand yaw it is inserted at,
+        and rewrites the remaining waypoints.
+        Selection (all arms: the V5 acceptance of the looks, the shadow V5 in the gt / fk_oracle arms): the edge fallback is a fallback at step level
+        (plan §2.4): when at least one look is stud-accepted the edge-estimated looks are dropped (v["used"]["dropped"] says which and why); edge looks
+        are used only when no look is stud-accepted. Insertion yaw: a single used look k is inserted at its own hand yaw (the camera's hand-frame
+        error then cancels between the target and the brick, both from that image: plan §2.2a), so the turned look's yaw means no turn-back (a footprint
+        is 180 deg symmetric: the same target), and an "unturn" move after the retract (the wrist must not carry its turn into the next step); two
+        used looks (fused, common mode solved by V.fuse_looks) insert at look 0's yaw; none accepted (or no V5 in this arm), look 0's yaw.
+        fk_vision with no accepted look is perception_v5. fk_oracle takes the plan target (+ the injected setpoint) and the GT brick, the GT at the
+        chosen look; gt re-measures its GT hand offset. v["insert"] logs the choice; v["used"] is the estimate steered with (or, in a shadow arm, that
+        would be) and its errors against the ground truth at the hand pose it is inserted with, scorer side."""
         n, bid = s["step"], s["brick_id"]
         tgt, yaw_t, _ = self.target[bid]
         t0 = self.b_phase_t.get((n, "look"))
         v.update(n_looks=len(v["looks"]), t_L_frame=self.frame, t_L_sim_s=self.sim_time, look_sim_s=None if t0 is None else self.sim_time - t0)
+        ks, dropped = (self.cand.get(n, []) if self.sees else []), []
+        stud = [c for c in ks if c[0].estimator != "edge"]
+        if stud and len(stud) < len(ks):                          # a stud look exists: the edge looks are only the fallback
+            dropped = [dict(k=c[4], estimator="edge", why="edge is a fallback: %d stud-accepted look(s) of the step" % len(stud)) for c in ks if c[0].estimator == "edge"]
+            ks = stud
+        k_ins, why = (ks[0][4], "single used look %d: inserted at its own hand yaw" % ks[0][4]) if len(ks) == 1 else \
+            (0, "fused pair: look 0's yaw") if ks else (0, "no accepted look: look 0's yaw" if self.sees else "no V5 in this arm: look 0's yaw")
+        turned = k_ins == 1
+        psi_ins = self.look_psi.get(n, {}).get(k_ins, self.B.cmd[1] + self.yaw_shift)     # the commanded hand yaw of the insertion look
+        R_L = Rot.from_quat(ee[3:7])
+        # The hand at the insertion: the final look's pose (turned) if the step is inserted at the turned yaw, else turned back (Rz(pi)). The used
+        # estimate is scored there: B from d_h at that hand pose, the ground truth carried to it rigidly (its hand-frame offset and yaw at t_L).
+        R_ref = R_L if turned else Rot.from_euler("z", math.pi) * R_L
+        d_gt, phi_gt = V.hand_offset(ee[:3], R_L, q[:3]), yaw_of(q[3:]) - yaw_of(ee[3:7])
+        q_ref = np.r_[V.brick_from_hand(ee[:3], R_ref, d_gt), qz(yaw_of(R_ref.as_quat()) + phi_gt)]
         fz = None
         if self.sees:
-            ks = self.cand.get(n, [])
-            stud = [c for c in ks if c[0].estimator != "edge"]
-            dropped = []
-            if stud and len(stud) < len(ks):                          # a stud look exists: the edge looks are only the fallback
-                dropped = [dict(k=l["k"], estimator="edge", why="edge is a fallback: %d stud-accepted look(s) of the step" % len(stud))
-                           for l in v["looks"] if l.get("accepted") and l.get("estimator") == "edge"]
-                ks = stud
-            v["used"] = dict(n_used=len(ks), estimators=[r.estimator for r, *_ in ks], dropped=dropped)
+            v["used"] = dict(n_used=len(ks), estimators=[c[0].estimator for c in ks], dropped=dropped)
             if ks:
-                # Scored where it matters: at the FINAL hand yaw. The hand turns back 180 deg after t_L, so B is taken at the turned-back pose R_ref =
-                # Rz(pi) R_L, and the ground truth at the same pose (the grasp is rigid: its hand-frame offset and yaw at t_L, carried to R_ref). A hand-frame
-                # error of the estimate (the camera's, flipped by the turn) then shows up in the error, as it will in the insertion; scored at t_L it would hide.
-                R_L = Rot.from_quat(ee[3:7])
-                R_ref = Rot.from_euler("z", math.pi) * R_L
-                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc in ks], ref=(ee[:3], R_ref))
-                d_gt, phi_gt = V.hand_offset(ee[:3], R_L, q[:3]), yaw_of(q[3:]) - yaw_of(ee[3:7])
-                q_ref = np.r_[V.brick_from_hand(ee[:3], R_ref, d_gt), qz(yaw_of(R_ref.as_quat()) + phi_gt)]
-                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]), scored_at="turned-back hand pose",
+                fz = V.fuse_looks([dict(T=r.T_hat, B=r.B_hat, ee=e_[:3], R=Rot.from_quat(e_[3:7]), psi_cmd=pc) for r, e_, _, pc, _ in ks], ref=(ee[:3], R_ref))
+                v["used"].update(T_hat=fz["T"], B_hat=fz["B"], d_h_mm=fz["d_h"] * 1e3, dpsi_deg=math.degrees(fz["dpsi"]), scored_at="the insertion hand pose",
                                  e_h_mm=None if fz["e_h"] is None else fz["e_h"] * 1e3, errors=v5_errors(tgt[:2], yaw_t, fz["T"], fz["B"], q_ref))
-        if self.aim == "gt":
-            self.hand_off = None                                  # aim_brick measures it again, at the final look's pose
+        if self.aim == "fk_vision" and fz is None:
+            v["failure"] = "perception_v5"
+            self.fail("perception_v5")
             return
+        dpsi, fo = 0.0, None
         if self.aim == "fk_oracle":                               # the oracle: the plan target (+ the injected setpoint) and the GT brick pose
             j = self.inject_for(n)
             c, sn = math.cos(yaw_t), math.sin(yaw_t)
             T = np.array([*(tgt[:2] + [c * j[0] - sn * j[1], sn * j[0] + c * j[1]]), yaw_t + math.radians(j[2])])
-            fo = V.fuse_looks([dict(T=T, B=[*q[:3], yaw_of(q[3:])], ee=ee[:3], R=Rot.from_quat(ee[3:7]), psi_cmd=self.B.cmd[1] + self.yaw_shift)])
-            src, ee_L, t_E, psi_cmd, used = "oracle", ee, self.frame, self.B.cmd[1] + self.yaw_shift, 1
+            fo = V.fuse_looks([dict(T=T, B=[*q[:3], yaw_of(q[3:])], ee=ee[:3], R=R_L, psi_cmd=psi_ins)], ref=(ee[:3], R_ref))
+            src, ee_L, psi_cmd, used = "oracle", ee, psi_ins, 1
+            t_E = self.look_frame.get(n, {}).get(k_ins, self.frame)
             v["inject"] = dict(dx_mm=j[0] * 1e3, dy_mm=j[1] * 1e3, dyaw_deg=j[2])
-        else:                                                     # fk_vision: the accepted looks, averaged
-            if fz is None:
-                v["failure"] = "perception_v5"
-                self.fail("perception_v5")
-                return
-            fo, src, (_, ee_L, t_E, psi_cmd), used = fz, "v5", ks[-1], fz["n"]
-        # The yaw: the brick's yaw in the hand (phi = B_yaw - the hand's FK yaw) is what is measured; the remaining waypoints are commanded, so the
-        # dpsi that puts the brick at T_yaw once the hand reaches its commanded yaw is T_yaw - phi - psi_cmd (fuse_looks; a look's hand-tracking offset
-        # at t_E is inside phi). The hand's tracking offset at the last accepted look is logged.
-        d_h, dpsi, T = fo["d_h"], fo["dpsi"], fo["T"]
-        d_psi_hand = wrap(yaw_of(ee_L[3:7]) - psi_cmd, math.pi)
-        self.fk = dict(d_h=d_h, T=np.asarray(T[:2]), i_xy=np.zeros(2))
-        add_dpsi([m for m in self.B.moves if m["phase"] != "look"], dpsi)    # not the wrist's turn-back: it must stay exactly pi from the turned look,
-                                                                             # or Arm.update's 2*pi wrap sends the wrist round the other way (past its limit)
-        v.update(aim=dict(src=src, T_hat=T, B_hat=fo["B"], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E, n_looks_used=used,
-                          hand_yaw_track_deg=math.degrees(d_psi_hand), **({"used_errors": v["used"]["errors"]} if src == "v5" else {})))
+        elif self.aim == "fk_vision":                             # the used looks, averaged
+            fo, src, used = fz, "v5", fz["n"]
+            _, ee_L, _, psi_cmd, _ = ks[-1]
+            t_E = min(c[2] for c in ks)                           # the earliest used look: the drift window starts there
+        if fo is not None:
+            # The yaw: the brick's yaw in the hand (phi = B_yaw - the hand's FK yaw) is what is measured; the remaining waypoints are commanded, so the
+            # dpsi that puts the brick at T_yaw once the hand reaches its commanded yaw is T_yaw - phi - psi_cmd (fuse_looks; a look's hand-tracking
+            # offset at t_E is inside phi). The hand's tracking offset at the last used look is logged.
+            d_h, dpsi, T = fo["d_h"], fo["dpsi"], fo["T"]
+            d_psi_hand = wrap(yaw_of(ee_L[3:7]) - psi_cmd, math.pi)
+            self.fk = dict(d_h=d_h, T=np.asarray(T[:2]), i_xy=np.zeros(2))
+            v.update(aim=dict(src=src, T_hat=T, B_hat=fo["B"], d_h_mm=d_h * 1e3, dpsi_deg=math.degrees(dpsi), t_E_frame=t_E, n_looks_used=used,
+                              hand_yaw_track_deg=math.degrees(d_psi_hand), **({"used_errors": v["used"]["errors"]} if src == "v5" else {})))
+        # the remaining waypoints: the insertion yaw (+ the turn when it is the turned look's) and delta-psi, once
+        rest = [m for m in self.B.moves if m["phase"] != "look"]
+        if turned:
+            self.B.moves[:] = rest                                 # no turn-back: the wrist stays at the turned look's yaw through the insertion
+            for m in rest:
+                m["yaw"] += self.look_turn
+        add_dpsi(rest, dpsi)                                       # the turn-back (phase look) stays exactly pi from the turned look, or Arm.update's 2*pi wrap
+                                                                   # sends the wrist round the other way (past its limit)
+        if turned:                                                 # after the retract: back the way it came (exactly pi - 1e-6), so the next step starts as before
+            self.B.push("look", rest[-1]["pos"], rest[-1]["yaw"] - self.look_turn, rest[-1]["grip"], LOOK_TURN_S)
+        v["insert"] = dict(look=k_ins, turned=turned, yaw_deg=math.degrees(psi_ins + dpsi), cmd_yaw_look_deg=math.degrees(psi_ins), reason=why)
+        self.hand_off = None                                       # gt: measured again from here (the turn-back that did it is gone when turned)
 
     def inject_for(self, n):
         """(dx m, dy m, dyaw deg) of --aim-inject for step n, in the target brick's frame: one vector, or {"<step>": vector}."""

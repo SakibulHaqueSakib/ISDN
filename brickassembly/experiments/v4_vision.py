@@ -109,7 +109,10 @@ def check_s5_prefix():
 # --- jobs ----------------------------------------------------------------------------------------------------------
 
 def vflags(aim, seed, shadow=False, inject=None, record=False, rr=0, cont=False):
+    """The cell's vision flags. An fk_oracle (and gt) job runs the shadow V5 always: the look selection and the insertion yaw (a single accepted look is
+    inserted at its own hand yaw) come from V5's acceptance in every arm, so motion and timing match fk_vision's (the control is unaffected by the shadow)."""
     v = {"look": True, "aim": aim, "seed": seed}
+    shadow = shadow or aim == "fk_oracle"
     if cont:
         v["continue_"] = True                                    # the cell's --continue (spec key = its dest): the queue goes on after a failure
     if shadow:

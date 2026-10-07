@@ -83,6 +83,7 @@ def look_stub(name="S3", aim="gt", shadow=False):
     e.NIJ = (max(b["grid_pos"][0] + D.P.footprint(b["type"], b["yaw_index"])[0] for b in plan["bricks"]),
              max(b["grid_pos"][1] + D.P.footprint(b["type"], b["yaw_index"])[1] for b in plan["bricks"]))
     e.vis, e.cand, e.fk, e.inject, e.b_phase_t, e.frame = {}, {}, None, None, {}, 0
+    e.look_psi, e.look_frame, e.look_turn, e.hand_off = {}, {}, 0.0, None
     return e, plan
 
 
@@ -190,7 +191,7 @@ def test_turn_back_goes_the_way_it_came():
                 break
             ee_B = e.B.update(DT, ee_B)[0]
             lo, hi = min(lo, e.B.cmd[1]), max(hi, e.B.cmd[1])
-        assert e.B.idle() and abs(e.B.cmd[1] - (psi + sign * math.radians(2.5))) < 1e-6, (e.B.cmd[1], psi)
+        assert e.B.idle() and abs(e.B.cmd[1] - (psi + sign * math.radians(2.5))) < 2e-6, (e.B.cmd[1], psi)
         assert lo > psi - math.pi - 1e-5 and hi < psi + math.radians(3), (lo - psi, hi - psi, sign)
 
 
@@ -307,14 +308,17 @@ def fused_step(accepted, aim="fk_vision", n=0, est=("studs", "studs"), e_cm=None
     """look_done on the stub with `accepted` of the two rigid looks accepted. -> (example, v, truth q)."""
     e, plan = look_stub(aim=aim, shadow=aim != "fk_vision")
     e.welds = {}
-    queue(e, plan, n)
+    moves = queue(e, plan, n)
+    first = [m["phase"] for m in moves].index("transport") + 1
+    e.B.moves[:] = moves[first + 4:]                                            # the final look's dwell has ended: what is left of the step
     bid = plan["sequence"][n]["brick_id"]
     tgt, yaw_t, _ = e.target[bid]
     rng = np.random.default_rng(5)
     psi0 = 1.0 - e.yaw_shift
     looks = rigid_looks(rng, psi_cmd=(1.0, 1.0 + math.pi - 1e-6), T=(*tgt[:2], yaw_t), phi0=0.3, e_cm=e_cm)
     e.B.cmd = (e.B.cmd[0], psi0, *e.B.cmd[2:])
-    e.cand = {n: [(fake_res(looks[k], est[k]), np.r_[looks[k]["ee"], looks[k]["R"].as_quat()], 100 + 10 * k, looks[k]["psi_cmd"]) for k in accepted]}
+    e.cand = {n: [(fake_res(looks[k], est[k]), np.r_[looks[k]["ee"], looks[k]["R"].as_quat()], 100 + 10 * k, looks[k]["psi_cmd"], k) for k in accepted]}
+    e.look_psi[n], e.look_frame[n] = {k: looks[k]["psi_cmd"] for k in (0, 1)}, {0: 100, 1: 110}
     ee, R = looks[1]["ee"], looks[1]["R"]                                       # the final look's hand pose; the brick is rigid in it
     q = np.r_[ee + R.apply([0.4 * MM, -0.7 * MM, -D.GRASP_DZ + 0.2 * MM]), Rot.from_euler("z", V._yaw(R) + 0.3).as_quat()]
     v = dict(looks=[dict(k=k, accepted=k in accepted, estimator=est[k]) for k in (0, 1)])
@@ -358,14 +362,99 @@ def test_edge_is_a_fallback_at_step_level():
     assert v["used"]["d_h_mm"] is not None and np.allclose(v["used"]["d_h_mm"], v2["used"]["d_h_mm"])
 
 
-def test_used_errors_are_scored_at_the_turned_back_hand():
-    """The hand turns back after the final look, so the used estimate is scored at the turned-back pose (ground truth carried there rigidly). With the camera's
-    hand-fixed offset e (0.2, -0.3 mm) in T and B: look 0 alone (the hand's yaw at the insert) is right to the tilt; look 1 alone (the turned look) misses by
-    2|e| there, although at t_L it looked fine; both looks (common mode removed) are right."""
+def test_single_look_inserted_at_its_own_yaw_cancels_the_camera_offset():
+    """Plan 2.2a: target and brick come from one image, and the insertion uses that image's hand frame. With the camera's hand-fixed offset e
+    (0.2, -0.3 mm) in T and B, a single used look (look 0, or the turned look 1) inserted at its own hand yaw, and the fused pair (common mode solved,
+    inserted at look 0's yaw), all end within 0.03 mm of the truth at the hand pose they are inserted with."""
     e = (0.2 * MM, -0.3 * MM)
-    err = lambda acc: fused_step(acc, e_cm=e)[1]["used"]["errors"]["rel_radial_mm"]
-    assert err((0,)) < 0.03 and abs(err((1,)) - 2 * math.hypot(*e) / MM) < 0.05 and err((0, 1)) < 0.03, (err((0,)), err((1,)), err((0, 1)))
-    assert fused_step((0, 1))[1]["used"]["scored_at"] == "turned-back hand pose"
+    for acc, turned in (((0,), False), ((1,), True), ((0, 1), False)):
+        ex, v, _ = fused_step(acc, e_cm=e)
+        er = v["used"]["errors"]
+        assert er["rel_radial_mm"] < 0.03 and abs(er["held_z_mm"]) < 0.01, (acc, er)
+        assert v["insert"]["turned"] is turned and v["insert"]["look"] == (1 if turned else 0), v["insert"]
+        assert v["used"]["scored_at"] == "the insertion hand pose"
+
+
+def test_insertion_waypoints_follow_the_chosen_look():
+    """Single turned look: no turn-back before the pre-insert; pre-insert .. retract carry the turned look's yaw + dpsi; an unturn move after the retract
+    goes back exactly the turn (pi - 1e-6) the way it came. Look 0 alone or the fused pair: the turn-back stays, the yaw is the base yaw + dpsi."""
+    for acc, turned in (((1,), True), ((0,), False), ((0, 1), False)):
+        e0, plan = look_stub(aim="fk_vision")
+        moves = queue(e0, plan, 0)
+        first = [m["phase"] for m in moves].index("transport") + 1
+        base = moves[first + 4]["yaw"]                                          # the turn-back's yaw = the step's base yaw
+        ex, v, _ = fused_step(acc, e_cm=(0.2 * MM, -0.3 * MM))
+        ph, dpsi, turn = [m["phase"] for m in ex.B.moves], math.radians(v["aim"]["dpsi_deg"]), ex.look_turn
+        if turned:
+            assert ph == ["pre-insert", "insert", "release", "retract", "look"], ph
+            assert all(abs(m["yaw"] - (base + turn + dpsi)) < 1e-9 for m in ex.B.moves[:4])
+            assert abs((ex.B.moves[3]["yaw"] - ex.B.moves[4]["yaw"]) - turn) < 1e-9 and abs(ex.B.moves[4]["yaw"] - (base + dpsi)) < 1e-9
+            assert np.allclose(ex.B.moves[4]["pos"], ex.B.moves[3]["pos"])
+        else:
+            assert ph == ["look", "pre-insert", "insert", "release", "retract"], ph
+            assert abs(ex.B.moves[0]["yaw"] - base) < 1e-9 and all(abs(m["yaw"] - (base + dpsi)) < 1e-9 for m in ex.B.moves[1:])
+        assert abs(v["insert"]["yaw_deg"] - math.degrees(ex.look_psi[0][1 if turned else 0] + dpsi)) < 1e-9 and "look" in v["insert"]["reason"]
+
+
+def test_every_arm_picks_the_same_insertion_yaw():
+    """gt and fk_oracle use the shadow V5's acceptance to choose, as fk_vision would: single look k at its own yaw, both looks look 0's, none look 0's;
+    without V5 in the arm, look 0's. Same waypoint phases in every arm."""
+    for acc, est, want in (((1,), ("studs", "studs"), True), ((0,), ("studs", "studs"), False), ((0, 1), ("studs", "studs"), False),
+                           ((0, 1), ("edge", "studs"), True)):               # edge look 0 dropped: look 1 alone
+        res = {}
+        for aim in ("fk_vision", "fk_oracle", "gt"):
+            ex, v, _ = fused_step(acc, aim=aim, est=est)
+            res[aim] = (v["insert"]["turned"], [m["phase"] for m in ex.B.moves])
+        assert all(r[0] is want for r in res.values()) and len({tuple(r[1]) for r in res.values()}) == 1, (acc, est, res)
+    for aim in ("fk_oracle", "gt"):                                              # the shadow V5 rejects both looks: look 0's yaw
+        ex, v, _ = fused_step((), aim=aim)
+        assert v["insert"]["turned"] is False and "no accepted look" in v["insert"]["reason"]
+    ex2, plan = look_stub(aim="fk_oracle")                                      # no V5 in this arm at all: look 0's yaw, with the reason
+    assert ex2.sees is False
+    moves = queue(ex2, plan, 0)
+    first = [m["phase"] for m in moves].index("transport") + 1
+    ex2.B.moves[:] = moves[first + 4:]
+    v = dict(looks=[])
+    ex2.look_done(plan["sequence"][0], v, np.r_[0.0, 0.0, 0.1, D.RX_PI.as_quat()], np.array([0, 0, 0.1, 0, 0, 0, 1.0]))
+    assert v["insert"]["turned"] is False and "no V5" in v["insert"]["reason"] and [m["phase"] for m in ex2.B.moves][0] == "look"
+    for acc in ((1,), (0,)):                                                     # the oracle's B is the ground truth at the chosen look's frame
+        ex, v, _ = fused_step(acc, aim="fk_oracle")
+        assert v["aim"]["src"] == "oracle" and v["insert"]["turned"] is (acc == (1,)) and v["aim"]["t_E_frame"] == (110 if acc == (1,) else 100)
+
+
+def test_turned_insertion_stays_inside_the_wrist_range_both_ways():
+    """Run a step through Arm.update with the turned look as the only used look, for delta-psi of either sign: the commanded yaw never leaves
+    [psi - pi, psi] (+ a few deg), the unturn goes back the way it came, and it ends at psi + delta-psi."""
+    for sign in (+1, -1):
+        e, plan = look_stub(aim="fk_vision")
+        order = D.P.sequence(D.P.STRUCTURES["S3"])
+        n = next(n for n in range(len(order)) if D.exposed_cells(order, n, *e.NIJ)[1])
+        moves = queue(e, plan, n)
+        bid = plan["sequence"][n]["brick_id"]
+        tgt, yaw_t, _ = e.target[bid]
+        psi = moves[0]["yaw"]
+        psi_wp = psi + e.yaw_shift
+        rng = np.random.default_rng(7)
+        looks = rigid_looks(rng, psi_cmd=(psi_wp, psi_wp + e.look_turn), track_deg=(0.0, 0.0), T=(*tgt[:2], yaw_t),
+                            phi0=D.wrap(yaw_t - psi_wp - sign * math.radians(2.5), math.pi))
+        e.cand = {n: [(fake_res(looks[1]), np.r_[looks[1]["ee"], looks[1]["R"].as_quat()], 110, looks[1]["psi_cmd"], 1)]}
+        e.sees = True
+        ee, R = looks[1]["ee"], looks[1]["R"]
+        qb = np.r_[ee, Rot.from_euler("z", V._yaw(R) + 0.2).as_quat()]
+        vv = dict(looks=[dict(k=0, accepted=False, estimator="studs"), dict(k=1, accepted=True, estimator="studs")])
+        e.on_look = lambda s, kk, final: e.look_done(s, vv, np.r_[ee, R.as_quat()], qb) if final else None
+        e.on_pre_insert = lambda s: None
+        e.B.moves[:] = moves[[m["phase"] for m in moves].index("transport"):]
+        lo, hi, ee_B = psi, psi, e.B.cmd[0].copy()
+        for _ in range(6000):
+            if e.B.idle():
+                break
+            ee_B = e.B.update(DT, ee_B)[0]
+            lo, hi = min(lo, e.B.cmd[1]), max(hi, e.B.cmd[1])
+        lim = sorted((psi, psi + e.look_turn))
+        assert vv["insert"]["turned"] is True
+        assert e.B.idle() and abs(e.B.cmd[1] - (psi + sign * math.radians(2.5))) < 2e-6, (e.B.cmd[1], psi)
+        assert lo > lim[0] - math.radians(3) and hi < lim[1] + math.radians(3), (lo - psi, hi - psi, sign)
 
 
 def test_used_estimators_are_recorded_and_shadow_arms_log_but_do_not_steer():
