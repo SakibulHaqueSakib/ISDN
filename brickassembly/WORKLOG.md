@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-254 entries. Later entries supersede earlier ones; retractions are marked.
+259 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -407,6 +407,23 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
 - **decided** `v4_perception_stopped`
     - outcome: The perception iteration stops after the ACC round; V2 and V3 are not started. The user will prepare a different training policy later. Open items carried: (1) held-height (z) error is not in the margin test (v4_v1acc_review); (2) the E2b validity rule does not require all planned steps scored (v4_v1acc_review); (3) look-0 rejections at arch step 7 and S3 step 10 (perception_v5, v4_v1_never_insert…
+
+- **decided** `v4_viewer_cameras_detector`
+    - outcome: The v4 viewer gains a wrist_A camera feed, a top-camera detector (top_detect.py), a Workspace window, object permanence for arm-occluded bricks and tracking of the held brick. All display only; nothing feeds the executor. (1) wrist_A feed: its hidden extrinsic error comes from its own rng stream, so the seeded streams are unchanged; V5 runs 8/8 before and after. (2) top_detect.py, under the vision…
+
+- **decided** `v4_robofab_sim_kit`
+    - outcome: robofab_sim/ is a standalone copy of the simulator's code closure at 7535897, with pinned requirements, setup.sh (creates .venv; picks torch cu128 or cu130 from nvidia-smi) and run.sh. A fresh install passes setup.sh --check. The bwrap-isolated run with the repo hidden gave cube 8/8. S3 weakest_joint stops at step 13 with joint_break, the same as the source tree.
+
+- **decided** `v4_rl_wrapper_isaaclab_interface`
+    - outcome: An RL wrapper around the Newton v4 cell, with an Isaac Lab-style interface on the existing Newton sim. User decisions: (a) both env kinds, per-brick decisions and low-level arm control; (b) the observation combines state vectors, top detections and RGB-D; (c) asked 'use Isaac', the user chose an Isaac Lab-style interface on the existing Newton sim over porting the cell into Isaac Lab (isaaclab_new…
+
+- **result** `v4_rl_brace_lp_brace_breaks`
+    - result: From the wrapper's checks in be3cadf, reproduced with the CLI. Arch step 10 with the plan's LP-shared brace (-0.036, 0.0224, 45): joint_break, u2 peak 1.00, 2 arm_arm events. S3 step 13 with LP-shared brace (-0.004, 0.0536, 45): joint_break, u2 1.60, 3 arm_arm events. Arch step 10 braced plus press scale 1.0: joint_break, u2 1.20. The same steps unbraced: success, u2 0.039 (arch step 10) and 0.045…
+    - finding: In the Newton cell the scripted LP-shared brace itself causes the break at both steps; the unbraced steps succeed at a u2 about 0.04. This is the opposite of the premise of the RL bracing task (v4_brace_to_rl: bracing is needed because an unbraced build may break; v4_pipeline_unbraced_now: unbraced is the pipeline default). Consistent with the kit finding (v4_robofab_sim_kit) that S3 weakest_joint…
+
+- **result** `v4_multiworld_probe`
+    - result: Feasibility probe with scratch scripts, no repo code yet. The cell replicated as N worlds in one Newton model (ModelBuilder.replicate, one SolverMuJoCo + CollisionPipeline, graph captured up to N=512). Throughput on a contended GPU, so lower bounds: 113 world-frames/s at N=1, 727 at N=16, 1136 at N=64, about 2000-2125 at N=128-512. The single-world Example graph runs 72.6 frames/s, so about 29x at…
+    - finding: Gotchas: the triangle-pair buffer must scale to max(4M, 300k*N) or contacts drop silently; nconmax is per world; unwelded studded bricks cost about 5x the contacts. Untested: held brick, finger contacts, arm-arm contacts and the break model in the batch. The batched env is being built next.
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
