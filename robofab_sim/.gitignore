@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.pytest_cache/
+imgui.ini
+plans/sim_*.json
+results/*
+!results/.gitkeep

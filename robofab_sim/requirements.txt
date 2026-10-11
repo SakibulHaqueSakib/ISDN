@@ -1,0 +1,37 @@
+# robofab_sim: what dual_arm_sim.py needs. Python 3.12; `bash setup.sh` installs this plus torch
+# (torch is NOT listed here: it comes from the PyTorch index, see TORCH in setup.sh).
+# Pins are the versions the sim is verified on (copied from the project's requirements.txt, 87f6e5a).
+
+# --- simulator: standalone Newton + MuJoCo-Warp ----------------------------
+newton==1.2.1              # requires warp-lang>=1.13,<1.14
+warp-lang==1.13.0
+mujoco==3.8.0              # mujoco-warp 3.8.0.3 needs mujoco~=3.8.0
+mujoco-warp==3.8.0.3
+newton-actuators==0.1.0
+absl-py==2.4.0
+etils==1.13.0
+requests==2.32.3           # newton.utils.download_asset
+GitPython==3.1.59          # newton.utils.download_asset (asset repo clone)
+cbor2==5.9.0
+trimesh==4.11.1            # FR3 / brick meshes
+pycollada==0.9.3           # trimesh loads the FR3 .dae meshes with it
+
+# --- viewers: ViewerGL (window), viser (--viewer viser) ---------------------
+pyglet==2.1.16
+imgui-bundle==1.92.601
+viser==1.1.0
+imageio==2.37.2            # viser's dependencies, pinned to the verified versions
+msgspec==0.21.1
+rich==14.3.4
+websockets==16.1.1
+zstandard==0.25.0
+tqdm==4.67.1
+
+# --- numerics, vision, tests ------------------------------------------------
+numpy==2.5.2
+scipy==1.17.0
+opencv-python-headless==4.13.0.90
+pillow==12.1.1
+matplotlib==3.10.8         # depth colormap in the camera window
+PyYAML==6.0.3
+pytest==9.1.1
