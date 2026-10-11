@@ -70,7 +70,7 @@ def overlay_look(rgb, cam_pose, rec, T_box, B_box):
 
 
 def overlay_top(rgb, det, stride=SHOW_STRIDE):
-    """The top tile with top_detect's read-out on it: the plate outline (cyan), each brick's top-face outline (yellow; magenta if it is on the plate)
+    """The top tile with top_detect's read-out on it: the plate outline (cyan), each brick's top-face outline (yellow; magenta if it is on the plate; gray if hidden, i.e. remembered)
     and its id. `det` is detect()'s result in the pixels of the image it ran on; the tile is that image at 1/`stride`."""
     from PIL import Image, ImageDraw, ImageFont
     im = Image.fromarray(rgb)
@@ -81,7 +81,7 @@ def overlay_top(rgb, det, stride=SHOW_STRIDE):
         dr.line(pts + pts[:1], fill=(0, 255, 255), width=1)
     for b in (det["bricks"] if det else []):
         pts = [(x / stride, y / stride) for x, y in b["outline"]]
-        dr.line(pts + pts[:1], fill=(255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
+        dr.line(pts + pts[:1], fill=(200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
         dr.text((b["px"] / stride + 4, b["py"] / stride - 16), str(b["id"]), fill=(0, 255, 0), font=f)
     return np.asarray(im)
 
@@ -89,7 +89,7 @@ def overlay_top(rgb, det, stride=SHOW_STRIDE):
 def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
     """A wrist tile with the TOP camera's read-out `det` (top_detect.detect) projected through this wrist camera's pose `cam_pose` = (pos, R)
     (the nominal one: display only, nothing from ground truth): the plate outline (cyan) and each brick's top-face outline (yellow; magenta on
-    the plate) with a two-line label on black, "#id colour size" and "x, y mm  yaw deg" (+ " L<layer> (i,j)" on the plate). A shape with a corner
+    the plate; gray and "(hidden)" when remembered, TD.remember) with a two-line label on black, "#id colour size" and "x, y mm  yaw deg" (+ " L<layer> (i,j)" on the plate). Labels are moved off each other (a leader line to a far one). A shape with a corner
     behind the camera or wholly outside the image is skipped. The tile is the camera's frame at 1/`stride`; None `det`: unchanged."""
     if not det:
         return rgb
@@ -100,6 +100,7 @@ def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
     dr = ImageDraw.Draw(im)
     f = ImageFont.load_default(size=15)
     w, h = CAMS[cam]["w"] / stride, CAMS[cam]["h"] / stride
+    boxes = []                                                       # the label boxes drawn so far
 
     def pts(corners):
         if (R.inv().apply(corners - pos)[:, 2] >= 0).any():          # a corner behind the camera: project() clamps it and would not say
@@ -118,13 +119,22 @@ def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
         q = pts(box_corners(b["x"], b["y"], b["z_top"], b["yaw"], b["L"], b["W"]))
         if not q:
             continue
-        dr.line(q + q[:1], fill=(255, 0, 255) if b["on_plate"] else (255, 255, 0), width=2)
-        txt = "#%d %s %s\n%.0f, %.0f mm  yaw %d deg" % (b["id"], b["colour"], b["studs"], 1e3 * b["x"], 1e3 * b["y"], round(math.degrees(b["yaw"])))
+        dr.line(q + q[:1], fill=(200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=2)
+        txt = ("#%d %s %s" + (" (hidden)" if b["hidden"] else "") + "\n%.0f, %.0f mm  yaw %d deg") % (b["id"], b["colour"], b["studs"], 1e3 * b["x"], 1e3 * b["y"], round(math.degrees(b["yaw"])))
         if b["on_plate"]:
             txt += " L%d (%d,%d)" % (b["layer"], *b["cell"])
-        tx, ty = min(q, key=lambda p: p[1])                           # above the outline's top edge, kept in the tile
+        ox, oy = min(q, key=lambda p: p[1])                           # above the outline's top edge, kept in the tile
         x0, y0, x1, y1 = dr.multiline_textbbox((0, 0), txt, font=f)
-        tx, ty = min(max(tx, 0), w - x1), min(max(ty - y1 - 2, 0), h - y1)
+        tx, ty0 = min(max(ox, 0), w - x1), min(max(oy - y1 - 2, 0), h - y1)
+        for d in (y1 + 2, -(y1 + 2)):                                 # clear of the labels already drawn: down, else up, a label height at a time
+            ty = ty0
+            while any(tx < bx1 and tx + x1 > bx0 and ty < by1 and ty + y1 > by0 for bx0, by0, bx1, by1 in boxes) and 0 <= ty + d <= h - y1:
+                ty += d
+            if not any(tx < bx1 and tx + x1 > bx0 and ty < by1 and ty + y1 > by0 for bx0, by0, bx1, by1 in boxes):
+                break
+        boxes.append((tx, ty, tx + x1, ty + y1))
+        if abs(ty - ty0) > y1:                                        # far from its brick: a leader to the outline's top point
+            dr.line([(tx + x1 / 2, ty + y1 / 2), (ox, oy)], fill=(255, 255, 255), width=1)
         dr.rectangle(dr.multiline_textbbox((tx, ty), txt, font=f), fill=(0, 0, 0))
         dr.multiline_text((tx, ty), txt, fill=(255, 255, 255), font=f)
     return np.asarray(im)

@@ -4,8 +4,10 @@ Same firewall as vision.py: pure numpy / scipy / cv2 (vision for the rays and no
 dual_arm_sim or cell.*, and never ground truth. Display and planning aid: nothing in the executor reads it.
 
     res = detect(rgb, depth, intrinsics_or_rays, cam_pos, cam_R)
-    res["bricks"]   [dict(id, colour, x, y, z_top, yaw, studs "LxW", L, W, layer, px, py, outline, on_plate, cell), ...]
-    res["plate"]    dict(x, y, yaw, size, studs (NI, NJ), pitch, top_z, corners, outline, origin, occupied) or None
+    res["bricks"]   [dict(id, colour, x, y, z_top, yaw, studs "LxW", L, W, layer, px, py, outline, on_plate, cell, hidden), ...]
+    res["plate"]    dict(x, y, yaw, size, studs (NI, NJ), pitch, top_z, corners, outline, origin, occupied, hidden) or None
+    res["height"]   (H, W) metres over the table of each pixel, nan where the depth is invalid
+    res = remember(prev_res, res)     # object permanence: bricks (and the plate) an arm hides stay, with hidden=True, until the top camera sees their spot empty
 
 Inputs are what cell.cameras Cameras.capture / preview return for the top camera: rgb uint8 (H, W, 3), depth = ray distance [m]
 (0 = invalid), the nominal pose (OpenGL camera: looks -z, up +y). `intrinsics_or_rays` is the intrinsics dict of the FULL image
@@ -166,8 +168,16 @@ def detect(rgb, depth, intrinsics_or_rays, cam_pos, cam_R):
                     continue
                 col = COLOURS[int(colour_class(rgbf[py, px].mean(0)[None], white_v)[0])]
                 bricks.append(dict(colour=col, x=float(c[0]), y=float(c[1]), z_top=zt, yaw=yaw, L=L, W=W, studs="%dx%d" % (max(nl, nw), min(nl, nw)),
-                                   px=float(px.mean()), py=float(py.mean()), outline=_outline(_corners(c, L, W, yaw), zt, pos, R, rays)))
+                                   px=float(px.mean()), py=float(py.mean()), outline=_outline(_corners(c, L, W, yaw), zt, pos, R, rays), hidden=False))
+    _number(bricks, plate)
+    return dict(bricks=bricks, plate=plate, height=h)
+
+
+def _number(bricks, plate):
+    """Sort the bricks (so ids stay stable while the set does), number them, and place each on the plate: on_plate, cell, layer, and the plate's occupied cells."""
     bricks.sort(key=lambda b: (round(b["x"], 3), b["y"]))
+    if plate:
+        plate["occupied"] = set()
     for i, b in enumerate(bricks):
         b["id"], b["on_plate"], b["cell"], b["layer"] = i, False, None, int(round((b["z_top"] - BRICK_H) / BRICK_H))     # 0 = the lowest layer
         if plate:
@@ -181,7 +191,42 @@ def detect(rgb, depth, intrinsics_or_rays, cam_pos, cam_R):
                 b["on_plate"], b["cell"] = True, (i0, j0)
                 plate["occupied"] |= {(i, j) for i in range(i0, i0 + nx) for j in range(j0, j0 + ny)}
                 b["layer"] = int(round((b["z_top"] - PLATE_TOP - BRICK_H) / BRICK_H))
-    return dict(bricks=bricks, plate=plate)
+
+
+def _inside(a, b):
+    """Brick a's centre lies within brick b's top face."""
+    c, s = math.cos(b["yaw"]), math.sin(b["yaw"])
+    u, v = c * (a["x"] - b["x"]) + s * (a["y"] - b["y"]), -s * (a["x"] - b["x"]) + c * (a["y"] - b["y"])
+    return abs(u) <= b["L"] / 2 and abs(v) <= b["W"] / 2
+
+
+def remember(prev, res, win=4):
+    """Object permanence over `detect` results (`prev` = the last merged result, or None): a previous brick that no new brick matches (same colour,
+    centre within half its long side, z_top within 4 mm) is kept, flagged hidden=True, if the top camera now sees at or above its top there (the median
+    of res["height"] in a +-`win` px window at its centroid: an arm or a brick over it); if it sees lower, the brick is gone and is dropped. A plate that
+    is missing or clearly smaller (an arm over it) is kept from `prev` with hidden=True. Ids, on_plate, cell, layer, occupied are recomputed for the merged set.
+    ponytail: a brick picked up while still occluded keeps its stale label at its old spot until the table there is seen again; upgrade: track the gripper."""
+    for b in res["bricks"]:
+        b["hidden"] = False
+    if res["plate"]:
+        res["plate"]["hidden"] = False
+    if prev is None:
+        return res
+    h = res["height"]
+    for o in prev["bricks"]:
+        if any(abs(n["z_top"] - o["z_top"]) < 4 * MM and (n["colour"] == o["colour"] and math.hypot(n["x"] - o["x"], n["y"] - o["y"]) < o["L"] / 2
+                                                          or _inside(o, n) or _inside(n, o)) for n in res["bricks"]):
+            continue                                                         # re-detected (a partial view, or the colour flipping under a shadow, still overlaps it)
+        py, px = int(round(o["py"])), int(round(o["px"]))
+        w = h[max(py - win, 0):py + win + 1, max(px - win, 0):px + win + 1]
+        w = w[np.isfinite(w)]
+        if len(w) == 0 or np.median(w) > o["z_top"] - 4 * MM:
+            res["bricks"].append(dict(o, hidden=True))
+    p, q = res["plate"], prev["plate"]
+    if q and (p is None or p["size"][0] * p["size"][1] < 0.8 * q["size"][0] * q["size"][1]):
+        p = res["plate"] = dict(q, hidden=True)
+    _number(res["bricks"], p)
+    return res
 
 
 def _outline(c2, z, pos, R, rays):

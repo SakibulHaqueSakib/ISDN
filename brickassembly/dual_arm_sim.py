@@ -1484,11 +1484,11 @@ class Example:
         The wrist tiles carry the top camera's top_detect read-out projected through each wrist camera's NOMINAL pose (LV.overlay_wrist): vision only, display only."""
         top = self.cams.preview("top", state=self.state_0, stride=1)                # full size: top_detect reads it, the tile is every second pixel
         t0 = time.perf_counter()
-        self.top_det = TD.detect(top["rgb"], top["depth"], self.cams.cams["top"]["rays_np"], *self.cams.poses("top")[2:])      # nominal pose; display only
+        self.top_det = TD.remember(self.top_det, TD.detect(top["rgb"], top["depth"], self.cams.cams["top"]["rays_np"], *self.cams.poses("top")[2:]))      # nominal pose; display only
         self.top_det_ms = (time.perf_counter() - t0) * 1e3
         wa = self.cams.preview("wrist_A", self.hand_fk(0), state=self.state_0, stride=LV.SHOW_STRIDE)
         wr = self.cams.preview("wrist_B", self.hand_fk(1), state=self.state_0, stride=LV.SHOW_STRIDE)
-        # ponytail: the labels are drawn even where an arm occludes the brick; depth-test against the wrist depth image if it matters
+        # ponytail: the labels are drawn even where an arm occludes the brick; depth-test against the wrist depth image if it matters. A brick the top camera lost under an arm is kept (TD.remember) and drawn as hidden
         wa_rgb = LV.overlay_wrist(wa["rgb"], "wrist_A", self.cams.poses("wrist_A", self.hand_fk(0))[2:], self.top_det)
         wr_rgb = LV.overlay_wrist(wr["rgb"], "wrist_B", self.cams.poses("wrist_B", self.hand_fk(1))[2:], self.top_det)
         self.feed = [LV.overlay_top(LV.tile(top["rgb"]), self.top_det), wa_rgb, wr_rgb, LV.depth_rgb(top["depth"]), LV.depth_rgb(wa["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
@@ -1730,7 +1730,7 @@ class Example:
                     ui.text("  %d x %d studs, pitch %.0f mm, top z %.1f mm, %d cells occupied" % (*p["studs"], p["pitch"] * 1e3, p["top_z"] * 1e3, len(p["occupied"])))
                     ui.text("  origin corner (cell 0, 0) %.1f, %.1f mm; i along the yaw, j to its left" % (p["origin"][0] * 1e3, p["origin"][1] * 1e3))
                 ui.text("%d bricks   (detect %.0f ms)" % (len(det["bricks"]), self.top_det_ms))
-                cols = ("id", "colour", "size", "x", "y", "z", "yaw", "layer", "on plate cell")
+                cols = ("id", "colour", "size", "x", "y", "z", "yaw", "layer", "on plate cell", "seen")
                 if ui.begin_table("bricks", len(cols), ui.TableFlags_.borders | ui.TableFlags_.row_bg | ui.TableFlags_.scroll_y):
                     for c in cols:
                         ui.table_setup_column(c)
@@ -1738,7 +1738,7 @@ class Example:
                     for b in det["bricks"]:
                         ui.table_next_row()
                         for v in (b["id"], b["colour"], b["studs"], "%.1f" % (b["x"] * 1e3), "%.1f" % (b["y"] * 1e3), "%.1f" % (b["z_top"] * 1e3),
-                                  "%.1f" % math.degrees(b["yaw"]), b["layer"], "(%d, %d)" % b["cell"] if b["on_plate"] else "table"):
+                                  "%.1f" % math.degrees(b["yaw"]), b["layer"], "(%d, %d)" % b["cell"] if b["on_plate"] else "table", "hidden" if b["hidden"] else "yes"):
                             ui.table_next_column()
                             ui.text(str(v))
                     ui.end_table()

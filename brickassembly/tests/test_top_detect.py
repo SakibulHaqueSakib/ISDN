@@ -7,6 +7,8 @@ nominal start at step 5: the feeder bricks lie on the table, the first five stan
     extrinsic error of the top camera (1 mm, 0.2 deg per axis, up to 4 mm at the table) is in it;
   - the plate: studs (NI + 4) x (NJ + 4) (the visible slab is two studs wider each side than the build), centre within 4 mm;
   - the topmost brick of the build: on the plate, its layer and its min-corner cell;
+  - remember() (pure numpy, no GPU): a brick under a taller occluder is kept hidden, one whose spot reads table height is dropped, a matched one is
+    replaced by the new detection;
   - the firewall (top_detect imports without newton / warp / torch) is in tests/test_vision.py, with vision.py.
 
     bash scripts/run.sh tests/test_top_detect.py          # or: python -m pytest tests/test_top_detect.py
@@ -100,6 +102,31 @@ def test_capture_and_preview(rig):
     layer = round((top["p"][2] - 0.0032) / 0.0096)
     assert b["on_plate"] and b["cell"] == cell and b["layer"] == layer and b["colour"] == top["colour"], (b["cell"], cell, b["layer"], layer, b["colour"])
     assert math.hypot(b["x"] - top["p"][0], b["y"] - top["p"][1]) < 4e-3
+
+
+def _brick(x, colour="red", z=0.0096, px=50):
+    return dict(colour=colour, x=x, y=0.0, z_top=z, yaw=0.0, L=0.032, W=0.016, studs="4x2", px=float(px), py=50.0, outline=None, hidden=False)
+
+
+def _res(bricks, level, plate=None):
+    return dict(bricks=bricks, plate=plate, height=np.full((100, 100), level))
+
+
+def test_remember():
+    old = _res([_brick(0.0), _brick(0.1, px=80)], 0.0096)
+    old = TD.remember(None, old)
+    assert [b["hidden"] for b in old["bricks"]] == [False, False]
+    new = TD.remember(old, _res([_brick(0.001)], 0.0096))                    # brick 0 re-detected 1 mm off, brick 1 (x 0.1) not: the top still reads its height
+    assert [(b["x"], b["hidden"]) for b in new["bricks"]] == [(0.001, False), (0.1, True)] and [b["id"] for b in new["bricks"]] == [0, 1]
+    new = TD.remember(old, _res([], 0.1))                                    # an arm 10 cm over both: both kept
+    assert [b["hidden"] for b in new["bricks"]] == [True, True]
+    new = TD.remember(new, _res([_brick(0.0, "blue")], 0.0))                 # now the table is visible at both spots (a blue one appeared elsewhere in colour): both gone
+    assert [(b["colour"], b["hidden"]) for b in new["bricks"]] == [("blue", False)]
+    new = TD.remember(old, _res([_brick(0.0, "gray")], 0.0096))               # the colour flipped (a shadow): the same brick, not a ghost beside it
+    assert [(b["colour"], b["hidden"]) for b in new["bricks"]] == [("gray", False), ("red", True)]
+    pl = dict(x=0, y=0, yaw=0.0, size=(0.2, 0.2), origin=np.array([-0.1, -0.1]), occupied=set(), top_z=0.0032)
+    new = TD.remember(TD.remember(None, _res([], 0.0, pl)), _res([], 0.0, None))
+    assert new["plate"]["hidden"] and new["plate"]["origin"] is pl["origin"]
 
 
 if __name__ == "__main__":
