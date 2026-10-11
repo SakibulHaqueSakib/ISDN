@@ -53,13 +53,20 @@ separate noise-free renders that touch no random stream, so V5 sees what it saw 
 duration. They need `--viewer gl` (the default); on the null viewer `--show-cameras` renders and shows nothing.
 
 **Camera window** (`--show-cameras`): one window, titled `cameras: ...`, tiles in two rows: RGB on top, depth below (colour-mapped, near = blue,
-black = no return), columns top camera, wrist_B, and, with `--look --aim fk_vision` (or `--shadow-vision`), the **last look**. Drag its corner to
+black = no return), columns top camera, wrist_A (the bracing arm), wrist_B (the placer), and, with `--look --aim fk_vision` (or `--shadow-vision`), the **last look**. Drag its corner to
 resize; the side panel's *Logged Images* dropdown hides or reopens it. The live feeds refresh every `--camera-every N` frames (default 10, about 6 Hz, ~30 ms a refresh;
-a larger N is lighter) and are shown at half size, without the sensor noise. The wrist feed is rendered from B's FK pose. The look tile is
+a larger N is lighter) and are shown at half size, without the sensor noise. Each wrist feed is rendered from its own arm's FK pose. The look tile is
 the real thing: the full noised frame V5 was given. The **last look** tile is the wrist frame at the scheduled look, with V5's result drawn on it: the estimated target
 footprint (cyan) and held-brick footprint (magenta), a green frame and "ACCEPTED studs" or a red one and "REJECTED <reason>", and the target / held
 stud counts. In the side panel, under the usual step lines: per step (the last three) each look's verdict and estimator, the looks the aim used
 (and "EDGE-steered"), and the aim source: `fk_vision (V5)`, `fk_oracle` or `gt (ground-truth servo)`.
+
+**Workspace window** (`--show-cameras`): a floating *Workspace (top camera)* window on the right, and outlines on the top tile (plate cyan, each brick yellow, or
+magenta on the plate, with its id). `top_detect.py` reads them from the top camera's image alone (rendered at full size, ~20 ms a read; the nominal camera pose; display
+only, nothing in the run uses it): per brick its id (sorted by x, then y), colour, size in studs, top-face centre x y and top z (mm), yaw (deg, long axis, mod 180),
+layer (0 = lowest) and, on the plate, the plate cell (i, j) of its min corner; for the plate (the grid base) its centre, yaw, studs, pitch, top z, the origin corner (cell
+(0, 0); i along the yaw, j to its left) and how many cells the detected bricks cover. The plate is the visible slab, two studs wider on each side than the build. Limits: same-colour
+bricks that touch merge and are dropped, and a brick partly under another is reported by its visible top face.
 
 **Manual control** (`--manual`): a floating *Manual control* window beside the side panel. Pick arm A or B, then
 - sliders `x y z` (mm, world), `yaw` (deg, relative to the arm's base; 0 = parked, the gripper is 180-degree symmetric), `grip` (mm per finger,

@@ -24,13 +24,14 @@ from newton.sensors import SensorTiledCamera
 
 HERE = Path(__file__).resolve().parent.parent
 MM = 1e-3
-CAMS = {"top": dict(w=1280, h=960, vfov=60.0), "wrist_B": dict(w=1280, h=960, vfov=55.0)}      # ACC remedy: wrist_B 1280x960 (same VFOV and mount; P2 ran 640x480)
+CAMS = {"top": dict(w=1280, h=960, vfov=60.0), "wrist_B": dict(w=1280, h=960, vfov=55.0),
+        "wrist_A": dict(w=1280, h=960, vfov=55.0)}      # ACC remedy: wrist_B 1280x960 (same VFOV and mount; P2 ran 640x480); wrist_A (live feed, bracing arm) is the same camera on A's hand
 TOP_POS = np.array([0.10, -0.20, 1.10])
 TILT = math.radians(25.0)         # wrist camera tilt toward the tool axis
 MOUNT_DZ = 0.060                  # camera above the TCP
 WRIST_DX = 0.060                  # camera offset along hand x (P2's chosen look pose; the probe passes its own)
 DEPTH_C = 2e-3                    # sigma_depth = C r^2  (plan §2.5.2)
-EXT_ERR = {"top": (1 * MM, 0.2), "wrist_B": (0.2 * MM, 0.1)}   # hidden extrinsic error, 1 sigma (m, deg)
+EXT_ERR = {"top": (1 * MM, 0.2), "wrist_B": (0.2 * MM, 0.1), "wrist_A": (0.2 * MM, 0.1)}   # hidden extrinsic error, 1 sigma (m, deg)
 
 
 def sigma_depth(r):
@@ -200,7 +201,7 @@ def mask_A(spheres, rays_np, pos, R, depth, links, pad=0.005):
 
 # --- the cell's cameras ---------------------------------------------------------------------------------------
 class Cameras:
-    """The top camera and wrist_B, attached to the cell's own model (the cell's brick, plate and arm shapes are what
+    """The top camera and the wrist cameras (wrist_B; wrist_A for the live feed), attached to the cell's own model (the cell's brick, plate and arm shapes are what
     they see). Per seed: the hidden extrinsic error (the top camera's in the world; wrist_B's as a fixed hand-eye
     error in the hand frame), the key light and its gain, and the noise stream.
 
@@ -213,7 +214,8 @@ class Cameras:
         self.sensor = SensorTiledCamera(model, config=SensorTiledCamera.RenderConfig(enable_shadows=shadows))
         self.cams = make_cams(self.sensor)
         rng = np.random.default_rng(seed)
-        self.hidden = {name: hidden_error(name, rng) for name in CAMS}
+        self.hidden = {name: hidden_error(name, rng) for name in CAMS if name != "wrist_A"}
+        self.hidden["wrist_A"] = hidden_error("wrist_A", np.random.default_rng([seed, 2]))     # its own stream: the seeded streams of top / wrist_B, the light and the noise are unchanged
         self.key_dir = tuple(-np.array([rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(0.5, 1.5)]))
         self.gain = float(rng.uniform(0.5, 2.0))
         self.noise = np.random.default_rng([seed, 1])
@@ -221,19 +223,19 @@ class Cameras:
         self.timing = {name: [] for name in CAMS}                  # per capture: dict(render_ms, sense_ms)
 
     def poses(self, cam, ee_pose=None):
-        """(true_pos, true_R, nominal_pos, nominal_R). wrist_B needs `ee_pose` = [x y z qx qy qz qw], B's TCP from FK."""
+        """(true_pos, true_R, nominal_pos, nominal_R). A wrist camera needs `ee_pose` = [x y z qx qy qz qw], its arm's TCP from FK."""
         hand = None
-        if cam == "wrist_B":
+        if cam.startswith("wrist"):
             hand = (np.asarray(ee_pose[:3], float), Rot.from_quat(ee_pose[3:7]))
         npos, nR = nominal_pose(cam, hand, WRIST_DX)
         dt, dr = self.hidden[cam]
-        if cam == "wrist_B":
+        if cam.startswith("wrist"):
             return npos + hand[1].apply(dt), nR * Rot.from_rotvec(dr), npos, nR
         return npos + dt, nR * Rot.from_rotvec(dr), npos, nR
 
     def _render(self, cam, ee_pose, state, labels):
         pos, R, npos, nR = self.poses(cam, ee_pose)
-        if cam == "wrist_B":                                        # co-located ring light at the true camera
+        if cam.startswith("wrist"):                                 # co-located ring light at the true camera
             set_lights(self.sensor, self.model.device, self.key_dir, (tuple(pos), tuple(R.apply([0, 0, -1]))))
         else:
             set_lights(self.sensor, self.model.device, self.key_dir)

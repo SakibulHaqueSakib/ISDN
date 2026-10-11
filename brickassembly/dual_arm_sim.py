@@ -48,8 +48,8 @@ setpoint to fk_oracle's target; --shadow-vision runs V5 at every look in the gt 
 always records the scorer-only pre-weld screen (plan_v4_perception D6). The row gets a "vision" block.
     bash scripts/run.sh dual_arm_sim.py --shape cube --viewer null --test --num-frames 40000 --look --aim fk_vision
 
-Live-viewer aids (cell/liveview.py, VIEWING.md; off by default, the physics is unchanged): --show-cameras puts the top and wrist_B feeds
-(RGB, depth, and V5's result on each look) in a viewer image window, refreshed every --camera-every frames; --manual drives the two hands
+Live-viewer aids (cell/liveview.py, VIEWING.md; off by default, the physics is unchanged): --show-cameras puts the top, wrist_A and wrist_B feeds
+(RGB, depth, and V5's result on each look) in a viewer image window, refreshed every --camera-every frames, and a Workspace window with what top_detect reads off the top image (plate, bricks); --manual drives the two hands
 by hand from the side panel and the keyboard (no build queue); --pace holds the loop to 60 frames/s (implied by both).
     bash scripts/run.sh dual_arm_sim.py --shape cube --look --aim fk_vision --show-cameras
     bash scripts/run.sh dual_arm_sim.py --shape cube --manual --show-cameras
@@ -84,6 +84,7 @@ import blueprint as B  # noqa: E402
 import bracing  # noqa: E402
 import planner as P  # noqa: E402
 import stability as ST  # noqa: E402
+import top_detect as TD  # noqa: E402
 from cell import liveview as LV  # noqa: E402
 import vision as V  # noqa: E402
 from tasks.brace_bandit import EXE  # noqa: E402
@@ -606,7 +607,7 @@ class Example:
         self.realtime = (bool(getattr(args, "pace", False)) or self.show_cams or self.manual_on) and getattr(args, "viewer", None) != "null"
         if self.manual_on and (self.look or getattr(args, "test", False) or getattr(args, "start_step", None) is not None):
             raise SystemExit("--manual runs no build queue: it cannot be combined with --look, --test or --start-step")
-        self.rt_t, self.feed, self.look_feed, self.man_info = time.perf_counter(), None, None, {}
+        self.rt_t, self.feed, self.look_feed, self.man_info, self.top_det, self.top_det_ms = time.perf_counter(), None, None, {}, None, 0.0
 
         self.plan, self.name = make_plan(args)
         self.failure = self.failed_at_step = self.built_at_failure = None   # end at the first failure (see fail())
@@ -798,6 +799,8 @@ class Example:
             self.viewer.register_ui_callback(self.gui_manual_window, position="free")
         if self.show_cams:
             LV.enlarge_image_window()
+            if hasattr(self.viewer, "register_ui_callback"):
+                self.viewer.register_ui_callback(self.gui_workspace_window, position="free")
         self.fixture_setup(steps, n0)
         self.capture()
         self.cams, self.fk_state, self.spheres = None, None, None    # cell.cameras.Cameras (--save-captures, V5 at the looks), rendered outside the captured graphs
@@ -1477,20 +1480,24 @@ class Example:
 
     # -- live viewer aids (cell/liveview.py; display only) --------------------------------
     def refresh_feeds(self):
-        """--show-cameras: a noise-free preview of both cameras of the current state (wrist_B from B's FK pose): the noise would cost 3x the render."""
-        top = self.cams.preview("top", state=self.state_0, stride=LV.SHOW_STRIDE)
+        """--show-cameras: a noise-free preview of the cameras of the current state (the wrist cameras from their arm's FK pose): the noise would cost 3x the render."""
+        top = self.cams.preview("top", state=self.state_0, stride=1)                # full size: top_detect reads it, the tile is every second pixel
+        t0 = time.perf_counter()
+        self.top_det = TD.detect(top["rgb"], top["depth"], self.cams.cams["top"]["rays_np"], *self.cams.poses("top")[2:])      # nominal pose; display only
+        self.top_det_ms = (time.perf_counter() - t0) * 1e3
+        wa = self.cams.preview("wrist_A", self.hand_fk(0), state=self.state_0, stride=LV.SHOW_STRIDE)
         wr = self.cams.preview("wrist_B", self.hand_fk(1), state=self.state_0, stride=LV.SHOW_STRIDE)
-        self.feed = [top["rgb"], wr["rgb"], LV.depth_rgb(top["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
+        self.feed = [LV.overlay_top(LV.tile(top["rgb"]), self.top_det), wa["rgb"], wr["rgb"], LV.depth_rgb(top["depth"]), LV.depth_rgb(wa["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
         self.push_feeds()
 
     def push_feeds(self, blank=None):
-        """One log_image batch, a row of RGB over a row of depth: top, wrist_B, and (with V5 at the looks) the last look with V5's result."""
+        """One log_image batch, a row of RGB over a row of depth: top, wrist_A, wrist_B, and (with V5 at the looks) the last look with V5's result."""
         if blank is not None:
-            self.feed = [blank] * 4
+            self.feed = [blank] * 6
         look = [self.look_feed[0] if self.look_feed else np.zeros_like(self.feed[0])] if self.sees else []
         ldep = [self.look_feed[1] if self.look_feed else np.zeros_like(self.feed[0])] if self.sees else []
-        self.viewer.log_image("cameras: top | wrist_B%s (RGB over depth)" % (" | last look" if self.sees else ""),
-                              np.stack(self.feed[:2] + look + self.feed[2:] + ldep))
+        self.viewer.log_image("cameras: top | wrist_A | wrist_B%s (RGB over depth)" % (" | last look" if self.sees else ""),
+                              np.stack(self.feed[:3] + look + self.feed[3:] + ldep))
 
     def show_look(self, cap, rec, res, s):
         """The look just taken, for the panel: the wrist frame with V5's estimated target and held-brick footprints and its verdict."""
@@ -1700,6 +1707,38 @@ class Example:
                 ui.text("  aim: gt (ground-truth servo)")
             if v.get("failure"):
                 ui.text("  FAILED: %s" % v["failure"])
+
+    def gui_workspace_window(self, ui):
+        """--show-cameras: its own floating window (right side): what top_detect reads off the top camera, the plate (grid base) and the bricks."""
+        w = ui.get_io().display_size.x
+        ui.set_next_window_pos(ui.ImVec2(max(w - 580, 700), 10), ui.Cond_.once)
+        ui.set_next_window_size(ui.ImVec2(570, 430), ui.Cond_.once)
+        if ui.begin("Workspace (top camera)"):
+            det = self.top_det
+            if det is None:
+                ui.text("waiting for the first top frame")
+            else:
+                p = det["plate"]
+                if p is None:
+                    ui.text("plate: not found")
+                else:
+                    ui.text("plate (grid base): centre %.1f, %.1f mm   yaw %.1f deg" % (p["x"] * 1e3, p["y"] * 1e3, math.degrees(p["yaw"])))
+                    ui.text("  %d x %d studs, pitch %.0f mm, top z %.1f mm, %d cells occupied" % (*p["studs"], p["pitch"] * 1e3, p["top_z"] * 1e3, len(p["occupied"])))
+                    ui.text("  origin corner (cell 0, 0) %.1f, %.1f mm; i along the yaw, j to its left" % (p["origin"][0] * 1e3, p["origin"][1] * 1e3))
+                ui.text("%d bricks   (detect %.0f ms)" % (len(det["bricks"]), self.top_det_ms))
+                cols = ("id", "colour", "size", "x", "y", "z", "yaw", "layer", "on plate cell")
+                if ui.begin_table("bricks", len(cols), ui.TableFlags_.borders | ui.TableFlags_.row_bg | ui.TableFlags_.scroll_y):
+                    for c in cols:
+                        ui.table_setup_column(c)
+                    ui.table_headers_row()
+                    for b in det["bricks"]:
+                        ui.table_next_row()
+                        for v in (b["id"], b["colour"], b["studs"], "%.1f" % (b["x"] * 1e3), "%.1f" % (b["y"] * 1e3), "%.1f" % (b["z_top"] * 1e3),
+                                  "%.1f" % math.degrees(b["yaw"]), b["layer"], "(%d, %d)" % b["cell"] if b["on_plate"] else "table"):
+                            ui.table_next_column()
+                            ui.text(str(v))
+                    ui.end_table()
+        ui.end()
 
     def gui_manual_window(self, ui):
         """--manual: its own floating window (the side panel is full), top left beside the side panel."""
@@ -2086,7 +2125,7 @@ if __name__ == "__main__":
     parser.add_argument("--shadow-vision", action="store_true",
                         help="with --look: run V5 at every look in the gt and fk_oracle modes too; logged only, never aborts or changes control")
     parser.add_argument("--show-cameras", action="store_true",
-                        help="ViewerGL: an image window with the top and wrist_B feeds (RGB, depth; with --look --aim fk_vision/--shadow-vision the last "
+                        help="ViewerGL: an image window with the top, wrist_A and wrist_B feeds (RGB, depth; the top camera with top_detect's plate and brick outlines, and a Workspace window listing them; with --look --aim fk_vision/--shadow-vision the last "
                              "look with V5's result), refreshed every --camera-every frames; display only, the physics and V5's noise are unchanged")
     parser.add_argument("--camera-every", type=int, default=10, metavar="N", help="--show-cameras: refresh the feeds every N frames (default 10)")
     parser.add_argument("--manual", action="store_true",

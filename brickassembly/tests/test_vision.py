@@ -3,7 +3,7 @@
   - the probe's synthetic lattice self-check, against vision.py;
   - the acceptance rule end to end on a synthetic wrist look (target lattice + held brick, straight-down camera);
   - hand_offset / brick_from_hand (the full 3-D lever);
-  - vision.py imports with newton and warp blocked;
+  - vision.py and top_detect.py import with newton and warp blocked;
   - regression: render P2-style look scenes through the probe's rig and compare vision.v5_estimate with the probe's own
     v5() on the same images (needs the Isaac interpreter and a GPU; skipped when the probe cannot be imported).
 
@@ -324,7 +324,7 @@ def test_dropping_the_z_lever_costs_0p227_mm_at_1_deg():
 # --- import guard -----------------------------------------------------------------------------------------------
 def test_imports_without_newton_or_warp():
     code = ("import sys; [sys.modules.__setitem__(m, None) for m in ('newton', 'warp', 'torch')]; sys.path.insert(0, %r); "
-            "import vision; bad = [m for m in ('dual_arm_sim', 'cell') if m in sys.modules]; assert not bad, bad; print(vision.PARAMS_HASH)"
+            "import vision, top_detect; bad = [m for m in ('dual_arm_sim', 'cell') if m in sys.modules]; assert not bad, bad; print(vision.PARAMS_HASH)"
             % str(HERE))
     r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True)
     assert r.returncode == 0 and r.stdout.strip() == V.PARAMS_HASH, r.stderr[-500:]

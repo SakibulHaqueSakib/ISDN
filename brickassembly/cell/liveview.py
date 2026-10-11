@@ -2,6 +2,7 @@
 camera frames drawn here use their own noise stream, so a run with the panels on is the same run.
 
     depth_rgb, tile, overlay_look      camera frames -> uint8 tiles for ViewerBase.log_image; the V5 result drawn on the wrist look
+    overlay_top                        top_detect's plate and bricks drawn on the top tile
     clamp_target, ManualCtl            the manual-control targets: workspace clamp, rate limit and a leash on the measured hand
 """
 
@@ -64,6 +65,23 @@ def overlay_look(rgb, cam_pose, rec, T_box, B_box):
     dr.text((10, 7), "look %d  %s  target studs %s  held studs %s  %s" % (
         rec["k"], "ACCEPTED " + str(rec.get("estimator")) if ok else "REJECTED", rec.get("n_target_studs"), rec.get("n_held_studs"),
         "" if ok else rec.get("reject_reason", "")), fill=(255, 255, 255), font=ImageFont.load_default(size=16))
+    return np.asarray(im)
+
+
+def overlay_top(rgb, det, stride=SHOW_STRIDE):
+    """The top tile with top_detect's read-out on it: the plate outline (cyan), each brick's top-face outline (yellow; magenta if it is on the plate)
+    and its id. `det` is detect()'s result in the pixels of the image it ran on; the tile is that image at 1/`stride`."""
+    from PIL import Image, ImageDraw, ImageFont
+    im = Image.fromarray(rgb)
+    dr = ImageDraw.Draw(im)
+    f = ImageFont.load_default(size=14)
+    if det and det["plate"]:
+        pts = [(x / stride, y / stride) for x, y in det["plate"]["outline"]]
+        dr.line(pts + pts[:1], fill=(0, 255, 255), width=1)
+    for b in (det["bricks"] if det else []):
+        pts = [(x / stride, y / stride) for x, y in b["outline"]]
+        dr.line(pts + pts[:1], fill=(255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
+        dr.text((b["px"] / stride + 4, b["py"] / stride - 16), str(b["id"]), fill=(0, 255, 0), font=f)
     return np.asarray(im)
 
 
