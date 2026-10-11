@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# One-command environment for robofab_sim (dual_arm_sim.py).
+# One-command environment for robofab_sim (dual_arm_sim.py, plus the RL wrappers and trainers).
 #
 #   bash setup.sh                  # .venv (Python 3.12), torch CUDA build picked from nvidia-smi
 #   bash setup.sh --cuda cu128     # force a torch CUDA build (cu128 | cu130)
 #   bash setup.sh --cpu            # CPU torch (no GPU: Newton/Warp then run on the CPU, slowly)
-#   bash setup.sh --no-torch       # skip torch (dual_arm_sim itself does not import it)
+#   bash setup.sh --no-torch       # skip torch (dual_arm_sim itself does not import it; the RL files and rsl_rl do)
 #   bash setup.sh --check          # after installing: also run the tests and a headless smoke build
 #
 # Idempotent: re-run it to repair or upgrade. VENV=/path overrides the location.
@@ -14,6 +14,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 VENV="${VENV:-$HERE/.venv}"
 TORCH=2.10.0                                            # cu128; cu130 builds exist too
+TORCHVISION=0.25.0                                      # rsl-rl-lib needs it; pinned here so it cannot drag torch up
 PYVER=3.12
 
 cuda=""; cpu=0; notorch=0; check=0
@@ -74,11 +75,12 @@ else
 fi
 
 if [ "$notorch" -eq 0 ]; then
-    say "installing torch==$TORCH"
-    pipi "torch==$TORCH" "${torch_args[@]}"
+    say "installing torch==$TORCH torchvision==$TORCHVISION"
+    pipi "torch==$TORCH" "torchvision==$TORCHVISION" "${torch_args[@]}"
 fi
 say "installing requirements.txt"
 pipi -r "$HERE/requirements.txt"
+pipi --no-deps rl_games==1.6.1                         # see requirements.txt
 
 # --- Newton's FR3 asset (network on first use; cached afterwards) -----------
 say "fetching the Newton FR3 asset (franka_emika_panda)"
@@ -89,6 +91,7 @@ say "fetching the Newton FR3 asset (franka_emika_panda)"
 say "import check"
 "$PY" - <<'PYEOF'
 import warp as wp, newton, mujoco, mujoco_warp, numpy, scipy, cv2, yaml, trimesh, viser, pyglet, imgui_bundle
+import gymnasium, gym, rsl_rl, skrl, rl_games, tensordict, tensorboard
 wp.config.quiet = True
 print("newton", newton.__version__, "| warp", wp.__version__, "| mujoco", mujoco.__version__)
 print("warp device:", wp.get_device())
