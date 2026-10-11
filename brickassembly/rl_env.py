@@ -3,6 +3,7 @@
     Sim                 the core: builds an Example (ViewerNull), steps physics, builds the observation, scores
     BrickStepEnv        one decision per brick, one env step per episode (plan_v4_rl_brace 2.3-2.5, plan_v4_rl_place)
     BrickReachEnv       low-level control of both hands, many steps per episode (10 Hz), shaped reward
+    ReachReward         BrickReachEnv's reward and termination rules over n worlds (n = 1 here; rl_batched.BatchedReachEnv uses the same one for N)
 
     bash scripts/run.sh rl_env.py --demo            # the scripted reach episode (privileged info inside the script only) and a timing line
 
@@ -58,6 +59,18 @@ BRICK_F = 1 + 3 + 2 + 2 + N_COL + 4                  # valid, x y z_top, sin cos
 PLATE_F, TASK_F, PROPRIO_F = 8, 8, 18 + 18 + 14 + 4
 N_CTX = BB.FEATURE_NAMES.index("is_none")            # the context part of brace_bandit.features
 FPS = 60
+DPOS, DYAW = 0.01, 0.1                                # BrickReachEnv: hand-target delta per tick at action 1 (m, rad)
+LIFT_DZ = 0.006                                       # the brick counts as lifted this far over its feeder slot
+REACH_WEIGHTS = dict(w_reach=0.5, w_grasp=5.0, w_place=1.0, w_yaw=0.05, w_time=-0.01, w_success=100.0, w_break=-20.0, w_arm_arm=-20.0, w_drop=-20.0)
+
+
+def example_args(structure, step, seed, rl_control, only_step, press=None, exe="E0"):
+    """The dual_arm_sim.Example arguments of a headless RL scene (also what rl_batched makes its plan from)."""
+    return argparse.Namespace(front=None, side=None, top=None, width=None, depth=None, name=structure, shape=None, structure=None,
+                              bricks=bricks_of(structure), strategy="none", brace_model="grasp_lp", plan=None, spec="rl_env",
+                              start_step=step, only_step=only_step, brace_json=None, press_scale=press and press[0], press_lateral=press and tuple(press[1:]),
+                              fixture_hold=False, exe=exe, viewer="null", legacy_brace=False, show_cameras=False,
+                              seed=seed, rl_control=rl_control)           # spec: no plans/ and results/ writes
 
 
 def bricks_of(structure):
@@ -150,11 +163,7 @@ class Sim:
         illegal access, tried), so a fixture means building the Example with it."""
         self.ex = self.cams = self.mon = self.det = None
         gc.collect()
-        args = argparse.Namespace(front=None, side=None, top=None, width=None, depth=None, name=structure, shape=None, structure=None,
-                                  bricks=bricks_of(structure), strategy="none", brace_model="grasp_lp", plan=None, spec="rl_env",
-                                  start_step=step, only_step=only_step, brace_json=None, press_scale=press and press[0], press_lateral=press and tuple(press[1:]),
-                                  fixture_hold=False, exe=self.exe, viewer="null", legacy_brace=False, show_cameras=False,
-                                  seed=seed, rl_control=rl_control)           # spec: no plans/ and results/ writes
+        args = example_args(structure, step, seed, rl_control, only_step, press, self.exe)
         with contextlib.nullcontext() if self.verbose else contextlib.redirect_stdout(io.StringIO()):
             self.ex = D.Example(newton.viewer.ViewerNull(num_frames=10 ** 9), args)
             self.mon = self.ex.monitor = ContactMonitor(self.ex)
@@ -207,8 +216,7 @@ class Sim:
         b = q[ex.body[bid]]
         tcp = q[D.EE + ex.n_arm_bodies][:3]
         tgt, yaw, square = ex.target[bid]
-        dyaw = abs(D.wrap(D.yaw_of(b[3:]) - yaw, math.pi / 2 if square else math.pi))
-        tilt = math.acos(float(np.clip(D.rotate(b[3:], np.array([0, 0, 1.0]))[2], -1, 1)))
+        _, _, dyaw, tilt = (float(x) for x in pose_errors(b, tgt, yaw, square))
         return dict(brick_id=bid, brick_pos=b[:3].copy(), brick_yaw_err=dyaw, tilt=tilt, tcp_B=tcp.copy(), target=np.array(tgt),
                     slot=ex.feeder[bid].copy(), gate=ex.gate(bid)[1:6], placed=self.step_n in ex.placed, failure=ex.failure,
                     arm_arm=sum(e["class"] == "arm_arm" for e in self.mon.raw) + sum(k[0] == "arm_arm" for k in self.mon._active),
@@ -222,6 +230,75 @@ def _spec(name, kw):
 
 def _sim_seed(env, seed):
     return int(seed) if seed is not None else int(env.np_random.integers(2 ** 31 - 1))
+
+
+# --- shared by the single and the batched reach env ---------------------------------------------------------------------
+def pose_errors(bq, target, yaw, square):
+    """Brick pose(s) bq (..., 7) [xyz qxyzw] against the target position (..., 3), yaw (...) and squareness (...): lateral [m], dz [m], yaw error
+    [rad] (mod pi, mod pi/2 for a square brick) and tilt [rad]. The numbers Example.gate reads, vectorised (tests/test_rl_batched.py checks both)."""
+    bq, target = np.asarray(bq, float), np.asarray(target, float)
+    x, y, z, w = (bq[..., 3 + i] for i in range(4))
+    lateral = np.hypot(bq[..., 0] - target[..., 0], bq[..., 1] - target[..., 1])
+    period = np.where(square, math.pi / 2, math.pi)
+    dyaw = np.abs(D.wrap(np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) - yaw, period))
+    tilt = np.arccos(np.clip(1 - 2 * (x * x + y * y), -1.0, 1.0))
+    return lateral, bq[..., 2] - target[..., 2], dyaw, tilt
+
+
+def action_targets(a, dpos=DPOS, dyaw=DYAW):
+    """BrickReachEnv's action Box(10) [..., arm A then B x (dx, dy, dz, dyaw, grip)] -> the ManualCtl nudge: (d (..., 2, 3), dyaw (..., 2), grip (..., 2))."""
+    a = np.clip(np.asarray(a, np.float64), -1, 1).reshape(*np.shape(a)[:-1], 2, 5)
+    return a[..., :3] * dpos, a[..., 3] * dyaw, LV.GRIP_SHUT + (a[..., 4] + 1) / 2 * (LV.GRIP_OPEN - LV.GRIP_SHUT)
+
+
+EVENTS = ("success", "joint_break", "divergence", "arm_arm", "dropped", "knocked_off")
+
+
+class ReachReward:
+    """BrickReachEnv's reward and termination over n worlds (n = 1 in the single env): one definition for it and rl_batched.BatchedReachEnv. Keeps the
+    per-world state (ticks, lifted, ticks out of the fingers, arm_arm count). The weights are BrickReachEnv's w_* arguments (REACH_WEIGHTS)."""
+
+    def __init__(self, n, max_steps=600, lift_dz=LIFT_DZ, **weights):
+        w = {**REACH_WEIGHTS, **weights}
+        self.w = dict(reach=w["w_reach"], grasp=w["w_grasp"], place=w["w_place"], yaw=w["w_yaw"], time=w["w_time"], success=w["w_success"],
+                      brk=w["w_break"], aa=w["w_arm_arm"], drop=w["w_drop"])
+        self.n, self.max_steps, self.lift_dz = n, max_steps, lift_dz
+        self.t, self.lifted, self.out_ticks, self.arm_arm0 = np.zeros(n, int), np.zeros(n, bool), np.zeros(n, int), np.zeros(n, int)
+        self.slot = np.zeros((n, 3))
+
+    def reset(self, mask, slot):
+        """Fresh episode in the worlds where `mask` (n,) is true; `slot`: their bricks' feeder slots (n, 3) (rows of the other worlds are ignored)."""
+        self.t[mask], self.lifted[mask], self.out_ticks[mask], self.arm_arm0[mask] = 0, False, 0, 0
+        self.slot[mask] = np.asarray(slot)[mask]
+
+    def update(self, brick_pos, tcp_B, target, yaw_err, tilt, placed, broke, arm_arm, diverged):
+        """One tick, ground truth in (all (n,) or (n, 3)): -> reward (n,), events {name: bool (n,)}, terminated, truncated, dist_tcp (n,)."""
+        w = self.w
+        dist_tcp = np.linalg.norm(tcp_B - (brick_pos + [0, 0, D.GRASP_DZ]), axis=-1)
+        in_hand = dist_tcp < 0.025
+        lifted = (brick_pos[:, 2] > self.slot[:, 2] + 0.0005 + self.lift_dz) & in_hand
+        r = np.full(self.n, w["time"])
+        r -= w["reach"] * np.linalg.norm(tcp_B - brick_pos, axis=-1) * ~(self.lifted | lifted)
+        r += w["grasp"] * (lifted & ~self.lifted)
+        self.lifted |= lifted
+        r -= w["place"] * (np.linalg.norm(brick_pos - target, axis=-1) + w["yaw"] * yaw_err) * lifted
+        self.out_ticks = np.where(in_hand | ~self.lifted, 0, self.out_ticks + 1)
+        ev = dict(success=np.asarray(placed, bool), joint_break=np.asarray(broke, bool) & ~diverged, divergence=np.asarray(diverged, bool),
+                  arm_arm=np.asarray(arm_arm) > self.arm_arm0)
+        r += w["success"] * ev["success"] + w["brk"] * (ev["joint_break"] | ev["divergence"]) + w["aa"] * ev["arm_arm"]
+        self.arm_arm0 = np.asarray(arm_arm).copy()
+        slot_move = np.linalg.norm(brick_pos[:, :2] - self.slot[:, :2], axis=-1)
+        ev["dropped"] = self.out_ticks >= 3
+        ev["knocked_off"] = ~ev["dropped"] & ((tilt > math.pi / 4) | (~self.lifted & (slot_move > 0.05)))
+        r += w["drop"] * (ev["dropped"] | ev["knocked_off"])
+        terminated = np.any([ev[k] for k in EVENTS], axis=0)
+        self.t += 1
+        return r, ev, terminated, ~terminated & (self.t >= self.max_steps), dist_tcp
+
+
+def event_names(ev, i):
+    """The events of world i as BrickReachEnv's info["events"] lists them (in EVENTS order)."""
+    return [k for k in EVENTS if ev[k][i]]
 
 
 # --- env 1: one decision per brick ---------------------------------------------------------------------------------
@@ -333,7 +410,7 @@ class BrickReachEnv(gym.Env):
             The target is not pulled back toward the measured hand: a hand blocked by a contact keeps its (clamped) target.
     start   nominal start of `step` (bricks < step welded on the plate, the rest on the feeder), both hands parked, fingers 10 mm.
     snap    every frame the Example's own gate (Example.gate / snap) reads the current brick; when it passes the brick is welded and the episode ends.
-    reward  per tick, privileged state allowed (all weights are constructor args):
+    reward  per tick, privileged state allowed (all weights are constructor args; the terms are ReachReward's, shared with rl_batched.BatchedReachEnv):
               w_reach  * -|B's TCP - the brick|                  until the brick is lifted for the first time
               w_grasp  * +1                                      once, the first tick the brick is lifted (>= lift_dz over its slot, in the fingers)
               w_place  * -(|brick - target| + w_yaw * yaw error) while it is lifted
@@ -346,12 +423,14 @@ class BrickReachEnv(gym.Env):
     """
     metadata = {"render_modes": []}
 
-    def __init__(self, structure="cube", step=0, control_every=6, max_steps=600, dpos=0.01, dyaw=0.1, images=True, cameras=CAM_NAMES,
-                 image_stride=4, n_max=16, exe="E0", w_reach=0.5, w_grasp=5.0, w_place=1.0, w_yaw=0.05, w_time=-0.01, w_success=100.0,
-                 w_break=-20.0, w_arm_arm=-20.0, w_drop=-20.0, lift_dz=0.006, verbose=False):
+    def __init__(self, structure="cube", step=0, control_every=6, max_steps=600, dpos=DPOS, dyaw=DYAW, images=True, cameras=CAM_NAMES,
+                 image_stride=4, n_max=16, exe="E0", w_reach=REACH_WEIGHTS["w_reach"], w_grasp=REACH_WEIGHTS["w_grasp"], w_place=REACH_WEIGHTS["w_place"],
+                 w_yaw=REACH_WEIGHTS["w_yaw"], w_time=REACH_WEIGHTS["w_time"], w_success=REACH_WEIGHTS["w_success"], w_break=REACH_WEIGHTS["w_break"],
+                 w_arm_arm=REACH_WEIGHTS["w_arm_arm"], w_drop=REACH_WEIGHTS["w_drop"], lift_dz=LIFT_DZ, verbose=False):
         self.spec = _spec("BrickReach", locals())
         self.structure, self.step_n, self.every, self.max_steps, self.dpos, self.dyaw = structure, step, control_every, max_steps, dpos, dyaw
-        self.w = dict(reach=w_reach, grasp=w_grasp, place=w_place, yaw=w_yaw, time=w_time, success=w_success, brk=w_break, aa=w_arm_arm, drop=w_drop)
+        self.rew = ReachReward(1, max_steps, lift_dz, w_reach=w_reach, w_grasp=w_grasp, w_place=w_place, w_yaw=w_yaw, w_time=w_time,
+                               w_success=w_success, w_break=w_break, w_arm_arm=w_arm_arm, w_drop=w_drop)
         self.lift_dz, self.exe_name = lift_dz, exe
         self.obs_spec = ObsSpec(n_max, images, cameras, image_stride)
         self.sim = Sim(self.obs_spec, exe, verbose)
@@ -363,57 +442,32 @@ class BrickReachEnv(gym.Env):
         o = options or {}
         self.structure, self.step_n = o.get("structure", self.structure), int(o.get("step", self.step_n))
         self.sim.build(self.structure, self.step_n, _sim_seed(self, seed), rl_control=True, only_step=False)
-        self.t, self.lifted, self.out_ticks, self.arm_arm0 = 0, False, 0, 0
         self.slot = self.sim.ex.feeder[self.sim.ex.plan["sequence"][self.step_n]["brick_id"]].copy()
+        self.rew.reset(np.ones(1, bool), self.slot[None])
         return self.sim.observe(), {"structure": self.structure, "step": self.step_n}
 
     def _apply(self, a):
         man = self.sim.ex.man
-        a = np.clip(np.asarray(a, np.float64), -1, 1).reshape(2, 5)
+        d, dyaw, grip = action_targets(a, self.dpos, self.dyaw)
         for k in (0, 1):
-            man.nudge(k, a[k, :3] * self.dpos, a[k, 3] * self.dyaw, grip=LV.GRIP_SHUT + (a[k, 4] + 1) / 2 * (LV.GRIP_OPEN - LV.GRIP_SHUT))
+            man.nudge(k, d[k], dyaw[k], grip=grip[k])
 
     def step(self, action):
-        sim, ex, w = self.sim, self.sim.ex, self.w
+        sim, ex = self.sim, self.sim.ex
         self._apply(action)
-        events, diverged = [], False
+        diverged = False
         try:
             sim.advance(self.every, until=lambda: self.step_n in ex.placed or ex.failure is not None)
         except RuntimeError:
             diverged = True
-        self.t += 1
         pv = sim.privileged()
-        dist_tcp = float(np.linalg.norm(pv["tcp_B"] - (pv["brick_pos"] + [0, 0, D.GRASP_DZ])))
-        in_hand = dist_tcp < 0.025
-        lifted = pv["brick_pos"][2] > self.slot[2] + 0.0005 + self.lift_dz and in_hand
-        r = w["time"]
-        if not (self.lifted or lifted):
-            r -= w["reach"] * float(np.linalg.norm(pv["tcp_B"] - pv["brick_pos"]))
-        if lifted and not self.lifted:
-            r += w["grasp"]
-        self.lifted |= lifted
-        if lifted:
-            r -= w["place"] * (float(np.linalg.norm(pv["brick_pos"] - pv["target"])) + w["yaw"] * pv["brick_yaw_err"])
-        self.out_ticks = 0 if (in_hand or not self.lifted) else self.out_ticks + 1
-        if pv["placed"]:
-            r += w["success"]
-            events.append("success")
-        if diverged or pv["failure"] == "joint_break":
-            r += w["brk"]
-            events.append("joint_break" if not diverged else "divergence")
-        if pv["arm_arm"] > self.arm_arm0:
-            r += w["aa"]
-            events.append("arm_arm")
-        self.arm_arm0 = pv["arm_arm"]
-        slot_move = float(np.linalg.norm(pv["brick_pos"][:2] - self.slot[:2]))
-        if self.out_ticks >= 3 or pv["tilt"] > math.pi / 4 or (not self.lifted and slot_move > 0.05):
-            r += w["drop"]
-            events.append("dropped" if self.out_ticks >= 3 else "knocked_off")
-        terminated = bool(events)
-        truncated = not terminated and self.t >= self.max_steps
+        r, ev, terminated, truncated, dist_tcp = self.rew.update(
+            pv["brick_pos"][None], pv["tcp_B"][None], pv["target"][None], np.array([pv["brick_yaw_err"]]), np.array([pv["tilt"]]),
+            np.array([pv["placed"]]), np.array([pv["failure"] == "joint_break"]), np.array([pv["arm_arm"]]), np.array([diverged]))
+        events = event_names(ev, 0)
         info = {"success": "success" in events, "events": events, "failure": ex.failure,
-                "privileged": {k: pv[k] for k in ("brick_pos", "tcp_B", "target", "gate", "arm_arm", "sim_time")} | {"lifted": self.lifted, "dist_tcp": dist_tcp}}
-        return sim.observe(), float(r), terminated, truncated, info
+                "privileged": {k: pv[k] for k in ("brick_pos", "tcp_B", "target", "gate", "arm_arm", "sim_time")} | {"lifted": bool(self.rew.lifted[0]), "dist_tcp": float(dist_tcp[0])}}
+        return sim.observe(), float(r[0]), bool(terminated[0]), bool(truncated[0]), info
 
 
 # --- a scripted controller (privileged info lives here only) ------------------------------------------------------------

@@ -1,8 +1,12 @@
 """PPO on the Newton cell through the Isaac Lab-style interface (rl_vec.py): rsl_rl by default, skrl with --skrl. Neither imports isaaclab or isaacsim.
 
-    bash scripts/run.sh train_rl.py --iterations 3 --num-envs 2                  # rsl_rl OnPolicyRunner on BrickReachEnv, images off
-    bash scripts/run.sh train_rl.py --skrl --timesteps 200 --num-envs 2          # skrl PPO
-    bash scripts/run.sh train_rl.py --env step --num-envs 2 --iterations 2       # BrickStepEnv (one 15-30 s step per episode)
+    bash scripts/run.sh train_rl.py --iterations 3 --num-envs 64                 # rsl_rl OnPolicyRunner on BatchedReachEnv (64 worlds in one Newton model), images off
+    bash scripts/run.sh train_rl.py --skrl --timesteps 200 --num-envs 64         # skrl PPO
+    bash scripts/run.sh train_rl.py --backend process --num-envs 2               # BrickReachEnv in subprocess workers (rl_vec.NewtonVecEnv), one Example each
+    bash scripts/run.sh train_rl.py --env step --num-envs 2 --iterations 2       # BrickStepEnv (one 15-30 s step per episode; process backend only)
+
+--backend batched (default for --env reach): rl_batched.BatchedReachEnv, the same task, spaces and reward as BrickReachEnv at ~10-50x the env steps/s.
+--backend process: rl_vec.NewtonVecEnv over rl_env's single-world envs (the only one for BrickStepEnv, and the reference the batched one is checked against).
 
 The configs are plain dataclasses in Isaac Lab's task-config style (EnvCfg for the task, RslRlCfg / SkrlCfg for the trainer); `to_dict()` gives the
 dict the trainer wants. A smoke test, not a tuned training run: the defaults are tiny.
@@ -23,6 +27,7 @@ sys.path.insert(0, str(HERE))
 @dataclass
 class EnvCfg:
     env: str = "reach"                  # reach: BrickReachEnv, step: BrickStepEnv
+    backend: str = "batched"            # batched: rl_batched.BatchedReachEnv (reach only), process: rl_vec.NewtonVecEnv
     num_envs: int = 2
     images: bool = False
     structure: str = "cube"
@@ -34,6 +39,11 @@ class EnvCfg:
         import rl_env
         import rl_vec
         kw = dict(images=self.images)
+        if self.backend == "batched":
+            assert self.env == "reach", "BrickStepEnv has no batched version: use --backend process"
+            import rl_batched
+            return rl_batched.BatchedReachEnv(self.num_envs, device=device, structure=self.structure, start_steps=(self.step,), max_steps=self.max_steps,
+                                              seed=self.seed, **kw)
         if self.env == "reach":
             cls, kw = rl_env.BrickReachEnv, dict(kw, structure=self.structure, step=self.step, max_steps=self.max_steps)
         else:
@@ -156,7 +166,8 @@ def train_skrl(env, cfg):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--env", choices=("reach", "step"), default="reach")
-    ap.add_argument("--num-envs", type=int, default=2)
+    ap.add_argument("--backend", choices=("batched", "process"), help="default: batched for --env reach, process for --env step")
+    ap.add_argument("--num-envs", type=int, help="default: 64 (batched) or 2 (process)")
     ap.add_argument("--images", action="store_true")
     ap.add_argument("--iterations", type=int, default=3, help="rsl_rl iterations")
     ap.add_argument("--steps-per-env", type=int, default=24, help="rsl_rl rollout length")
@@ -166,10 +177,13 @@ def main():
     ap.add_argument("--log-dir", help="rsl_rl log directory (tensorboard + the printed table); default a temp dir")
     ap.add_argument("--device", default="cuda:0")
     a = ap.parse_args()
-    env = EnvCfg(env=a.env, num_envs=a.num_envs, images=a.images).make(a.device)
+    backend = a.backend or ("batched" if a.env == "reach" else "process")
+    num_envs = a.num_envs or (64 if backend == "batched" else 2)
+    env = EnvCfg(env=a.env, backend=backend, num_envs=num_envs, images=a.images).make(a.device)
+    print("backend %s, %d envs" % (backend, num_envs))
     try:
         if a.rl_games:
-            train_rl_games(env, RlGamesCfg(num_envs=a.num_envs))
+            train_rl_games(env, RlGamesCfg(num_envs=num_envs))
         elif a.skrl:
             train_skrl(env, SkrlCfg(timesteps=a.timesteps))
         else:

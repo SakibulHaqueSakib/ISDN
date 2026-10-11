@@ -51,7 +51,7 @@ fi
 # v4 (plan_v4 §2.8): Newton + cuRobo overlay, all in the Isaac interpreter.
 # Matched before the twin's experiments/* rule.
 case "$script" in
-    */tests/test_vision.py|*/tests/test_v4_vision.py|*/tests/test_aim.py|*/tests/test_cell.py|*/tests/test_motion.py|*/tests/test_arm_protocol.py|*/tests/test_manual.py|*/tests/test_top_detect.py|*/tests/test_rl_env.py)
+    */tests/test_vision.py|*/tests/test_v4_vision.py|*/tests/test_aim.py|*/tests/test_cell.py|*/tests/test_motion.py|*/tests/test_arm_protocol.py|*/tests/test_manual.py|*/tests/test_top_detect.py|*/tests/test_rl_env.py|*/tests/test_rl_batched.py)
         cd "$HERE"; exec "$ISAAC_PY" -m pytest "${script#$HERE/}" "$@" ;;
     */cell/*.py|*/motion/plan_curobo.py|*/vision.py|*/top_detect.py|*/scripts/1[0-3]_*.py|*/scripts/fixture_check.py|*/experiments/v4*.py|*/experiments/analyze_v4.py)
         cd "$HERE"; exec "$ISAAC_PY" -u "$script" "$@" ;;
@@ -113,7 +113,7 @@ case "$script" in
     # USD export and playback, and the live dual-arm prototype (Newton +
     # its viewer): the Isaac Sim 6.0 env, the only one with newton. Run from
     # brickassembly so a relative results/ path resolves the way it reads.
-    *to_usd.py|*open_usd.py|*dual_arm_sim.py|*/rl_env.py|*/rl_vec.py|*/train_rl.py)
+    *to_usd.py|*open_usd.py|*dual_arm_sim.py|*/rl_env.py|*/rl_vec.py|*/rl_batched.py|*/rl_detect.py|*/train_rl.py)
         cd "$HERE"
         exec "$ISAAC_PY" -u "$script" "$@"
         ;;

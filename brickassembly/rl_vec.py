@@ -6,6 +6,8 @@ only the interface follows isaaclab.envs.DirectRLEnv. Nothing here imports isaac
     skrl_env(env)           skrl.envs.wrappers.torch.wrap_env(env, wrapper="isaaclab"): works on NewtonVecEnv as it is
     RlGamesVecEnv(env)      rl_games IVecEnv (see the class)
 
+rl_batched.BatchedReachEnv implements the same surface directly (N worlds in one Newton model, no subprocesses); the adapters below take either.
+
 NewtonVecEnv mirrors DirectRLEnv's public surface: num_envs, device, cfg (NewtonVecEnvCfg: is_finite_horizon, decimation, step_dt, seed, to_dict()),
 max_episode_length, episode_length_buf (long, (num_envs,)), single_observation_space / observation_space (batched), single_action_space / action_space,
 unwrapped, reset(seed=None, options=None) -> (obs, extras), step(actions) -> (obs, reward, terminated, truncated, extras), close(), seed().
@@ -36,6 +38,9 @@ import torch
 from gymnasium import spaces
 
 
+POLICY_KEYS = ("proprio", "bricks", "plate", "task", "features")      # the "policy" vector: these entries of the Dict observation, flat, in this order
+
+
 # --- worker side: one env, flat obs and actions ----------------------------------------------------------------------
 class FlatObs(gym.Wrapper):
     """Dict obs -> {"policy": flat float32, "images": {...}}; info -> the scalar numbers a vector env can batch."""
@@ -43,7 +48,7 @@ class FlatObs(gym.Wrapper):
     def __init__(self, env):
         super().__init__(env)
         sp = env.observation_space.spaces
-        self.keys = [k for k in ("proprio", "bricks", "plate", "task", "features") if k in sp]
+        self.keys = [k for k in POLICY_KEYS if k in sp]
         dim = sum(int(np.prod(sp[k].shape)) for k in self.keys)
         d = {"policy": spaces.Box(-np.inf, np.inf, (dim,), np.float32)}
         if "images" in sp:

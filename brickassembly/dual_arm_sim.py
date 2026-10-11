@@ -65,6 +65,7 @@ import json
 import math
 import os
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -581,6 +582,116 @@ class JointBreaker:
         print("  BREAK %s on %s: u %.3f, frame %d, step %s" % (bid, sid, r["u"], ex.frame, ex.b_step))
 
 
+def solve_park(model_ik):
+    """Joint angles that put the hand at PARK, pointing down."""
+    q = wp.array(np.array([HOME_Q + [0.01, 0.01]]), dtype=wp.float32)
+    solver = ik.IKSolver(
+        model=model_ik, n_problems=1, lambda_initial=0.1,
+        jacobian_mode=ik.IKJacobianType.ANALYTIC,
+        objectives=[ik.IKObjectivePosition(link_index=EE, link_offset=wp.vec3(0, 0, 0),
+                                           target_positions=wp.array([PARK], dtype=wp.vec3)),
+                    ik.IKObjectiveRotation(link_index=EE, link_offset_rotation=wp.quat_identity(),
+                                           target_rotations=wp.array([Q_DOWN], dtype=wp.vec4)),
+                    ik.IKObjectiveJointLimit(joint_limit_lower=model_ik.joint_limit_lower,
+                                             joint_limit_upper=model_ik.joint_limit_upper)])
+    for _ in range(30):
+        solver.step(q, q, iterations=24)
+    return q.numpy()[0].tolist()
+
+
+def build_cell(plan, exe, n0=0, substeps=16, legacy_brace=False):
+    """One cell as a world builder, without the ground plane: both arms parked, the baseplate, every brick (steps < n0 at their targets, the rest
+    waiting in the feeder with their final yaw) and the clutch pool (one weld per brick and support, enabled for steps < n0). Example.__init__ and
+    rl_batched.BatchedCells (which replicates it per world) both build the scene here.
+    Returns (scene, c): c.model_ik, park_q, n_arm_bodies, NIJ, plate_shapes, body / target / dims / feeder / welds keyed by brick id."""
+    bricks = {b["id"]: b for b in plan["bricks"]}
+    steps = plan["sequence"]
+    # --- arms ---------------------------------------------------------
+    arm = build_arm(substeps)
+    model_ik = arm.finalize()
+    # Start parked. HOME_Q reaches 0.41 m out, so two arms 0.9 m apart
+    # would begin with their hands interlocked.
+    park_q = solve_park(model_ik)
+    arm.joint_q[:9] = park_q
+    arm.joint_target_pos[:9] = park_q
+    scene = newton.ModelBuilder()
+    newton.solvers.SolverMuJoCo.register_custom_attributes(scene)
+    for pos, yaw in (ARM_A, ARM_B):
+        scene.add_builder(arm, xform=wp.transform(pos, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw)))
+    n_arm_bodies = arm.body_count
+    if exe["name"] != "E0":               # E1: A's arm joints only (E0 is build_arm's 400 / 40)
+        scene.joint_target_ke[:7], scene.joint_target_kd[:7] = [exe["arm_ke"]] * 7, [exe["arm_kd"]] * 7
+    if not legacy_brace:     # A's grip: 14.3 N per finger at the 1.5 mm brace squeeze (E0)
+        scene.joint_target_ke[7:9] = [exe["finger_ke"]] * 2
+        scene.joint_target_kd[7:9] = [2 * math.sqrt(exe["finger_ke"] * 0.1)] * 2
+
+    # --- baseplate: a studded slab, colliding only where the build stands --
+    ox, oy, _ = plan["voxel_origin"]
+    NI = max(b["grid_pos"][0] + P.footprint(b["type"], b["yaw_index"])[0] for b in bricks.values())
+    NJ = max(b["grid_pos"][1] + P.footprint(b["type"], b["yaw_index"])[1] for b in bricks.values())
+    cx, cy = ox + NI * P.PITCH / 2, oy + NJ * P.PITCH / 2
+    NIJ = (NI, NJ)
+    v, f = ex._make_brick_mesh(NI + 4, NJ + 4)
+    scene.add_shape_mesh(-1, mesh=newton.Mesh(v, f.flatten()), color=(0.45, 0.47, 0.45),
+                         xform=wp.transform((cx, cy, Z0 - ex.BRICK_HEIGHT), wp.quat_identity()),
+                         cfg=newton.ModelBuilder.ShapeConfig(has_shape_collision=False,
+                                                             has_particle_collision=False))
+    plate_shapes = [scene.add_shape_box(-1, hx=(NI + 4) * P.PITCH / 2, hy=(NJ + 4) * P.PITCH / 2, hz=Z0 / 2,
+                        xform=wp.transform((cx, cy, Z0 / 2), wp.quat_identity()), cfg=PROXY_CFG)]
+    stud_hh = 0.5 * ex.STUD_HEIGHT - ex.COLLIDER_INSET
+    for i in range(NI):
+        for j in range(NJ):
+            plate_shapes.append(scene.add_shape_cylinder(
+                -1, radius=ex.STUD_COLLIDER_RADIUS, half_height=stud_hh, cfg=PROXY_CFG,
+                xform=wp.transform((ox + (i + 0.5) * P.PITCH, oy + (j + 0.5) * P.PITCH,
+                                    Z0 + stud_hh), wp.quat_identity())))
+
+    # --- bricks, waiting in the placer's feeder with their final yaw ------
+    solimp = scene.custom_attributes["mujoco:geom_solimp"]
+    meshes, body, target, dims = {}, {}, {}, {}
+    slots = feeder_slots(len(steps))
+    for n, s in enumerate(steps):
+        b = bricks[s["brick_id"]]
+        nx, ny = P.footprint(b["type"], b["yaw_index"])
+        L, W = max(nx, ny), min(nx, ny)
+        yaw = math.pi / 2 if ny > nx else 0.0           # mesh x = long side
+        if (L, W) not in meshes:
+            mv, mf = ex._make_brick_mesh(L, W)
+            meshes[(L, W)] = ex._build_mesh_with_sdf(mv, mf, color=COLORS[0])
+        at = tuple(s["target_pose"][:3]) if n < n0 else (*slots[n], 0.0005)
+        xform = wp.transform(at, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw))
+        bd = scene.add_body(xform=xform, label=b["id"])
+        shape = scene.add_shape_mesh(bd, mesh=meshes[(L, W)], cfg=BRICK_CFG,
+                                     color=COLORS[n % len(COLORS)])
+        solimp.values = solimp.values or {}
+        solimp.values[shape] = (0.6, 0.95, 0.00075, 0.5, 2.5)
+        add_proxies(scene, bd, L, W, wp.transform_identity())
+        body[b["id"]] = bd
+        target[b["id"]] = (np.array(s["target_pose"][:3]), yaw, L == W)
+        dims[b["id"]] = (L * P.PITCH, W * P.PITCH)
+    feeder = {s["brick_id"]: np.array([*slots[n], 0.0]) for n, s in enumerate(steps)}
+
+    # --- clutch pool: one disabled weld per (brick, support) (§3.3) -------
+    welds = {}
+    for n, s in enumerate(steps):
+        bid = s["brick_id"]
+        p2, y2, _ = target[bid]
+        parents = [m[0] for m in s["mating_studs"]] or [None]   # None = baseplate
+        for sid in parents:
+            if sid is None:
+                rel = wp.transform(p2, qz(y2))
+            else:
+                p1, y1, _ = target[sid]
+                rel = wp.transform(rotate(qz(-y1), p2 - p1), qz(y2 - y1))
+            eq = scene.add_equality_constraint_weld(
+                body1=-1 if sid is None else body[sid], body2=body[bid],
+                relpose=rel, enabled=n < n0, label="clutch_%s_%s" % (sid or "plate", bid),
+                custom_attributes=WELD_ATTRS)
+            welds.setdefault(bid, []).append([eq, sid, rel, n < n0])
+    return scene, types.SimpleNamespace(model_ik=model_ik, park_q=park_q, n_arm_bodies=n_arm_bodies, NIJ=NIJ, plate_shapes=plate_shapes,
+                                        body=body, target=target, dims=dims, feeder=feeder, welds=welds)
+
+
 class Example:
     def __init__(self, viewer, args):
         self.viewer, self.args = viewer, args
@@ -634,89 +745,10 @@ class Example:
                 raise SystemExit("--brace-json needs --start-step: it overrides the brace of that step")
             self.sham_s = self.set_brace(steps[n0], json.loads(args.brace_json), exe)
 
-        # --- arms ---------------------------------------------------------
-        arm = build_arm(self.substeps)
-        self.model_ik = arm.finalize()
-        # Start parked. HOME_Q reaches 0.41 m out, so two arms 0.9 m apart
-        # would begin with their hands interlocked.
-        park_q = self.solve_park()
-        arm.joint_q[:9] = park_q
-        arm.joint_target_pos[:9] = park_q
-        scene = newton.ModelBuilder()
-        newton.solvers.SolverMuJoCo.register_custom_attributes(scene)
-        for pos, yaw in (ARM_A, ARM_B):
-            scene.add_builder(arm, xform=wp.transform(pos, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw)))
-        n_arm_bodies = arm.body_count
-        if exe["name"] != "E0":               # E1: A's arm joints only (E0 is build_arm's 400 / 40)
-            scene.joint_target_ke[:7], scene.joint_target_kd[:7] = [exe["arm_ke"]] * 7, [exe["arm_kd"]] * 7
-        if not getattr(args, "legacy_brace", False):     # A's grip: 14.3 N per finger at the 1.5 mm brace squeeze (E0)
-            scene.joint_target_ke[7:9] = [exe["finger_ke"]] * 2
-            scene.joint_target_kd[7:9] = [2 * math.sqrt(exe["finger_ke"] * 0.1)] * 2
-
-        # --- baseplate: a studded slab, colliding only where the build stands --
-        ox, oy, _ = self.plan["voxel_origin"]
-        NI = max(b["grid_pos"][0] + P.footprint(b["type"], b["yaw_index"])[0] for b in bricks.values())
-        NJ = max(b["grid_pos"][1] + P.footprint(b["type"], b["yaw_index"])[1] for b in bricks.values())
-        cx, cy = ox + NI * P.PITCH / 2, oy + NJ * P.PITCH / 2
-        self.NIJ = (NI, NJ)
-        v, f = ex._make_brick_mesh(NI + 4, NJ + 4)
-        scene.add_shape_mesh(-1, mesh=newton.Mesh(v, f.flatten()), color=(0.45, 0.47, 0.45),
-                             xform=wp.transform((cx, cy, Z0 - ex.BRICK_HEIGHT), wp.quat_identity()),
-                             cfg=newton.ModelBuilder.ShapeConfig(has_shape_collision=False,
-                                                                 has_particle_collision=False))
-        self.plate_shapes = [scene.add_shape_box(-1, hx=(NI + 4) * P.PITCH / 2, hy=(NJ + 4) * P.PITCH / 2, hz=Z0 / 2,
-                            xform=wp.transform((cx, cy, Z0 / 2), wp.quat_identity()), cfg=PROXY_CFG)]
-        stud_hh = 0.5 * ex.STUD_HEIGHT - ex.COLLIDER_INSET
-        for i in range(NI):
-            for j in range(NJ):
-                self.plate_shapes.append(scene.add_shape_cylinder(
-                    -1, radius=ex.STUD_COLLIDER_RADIUS, half_height=stud_hh, cfg=PROXY_CFG,
-                    xform=wp.transform((ox + (i + 0.5) * P.PITCH, oy + (j + 0.5) * P.PITCH,
-                                        Z0 + stud_hh), wp.quat_identity())))
-
-        # --- bricks, waiting in the placer's feeder with their final yaw ------
-        solimp = scene.custom_attributes["mujoco:geom_solimp"]
-        meshes, self.body, self.target, self.dims = {}, {}, {}, {}
-        slots = feeder_slots(len(steps))
-        for n, s in enumerate(steps):
-            b = bricks[s["brick_id"]]
-            nx, ny = P.footprint(b["type"], b["yaw_index"])
-            L, W = max(nx, ny), min(nx, ny)
-            yaw = math.pi / 2 if ny > nx else 0.0           # mesh x = long side
-            if (L, W) not in meshes:
-                mv, mf = ex._make_brick_mesh(L, W)
-                meshes[(L, W)] = ex._build_mesh_with_sdf(mv, mf, color=COLORS[0])
-            at = tuple(s["target_pose"][:3]) if n < n0 else (*slots[n], 0.0005)
-            xform = wp.transform(at, wp.quat_from_axis_angle(wp.vec3(0, 0, 1), yaw))
-            body = scene.add_body(xform=xform, label=b["id"])
-            shape = scene.add_shape_mesh(body, mesh=meshes[(L, W)], cfg=BRICK_CFG,
-                                         color=COLORS[n % len(COLORS)])
-            solimp.values = solimp.values or {}
-            solimp.values[shape] = (0.6, 0.95, 0.00075, 0.5, 2.5)
-            add_proxies(scene, body, L, W, wp.transform_identity())
-            self.body[b["id"]] = body
-            self.target[b["id"]] = (np.array(s["target_pose"][:3]), yaw, L == W)
-            self.dims[b["id"]] = (L * P.PITCH, W * P.PITCH)
-        self.feeder = {s["brick_id"]: np.array([*slots[n], 0.0]) for n, s in enumerate(steps)}
-
-        # --- clutch pool: one disabled weld per (brick, support) (§3.3) -------
-        self.welds = {}
-        for n, s in enumerate(steps):
-            bid = s["brick_id"]
-            p2, y2, _ = self.target[bid]
-            parents = [m[0] for m in s["mating_studs"]] or [None]   # None = baseplate
-            for sid in parents:
-                if sid is None:
-                    rel = wp.transform(p2, qz(y2))
-                else:
-                    p1, y1, _ = self.target[sid]
-                    rel = wp.transform(rotate(qz(-y1), p2 - p1), qz(y2 - y1))
-                eq = scene.add_equality_constraint_weld(
-                    body1=-1 if sid is None else self.body[sid], body2=self.body[bid],
-                    relpose=rel, enabled=n < n0, label="clutch_%s_%s" % (sid or "plate", bid),
-                    custom_attributes=WELD_ATTRS)
-                self.welds.setdefault(bid, []).append([eq, sid, rel, n < n0])
-
+        # --- the cell: arms, baseplate, bricks, clutch pool (build_cell) -------
+        scene, c = build_cell(self.plan, exe, n0, self.substeps, getattr(args, "legacy_brace", False))
+        self.model_ik, park_q, n_arm_bodies, self.NIJ, self.plate_shapes = c.model_ik, c.park_q, c.n_arm_bodies, c.NIJ, c.plate_shapes
+        self.body, self.target, self.dims, self.feeder, self.welds = c.body, c.target, c.dims, c.feeder, c.welds
         scene.add_ground_plane(cfg=newton.ModelBuilder.ShapeConfig(mu=0.75))
         self.model = scene.finalize()
         self.n_arm_bodies = n_arm_bodies
@@ -825,20 +857,7 @@ class Example:
             self.plan["validation"]["bracing_strategy"], sum(len(w) for w in self.welds.values())))
 
     def solve_park(self):
-        """Joint angles that put the hand at PARK, pointing down."""
-        q = wp.array(np.array([HOME_Q + [0.01, 0.01]]), dtype=wp.float32)
-        solver = ik.IKSolver(
-            model=self.model_ik, n_problems=1, lambda_initial=0.1,
-            jacobian_mode=ik.IKJacobianType.ANALYTIC,
-            objectives=[ik.IKObjectivePosition(link_index=EE, link_offset=wp.vec3(0, 0, 0),
-                                               target_positions=wp.array([PARK], dtype=wp.vec3)),
-                        ik.IKObjectiveRotation(link_index=EE, link_offset_rotation=wp.quat_identity(),
-                                               target_rotations=wp.array([Q_DOWN], dtype=wp.vec4)),
-                        ik.IKObjectiveJointLimit(joint_limit_lower=self.model_ik.joint_limit_lower,
-                                                 joint_limit_upper=self.model_ik.joint_limit_upper)])
-        for _ in range(30):
-            solver.step(q, q, iterations=24)
-        return q.numpy()[0].tolist()
+        return solve_park(self.model_ik)
 
     # -- design-press fixture (plan_v4_rl_brace 2.2) --------------------------------------
     def fixture_setup(self, steps, n0):
