@@ -607,6 +607,11 @@ class Example:
         self.realtime = (bool(getattr(args, "pace", False)) or self.show_cams or self.manual_on) and getattr(args, "viewer", None) != "null"
         if self.manual_on and (self.look or getattr(args, "test", False) or getattr(args, "start_step", None) is not None):
             raise SystemExit("--manual runs no build queue: it cannot be combined with --look, --test or --start-step")
+        # rl_control (an Example arg, rl_env.py; no CLI flag): the hands follow ManualCtl targets that the env sets, from a nominal start, and the current step's brick is welded the moment it passes the snap gate
+        self.rl = bool(getattr(args, "rl_control", False))
+        self.direct = self.manual_on or self.rl      # the hands are driven from ManualCtl, not from a queue
+        if self.rl and (self.manual_on or self.look):
+            raise SystemExit("rl_control cannot be combined with --manual or --look")
         self.rt_t, self.feed, self.look_feed, self.man_info, self.top_det, self.top_det_ms = time.perf_counter(), None, None, {}, None, 0.0
 
         self.plan, self.name = make_plan(args)
@@ -759,13 +764,13 @@ class Example:
         self.A.push("park", park(ARM_A), 0.0, 0.0, 1.5)
         self.B.push("park", park(ARM_B), 0.0, 0.01, 1.5)
         self.man = None
-        if self.manual_on:                    # --manual: no queue; the hands are driven from liveview.ManualCtl (step)
+        if self.direct:                       # --manual / rl_control: no queue; the hands are driven from liveview.ManualCtl (step)
             for a in (self.A, self.B):
                 a.moves.clear()
                 a.phase = "manual"
                 a.cmd = (a.cmd[0], a.base[1], a.cmd[2], a.cmd[3])      # hand yaw = base yaw: the parked hand (what the park move's yaw 0 becomes through step()'s wrap)
             self.man = LV.ManualCtl((ARM_A, ARM_B), [park(ARM_A), park(ARM_B)])
-        self.next_step, self.b_step = n0, None
+        self.next_step, self.b_step = n0, n0 if self.rl else None
         self.legacy = bool(getattr(args, "legacy_brace", False))
         # hand-off protocol events (plan_v4 r5-5): B lifted its brick / A closed on the structure / B retracted
         self.staged, self.braced, self.retracted, self.placed = set(), set(), set(), set()
@@ -1391,9 +1396,8 @@ class Example:
         g[shapes] = group
         self.model.shape_collision_group.assign(g)
 
-    def snap(self, s):
-        """§2.3.3 gate on the pressed brick; if it passes, engage its clutch welds."""
-        bid = s["brick_id"]
+    def gate(self, bid):
+        """§2.3.3 gate on a brick, read-only: (q, lateral mm, dz mm, dyaw deg, tilt deg, ok, screen)."""
         q = self.state_0.body_q.numpy()[self.body[bid]]
         tgt, yaw, square = self.target[bid]
         lateral = float(np.hypot(*(q[:2] - tgt[:2]))) * 1000
@@ -1405,6 +1409,13 @@ class Example:
               and dyaw < GATE["yaw_deg"] and tilt < GATE["yaw_deg"])
         screen = (lateral < SCREEN["lateral_mm"] and SCREEN["dz_mm"][0] <= dz <= SCREEN["dz_mm"][1]
                   and tilt < SCREEN["tilt_deg"] and dyaw < SCREEN["yaw_deg"])        # D6, scorer only: changes neither the gate nor the weld
+        return q, lateral, dz, dyaw, tilt, ok, screen
+
+    def snap(self, s):
+        """§2.3.3 gate on the pressed brick; if it passes, engage its clutch welds."""
+        bid = s["brick_id"]
+        q, lateral, dz, dyaw, tilt, ok, screen = self.gate(bid)
+        tgt, yaw, _ = self.target[bid]
         self.last_gate = {"brick": bid, "lateral_mm": round(lateral, 2), "dz_mm": round(dz, 2),
                           "yaw_deg": round(dyaw, 2), "tilt_deg": round(tilt, 2)}
         after = self.failure is not None      # only under --continue
@@ -1517,6 +1528,13 @@ class Example:
         self.look_feed = (LV.overlay_look(LV.tile(cap["rgb"]), (cap["pos"], Rot.from_quat(cap["quat_xyzw"])), rec, T_box, B_box), LV.depth_rgb(cap["depth"]))
         self.push_feeds()
 
+    def rl_snap(self):
+        """rl_control, once per frame: the current step's brick is welded (snap) the moment it passes the gate; the env reads self.placed."""
+        s = self.plan["sequence"][self.b_step]
+        if s["step"] not in self.placed and self.gate(s["brick_id"])[5]:
+            self.snap(s)
+            self.placed.add(s["step"])
+
     def manual_step(self, body_q):
         """--manual: the held keys move the selected arm's target, then both arms' commands follow their targets (rate-limited, leashed)."""
         m, v = self.man, self.viewer
@@ -1533,6 +1551,11 @@ class Example:
             m.nudge(m.sel, (r * (down(K.L) - down(K.J)), r * (down(K.I) - down(K.K)), r * (down(K.T) - down(K.G))),
                     math.radians(self.man_step_deg) * 10 * self.frame_dt * (down(K.Z) - down(K.X)),
                     grip=m.tgt[m.sel]["grip"] + 0.03 * self.frame_dt * (down(K.V) - down(K.C)))
+        self.man_follow(body_q)
+
+    def man_follow(self, body_q):
+        """Both arms' commands follow their ManualCtl targets (rate-limited, leashed)."""
+        m = self.man
         for k, arm in enumerate((self.A, self.B)):
             arm.cmd = m.advance(k, arm.cmd, body_q[EE + k * self.n_arm_bodies][:3], self.frame_dt)
 
@@ -1567,12 +1590,14 @@ class Example:
                                % (self.sim_time, self.b_step, self.B.phase, self.A.phase))
         if self.manual_on:
             self.manual_step(body_q)
+        elif self.rl:
+            self.man_follow(body_q)
         else:
             self.schedule()
         pos, rot, grip, cmd_w = [], [], [], []
         for arm, k in ((self.A, 0), (self.B, 1)):
             ee = body_q[EE + k * self.n_arm_bodies][:3]
-            if arm is self.B:
+            if arm is self.B and not self.direct:
                 self.aim_brick(ee, body_q)
             p, yaw, g, tilt = arm.update(self.frame_dt, ee)
             cmd_w.append(p)
@@ -1580,7 +1605,7 @@ class Example:
             pos.append(rotate(qz(-byaw), p - [bx, by, bz]))
             # a parallel gripper is 180-degree symmetric: pick the nearer wrist. A look step (--look) takes that choice once,
             # at its grasp (yaw_shift), so the wrist can turn 180 deg for the second look and delta-psi cannot flip it
-            yaw = (yaw if self.manual_on else yaw + self.yaw_shift if arm is self.B and self.yaw_shift is not None
+            yaw = (yaw if self.direct else yaw + self.yaw_shift if arm is self.B and self.yaw_shift is not None
                    else byaw + wrap(yaw - byaw, math.pi))     # --manual: the command is the hand's world yaw: no wrap, no wrist flip
             world = qmul(qrot(tilt), qmul(qz(yaw), Q_DOWN))
             rot.append(qmul(qz(-byaw), world))
@@ -1622,6 +1647,8 @@ class Example:
         if self.show_cams and self.frame % self.cam_every == 0:
             self.refresh_feeds()
         self.breaker.update()
+        if self.rl:
+            self.rl_snap()
         self.brace_readout()
         if self.monitor:
             self.monitor.step(self)
