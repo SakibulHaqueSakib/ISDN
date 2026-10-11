@@ -2,7 +2,7 @@
 
 Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 
-259 entries. Later entries supersede earlier ones; retractions are marked.
+260 entries. Later entries supersede earlier ones; retractions are marked.
 
 ## WP0 — Environment & platform verification
 
@@ -424,6 +424,10 @@ Generated from `ledger.jsonl` by `scripts/worklog.py` — do not edit by hand.
 - **result** `v4_multiworld_probe`
     - result: Feasibility probe with scratch scripts, no repo code yet. The cell replicated as N worlds in one Newton model (ModelBuilder.replicate, one SolverMuJoCo + CollisionPipeline, graph captured up to N=512). Throughput on a contended GPU, so lower bounds: 113 world-frames/s at N=1, 727 at N=16, 1136 at N=64, about 2000-2125 at N=128-512. The single-world Example graph runs 72.6 frames/s, so about 29x at…
     - finding: Gotchas: the triangle-pair buffer must scale to max(4M, 300k*N) or contacts drop silently; nconmax is per world; unwelded studded bricks cost about 5x the contacts. Untested: held brick, finger contacts, arm-arm contacts and the break model in the batch. The batched env is being built next.
+
+- **result** `v4_rl_batched_multiworld`
+    - result: Many worlds in one Newton model (commit 7be13ca). rl_batched.BatchedReachEnv runs N cells in one Model / SolverMuJoCo / CollisionPipeline, with batched IK, per-world reset, welds and joint break (BatchedBreaker), batched noised cameras, and top_detect per world in worker processes (rl_detect.py). It has the same spaces and reward as BrickReachEnv and an Isaac Lab-style interface; train_rl.py --bac…
+    - finding: The batched env reaches 194 env steps/s at N=128 (random actions 133), against 7 for a single BrickReachEnv and 10.4 for NewtonVecEnv with 4 workers; this resolves the throughput gap measured in v4_multiworld_probe, including the previously untested held brick, finger contacts, arm-arm contacts and break model. Deliberate deviations from BrickReachEnv, stated in the module docstring: one key light…
 
 ## pre-WP0 — Kinematic slice (pre-gate exploration)
 
