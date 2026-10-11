@@ -69,8 +69,11 @@ def overlay_look(rgb, cam_pose, rec, T_box, B_box):
     return np.asarray(im)
 
 
+HELD = (0, 255, 0)        # outline of a brick in a gripper (top_detect.track_held)
+
+
 def overlay_top(rgb, det, stride=SHOW_STRIDE):
-    """The top tile with top_detect's read-out on it: the plate outline (cyan), each brick's top-face outline (yellow; magenta if it is on the plate; gray if hidden, i.e. remembered)
+    """The top tile with top_detect's read-out on it: the plate outline (cyan), each brick's top-face outline (yellow; magenta if it is on the plate; gray if hidden, i.e. remembered; green if a gripper holds it)
     and its id. `det` is detect()'s result in the pixels of the image it ran on; the tile is that image at 1/`stride`."""
     from PIL import Image, ImageDraw, ImageFont
     im = Image.fromarray(rgb)
@@ -79,9 +82,9 @@ def overlay_top(rgb, det, stride=SHOW_STRIDE):
     if det and det["plate"]:
         pts = [(x / stride, y / stride) for x, y in det["plate"]["outline"]]
         dr.line(pts + pts[:1], fill=(0, 255, 255), width=1)
-    for b in (det["bricks"] if det else []):
+    for b in (det["bricks"] + list(det.get("held", {}).values()) if det else []):
         pts = [(x / stride, y / stride) for x, y in b["outline"]]
-        dr.line(pts + pts[:1], fill=(200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
+        dr.line(pts + pts[:1], fill=HELD if b.get("held_by") else (200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
         dr.text((b["px"] / stride + 4, b["py"] / stride - 16), str(b["id"]), fill=(0, 255, 0), font=f)
     return np.asarray(im)
 
@@ -89,7 +92,7 @@ def overlay_top(rgb, det, stride=SHOW_STRIDE):
 def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
     """A wrist tile with the TOP camera's read-out `det` (top_detect.detect) projected through this wrist camera's pose `cam_pose` = (pos, R)
     (the nominal one: display only, nothing from ground truth): the plate outline (cyan) and each brick's top-face outline (yellow; magenta on
-    the plate; gray and "(hidden)" when remembered, TD.remember) with a two-line label on black, "#id colour size" and "x, y mm  yaw deg" (+ " L<layer> (i,j)" on the plate). Labels are moved off each other (a leader line to a far one). A shape with a corner
+    the plate; gray and "(hidden)" when remembered, TD.remember; green and "(held by B)" in a gripper, TD.track_held) with a two-line label on black, "#id colour size" and "x, y mm  yaw deg" (+ " L<layer> (i,j)" on the plate). Labels are moved off each other (a leader line to a far one). A shape with a corner
     behind the camera or wholly outside the image is skipped. The tile is the camera's frame at 1/`stride`; None `det`: unchanged."""
     if not det:
         return rgb
@@ -115,12 +118,12 @@ def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
         q = pts(np.c_[det["plate"]["corners"][:, :2], np.full(4, det["plate"]["top_z"])])
         if q:
             dr.line(q + q[:1], fill=(0, 255, 255), width=2)
-    for b in det["bricks"]:
+    for b in det["bricks"] + list(det.get("held", {}).values()):
         q = pts(box_corners(b["x"], b["y"], b["z_top"], b["yaw"], b["L"], b["W"]))
         if not q:
             continue
-        dr.line(q + q[:1], fill=(200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=2)
-        txt = ("#%d %s %s" + (" (hidden)" if b["hidden"] else "") + "\n%.0f, %.0f mm  yaw %d deg") % (b["id"], b["colour"], b["studs"], 1e3 * b["x"], 1e3 * b["y"], round(math.degrees(b["yaw"])))
+        dr.line(q + q[:1], fill=HELD if b.get("held_by") else (200, 200, 200) if b["hidden"] else (255, 0, 255) if b["on_plate"] else (255, 255, 0), width=2)
+        txt = ("#%d %s %s" + (" (held by %s)" % b["held_by"] if b.get("held_by") else " (hidden)" if b["hidden"] else "") + "\n%.0f, %.0f mm  yaw %d deg") % (b["id"], b["colour"], b["studs"], 1e3 * b["x"], 1e3 * b["y"], round(math.degrees(b["yaw"])))
         if b["on_plate"]:
             txt += " L%d (%d,%d)" % (b["layer"], *b["cell"])
         ox, oy = min(q, key=lambda p: p[1])                           # above the outline's top edge, kept in the tile

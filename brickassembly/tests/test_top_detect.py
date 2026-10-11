@@ -9,6 +9,8 @@ nominal start at step 5: the feeder bricks lie on the table, the first five stan
   - the topmost brick of the build: on the plate, its layer and its min-corner cell;
   - remember() (pure numpy, no GPU): a brick under a taller occluder is kept hidden, one whose spot reads table height is dropped, a matched one is
     replaced by the new detection;
+  - track_held() (pure numpy): a closed hand takes the brick under its TCP out of the bricks, the held pose follows the hand's move and turn, a new detection
+    of it is dropped, opening the fingers puts it back as hidden;
   - the firewall (top_detect imports without newton / warp / torch) is in tests/test_vision.py, with vision.py.
 
     bash scripts/run.sh tests/test_top_detect.py          # or: python -m pytest tests/test_top_detect.py
@@ -124,9 +126,33 @@ def test_remember():
     assert [(b["colour"], b["hidden"]) for b in new["bricks"]] == [("blue", False)]
     new = TD.remember(old, _res([_brick(0.0, "gray")], 0.0096))               # the colour flipped (a shadow): the same brick, not a ghost beside it
     assert [(b["colour"], b["hidden"]) for b in new["bricks"]] == [("gray", False), ("red", True)]
+    part = dict(_brick(0.004), L=0.016, W=0.008, studs="2x1")
+    new = TD.remember(old, _res([part, _brick(0.1, px=80)], 0.0096))        # a 2x1 piece of brick 0 in view (a hand over the rest): brick 0 stays whole
+    assert [(b["studs"], b["x"], b["hidden"]) for b in new["bricks"]] == [("4x2", 0.0, True), ("4x2", 0.1, False)]
     pl = dict(x=0, y=0, yaw=0.0, size=(0.2, 0.2), origin=np.array([-0.1, -0.1]), occupied=set(), top_z=0.0032)
     new = TD.remember(TD.remember(None, _res([], 0.0, pl)), _res([], 0.0, None))
     assert new["plate"]["hidden"] and new["plate"]["origin"] is pl["origin"]
+
+
+def test_track_held():
+    hand = lambda x, yaw, o, z=0.0134: [dict(name="B", pos=np.array([x, 0.0, z]), R=Rot.from_euler("zx", [yaw, math.pi]).as_matrix(), opening=np.array([o, o]))]
+    other = _brick(0.1, "blue", px=80)
+    det = TD.remember(None, _res([_brick(0.001), other], 0.0096))
+    det = TD.track_held(det, None, hand(0.0, 0.0, 0.0106))                      # open (10.6 mm, a 16 mm side is 8): nothing taken
+    assert det["held"] == {} and len(det["bricks"]) == 2
+    det = TD.track_held(TD.remember(det, _res([_brick(0.001), other], 0.0096)), det, hand(0.0, 0.0, 0.008))     # closed on a 4x2's 16 mm side
+    h = det["held"]["B"]
+    assert h["colour"] == "red" and h["held_by"] == "B" and [b["colour"] for b in det["bricks"]] == ["blue"] and {h["id"], det["bricks"][0]["id"]} == {0, 1}
+    assert not h["on_plate"] and h["cell"] is None
+    # the hand moves 50 mm in x and turns 30 deg: the brick follows (offset 1 mm in x about the TCP), the camera's copy of it (at the hand) is dropped
+    det = TD.remember(det, _res([_brick(0.1, "blue", px=80), dict(_brick(0.05 + 0.001 * math.cos(math.radians(30))), y=0.001 * math.sin(math.radians(30)), yaw=math.radians(30))], 0.0096))
+    det = TD.track_held(det, det, hand(0.05, math.radians(30), 0.008))
+    h = det["held"]["B"]
+    assert abs(h["x"] - (0.05 + 0.001 * math.cos(math.radians(30)))) < 1e-9 and abs(math.degrees(h["yaw"]) - 30) < 1e-6 and [b["colour"] for b in det["bricks"]] == ["blue"]
+    det = TD.track_held(TD.remember(det, _res([_brick(0.1, "blue", px=80)], 0.0096)), det, hand(0.05, math.radians(30), 0.0106))    # fingers open: released, hidden
+    assert det["held"] == {} and sorted((b["colour"], b["hidden"]) for b in det["bricks"]) == [("blue", False), ("red", True)]
+    det = TD.track_held(TD.remember(det, _res([_brick(0.1, "blue", px=80)], 0.0096)), det, hand(0.05, 0.0, 0.0106))             # it is not retaken while open
+    assert det["held"] == {}
 
 
 if __name__ == "__main__":

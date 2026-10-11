@@ -8,6 +8,7 @@ dual_arm_sim or cell.*, and never ground truth. Display and planning aid: nothin
     res["plate"]    dict(x, y, yaw, size, studs (NI, NJ), pitch, top_z, corners, outline, origin, occupied, hidden) or None
     res["height"]   (H, W) metres over the table of each pixel, nan where the depth is invalid
     res = remember(prev_res, res)     # object permanence: bricks (and the plate) an arm hides stay, with hidden=True, until the top camera sees their spot empty
+    res = track_held(res, prev_res, hands)    # bricks in a gripper (hands' FK pose + finger openings) leave res["bricks"] for res["held"] = {"A"/"B": brick dict with held_by}, followed with the hand
 
 Inputs are what cell.cameras Cameras.capture / preview return for the top camera: rgb uint8 (H, W, 3), depth = ray distance [m]
 (0 = invalid), the nominal pose (OpenGL camera: looks -z, up +y). `intrinsics_or_rays` is the intrinsics dict of the FULL image
@@ -170,16 +171,21 @@ def detect(rgb, depth, intrinsics_or_rays, cam_pos, cam_R):
                 bricks.append(dict(colour=col, x=float(c[0]), y=float(c[1]), z_top=zt, yaw=yaw, L=L, W=W, studs="%dx%d" % (max(nl, nw), min(nl, nw)),
                                    px=float(px.mean()), py=float(py.mean()), outline=_outline(_corners(c, L, W, yaw), zt, pos, R, rays), hidden=False))
     _number(bricks, plate)
-    return dict(bricks=bricks, plate=plate, height=h)
+    return dict(bricks=bricks, plate=plate, height=h, cam=(pos, R, rays))
 
 
-def _number(bricks, plate):
-    """Sort the bricks (so ids stay stable while the set does), number them, and place each on the plate: on_plate, cell, layer, and the plate's occupied cells."""
-    bricks.sort(key=lambda b: (round(b["x"], 3), b["y"]))
+def _number(bricks, plate, held=()):
+    """Sort the bricks (so ids stay stable while the set does), number them, and place each on the plate: on_plate, cell, layer, and the plate's occupied cells.
+    `held` (the bricks in a gripper) are numbered in the same order but never placed on the plate."""
+    key = lambda b: (round(b["x"], 3), b["y"])
+    bricks.sort(key=key)
+    ids = {id(b): i for i, b in enumerate(sorted(bricks + list(held), key=key))}
+    for b in held:
+        b["id"], b["on_plate"], b["cell"], b["layer"] = ids[id(b)], False, None, int(round((b["z_top"] - BRICK_H) / BRICK_H))
     if plate:
         plate["occupied"] = set()
-    for i, b in enumerate(bricks):
-        b["id"], b["on_plate"], b["cell"], b["layer"] = i, False, None, int(round((b["z_top"] - BRICK_H) / BRICK_H))     # 0 = the lowest layer
+    for b in bricks:
+        b["id"], b["on_plate"], b["cell"], b["layer"] = ids[id(b)], False, None, int(round((b["z_top"] - BRICK_H) / BRICK_H))     # 0 = the lowest layer
         if plate:
             ca, sa = math.cos(plate["yaw"]), math.sin(plate["yaw"])
             u = np.array([[ca, sa], [-sa, ca]]) @ (np.array([b["x"], b["y"]]) - plate["origin"])    # in the plate's cell frame
@@ -205,7 +211,8 @@ def remember(prev, res, win=4):
     centre within half its long side, z_top within 4 mm) is kept, flagged hidden=True, if the top camera now sees at or above its top there (the median
     of res["height"] in a +-`win` px window at its centroid: an arm or a brick over it); if it sees lower, the brick is gone and is dropped. A plate that
     is missing or clearly smaller (an arm over it) is kept from `prev` with hidden=True. Ids, on_plate, cell, layer, occupied are recomputed for the merged set.
-    ponytail: a brick picked up while still occluded keeps its stale label at its old spot until the table there is seen again; upgrade: track the gripper."""
+    A new brick that is smaller than a previous one and lies inside it (same height) is that brick seen in part (an arm over the rest): the previous one is kept, hidden=True.
+    A brick a gripper holds is not in `prev["bricks"]` (see track_held), so this never judges it."""
     for b in res["bricks"]:
         b["hidden"] = False
     if res["plate"]:
@@ -213,6 +220,11 @@ def remember(prev, res, win=4):
     if prev is None:
         return res
     h = res["height"]
+    for i, n in enumerate(res["bricks"]):                                    # a hand over part of a brick leaves a smaller whole-stud rectangle in view: the brick stays whole
+        for o in prev["bricks"]:
+            if n["L"] * n["W"] < 0.9 * o["L"] * o["W"] and _inside(n, o) and abs(n["z_top"] - o["z_top"]) < 4 * MM:
+                res["bricks"][i] = dict(o, hidden=True)
+                break
     for o in prev["bricks"]:
         if any(abs(n["z_top"] - o["z_top"]) < 4 * MM and (n["colour"] == o["colour"] and math.hypot(n["x"] - o["x"], n["y"] - o["y"]) < o["L"] / 2
                                                           or _inside(o, n) or _inside(n, o)) for n in res["bricks"]):
@@ -227,6 +239,67 @@ def remember(prev, res, win=4):
         p = res["plate"] = dict(q, hidden=True)
     _number(res["bricks"], p)
     return res
+
+
+GRASP_XY = 15 * MM                  # a gripped brick's top-face centre is this close (xy) to the TCP: the planner slides the grip up to ~14 mm along a long brick
+GRASP_Z = (-2 * MM, 9 * MM)         # TCP height over a gripped brick's top face: GRASP_DZ 13 mm over the bottom face = 3.4 mm over the top, with a band for FK / depth error
+OPEN_TOL, FINGER_MIN = 1.5 * MM, 2 * MM    # fingers "closed on it": each within OPEN_TOL of half a brick side (8 mm for the 16 mm side); the grasp command is 1.5 mm inside it and
+                                    # the open one 2.6 mm outside, so OPEN_TOL splits them; below FINGER_MIN the hand shut on nothing
+OVERLAP_DZ = 6 * MM
+
+
+def _symm(a, b):
+    """Yaw a wrapped to brick b's symmetry (mod pi; squares mod pi / 2), as detect reports it."""
+    p = math.pi / 2 if abs(b["L"] - b["W"]) < MM else math.pi
+    return (a + p / 2) % p - p / 2
+
+
+def _same(a, b):
+    """Two detections of one brick: footprints overlap (either centre inside the other) at about the same height."""
+    return abs(a["z_top"] - b["z_top"]) < OVERLAP_DZ and (_inside(a, b) or _inside(b, a))
+
+
+def track_held(det, prev, hands):
+    """Bricks in a gripper, from the hand's pose and finger joints (proprioception, FK only; no ground truth). `hands`: per arm dict(name "A"/"B",
+    pos (3,) and R (3x3 or Rotation) = the TCP from FK, opening = per-finger opening [m] from the measured finger joints). Held bricks live in
+    det["held"] = {arm name: brick dict + d (hand-frame offset of the top-face centre), yaw_rel, half, held_by}, carried over from `prev`.
+    Grasp: an arm with nothing held, fingers closed on a brick side (see OPEN_TOL), takes the brick of det["bricks"] (hidden ones too) whose top face
+    is at the TCP (GRASP_XY, GRASP_Z): removed from det["bricks"], its hand-frame offset stored. Hold: its pose follows the hand each call and a new
+    detection of the same brick is dropped. Release: fingers opened, or shut on nothing: it goes back into det["bricks"] at the hand's pose with
+    hidden=True, for remember to match when the camera sees it again. Renumbers bricks and held together.
+    ponytail: identity comes from the grasp (the nearest brick at the TCP); the held pose is the grasp-time offset, so slip in the fingers isn't seen
+    (V5's B_hat at the looks could refine it)."""
+    held = {k: dict(b) for k, b in ((prev or {}).get("held") or {}).items()}
+    for hd in hands or ():
+        k = hd["name"]
+        pos, R = np.asarray(hd["pos"], float), hd["R"].as_matrix() if isinstance(hd["R"], Rot) else np.asarray(hd["R"], float)
+        o, hyaw = np.asarray(hd["opening"], float), math.atan2(R[1, 0], R[0, 0])
+        b = held.get(k)
+        if b is None and o.min() >= FINGER_MIN:
+            near = [(math.hypot(c["x"] - pos[0], c["y"] - pos[1]), n, c) for n, c in enumerate(det["bricks"])
+                    if math.hypot(c["x"] - pos[0], c["y"] - pos[1]) <= GRASP_XY and GRASP_Z[0] <= pos[2] - c["z_top"] <= GRASP_Z[1]]
+            for _, _, c in sorted(near, key=lambda t: t[:2]):
+                nl, nw = map(int, c["studs"].split("x"))
+                half = min((nw * PITCH / 2, nl * PITCH / 2), key=lambda w: np.abs(o - w).max())
+                if np.abs(o - half).max() <= OPEN_TOL:
+                    b = held[k] = dict(c, d=R.T @ (np.array([c["x"], c["y"], c["z_top"]]) - pos), yaw_rel=c["yaw"] - hyaw, half=half)
+                    det["bricks"] = [n for n in det["bricks"] if n is not c]
+                    break
+        if b is None:
+            continue
+        c3 = pos + R @ b["d"]
+        b.update(x=float(c3[0]), y=float(c3[1]), z_top=float(c3[2]), yaw=_symm(hyaw + b["yaw_rel"], b), hidden=False, held_by=k)
+        if det.get("cam") is not None:
+            b["outline"] = _outline(_corners(c3[:2], b["L"], b["W"], b["yaw"]), c3[2], *det["cam"])
+            b["px"], b["py"] = map(float, b["outline"].mean(0))
+        if o.mean() > b["half"] + OPEN_TOL or o.min() < FINGER_MIN:          # opened, or shut on nothing (slipped)
+            del held[k]
+            if not any(_same(n, b) for n in det["bricks"]):
+                det["bricks"].append({a: v for a, v in b.items() if a not in ("d", "yaw_rel", "half", "held_by")} | dict(hidden=True))
+    det["bricks"] = [n for n in det["bricks"] if not any(_same(n, b) for b in held.values())]       # the held one wins
+    det["held"] = held
+    _number(det["bricks"], det["plate"], list(held.values()))
+    return det
 
 
 def _outline(c2, z, pos, R, rays):
