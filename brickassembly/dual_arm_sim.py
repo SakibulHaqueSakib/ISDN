@@ -1480,14 +1480,18 @@ class Example:
 
     # -- live viewer aids (cell/liveview.py; display only) --------------------------------
     def refresh_feeds(self):
-        """--show-cameras: a noise-free preview of the cameras of the current state (the wrist cameras from their arm's FK pose): the noise would cost 3x the render."""
+        """--show-cameras: a noise-free preview of the cameras of the current state (the wrist cameras from their arm's FK pose): the noise would cost 3x the render.
+        The wrist tiles carry the top camera's top_detect read-out projected through each wrist camera's NOMINAL pose (LV.overlay_wrist): vision only, display only."""
         top = self.cams.preview("top", state=self.state_0, stride=1)                # full size: top_detect reads it, the tile is every second pixel
         t0 = time.perf_counter()
         self.top_det = TD.detect(top["rgb"], top["depth"], self.cams.cams["top"]["rays_np"], *self.cams.poses("top")[2:])      # nominal pose; display only
         self.top_det_ms = (time.perf_counter() - t0) * 1e3
         wa = self.cams.preview("wrist_A", self.hand_fk(0), state=self.state_0, stride=LV.SHOW_STRIDE)
         wr = self.cams.preview("wrist_B", self.hand_fk(1), state=self.state_0, stride=LV.SHOW_STRIDE)
-        self.feed = [LV.overlay_top(LV.tile(top["rgb"]), self.top_det), wa["rgb"], wr["rgb"], LV.depth_rgb(top["depth"]), LV.depth_rgb(wa["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
+        # ponytail: the labels are drawn even where an arm occludes the brick; depth-test against the wrist depth image if it matters
+        wa_rgb = LV.overlay_wrist(wa["rgb"], "wrist_A", self.cams.poses("wrist_A", self.hand_fk(0))[2:], self.top_det)
+        wr_rgb = LV.overlay_wrist(wr["rgb"], "wrist_B", self.cams.poses("wrist_B", self.hand_fk(1))[2:], self.top_det)
+        self.feed = [LV.overlay_top(LV.tile(top["rgb"]), self.top_det), wa_rgb, wr_rgb, LV.depth_rgb(top["depth"]), LV.depth_rgb(wa["depth"], 1), LV.depth_rgb(wr["depth"], 1)]
         self.push_feeds()
 
     def push_feeds(self, blank=None):

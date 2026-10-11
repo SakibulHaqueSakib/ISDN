@@ -3,6 +3,7 @@ camera frames drawn here use their own noise stream, so a run with the panels on
 
     depth_rgb, tile, overlay_look      camera frames -> uint8 tiles for ViewerBase.log_image; the V5 result drawn on the wrist look
     overlay_top                        top_detect's plate and bricks drawn on the top tile
+    overlay_wrist                      the same read-out projected into a wrist tile, with each brick's label
     clamp_target, ManualCtl            the manual-control targets: workspace clamp, rate limit and a leash on the measured hand
 """
 
@@ -82,6 +83,50 @@ def overlay_top(rgb, det, stride=SHOW_STRIDE):
         pts = [(x / stride, y / stride) for x, y in b["outline"]]
         dr.line(pts + pts[:1], fill=(255, 0, 255) if b["on_plate"] else (255, 255, 0), width=1)
         dr.text((b["px"] / stride + 4, b["py"] / stride - 16), str(b["id"]), fill=(0, 255, 0), font=f)
+    return np.asarray(im)
+
+
+def overlay_wrist(rgb, cam, cam_pose, det, stride=SHOW_STRIDE):
+    """A wrist tile with the TOP camera's read-out `det` (top_detect.detect) projected through this wrist camera's pose `cam_pose` = (pos, R)
+    (the nominal one: display only, nothing from ground truth): the plate outline (cyan) and each brick's top-face outline (yellow; magenta on
+    the plate) with a two-line label on black, "#id colour size" and "x, y mm  yaw deg" (+ " L<layer> (i,j)" on the plate). A shape with a corner
+    behind the camera or wholly outside the image is skipped. The tile is the camera's frame at 1/`stride`; None `det`: unchanged."""
+    if not det:
+        return rgb
+    from PIL import Image, ImageDraw, ImageFont
+    from cell.cameras import CAMS, project
+    pos, R = cam_pose
+    im = Image.fromarray(rgb)
+    dr = ImageDraw.Draw(im)
+    f = ImageFont.load_default(size=15)
+    w, h = CAMS[cam]["w"] / stride, CAMS[cam]["h"] / stride
+
+    def pts(corners):
+        if (R.inv().apply(corners - pos)[:, 2] >= 0).any():          # a corner behind the camera: project() clamps it and would not say
+            return None
+        px, py, _ = project(cam, pos, R, corners)
+        px, py = px / stride, py / stride
+        if px.max() < 0 or px.min() > w or py.max() < 0 or py.min() > h:
+            return None
+        return list(zip(px, py))
+
+    if det["plate"]:
+        q = pts(np.c_[det["plate"]["corners"][:, :2], np.full(4, det["plate"]["top_z"])])
+        if q:
+            dr.line(q + q[:1], fill=(0, 255, 255), width=2)
+    for b in det["bricks"]:
+        q = pts(box_corners(b["x"], b["y"], b["z_top"], b["yaw"], b["L"], b["W"]))
+        if not q:
+            continue
+        dr.line(q + q[:1], fill=(255, 0, 255) if b["on_plate"] else (255, 255, 0), width=2)
+        txt = "#%d %s %s\n%.0f, %.0f mm  yaw %d deg" % (b["id"], b["colour"], b["studs"], 1e3 * b["x"], 1e3 * b["y"], round(math.degrees(b["yaw"])))
+        if b["on_plate"]:
+            txt += " L%d (%d,%d)" % (b["layer"], *b["cell"])
+        tx, ty = min(q, key=lambda p: p[1])                           # above the outline's top edge, kept in the tile
+        x0, y0, x1, y1 = dr.multiline_textbbox((0, 0), txt, font=f)
+        tx, ty = min(max(tx, 0), w - x1), min(max(ty - y1 - 2, 0), h - y1)
+        dr.rectangle(dr.multiline_textbbox((tx, ty), txt, font=f), fill=(0, 0, 0))
+        dr.multiline_text((tx, ty), txt, fill=(255, 255, 255), font=f)
     return np.asarray(im)
 
 

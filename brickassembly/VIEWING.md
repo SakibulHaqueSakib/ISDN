@@ -55,7 +55,7 @@ duration. They need `--viewer gl` (the default); on the null viewer `--show-came
 **Camera window** (`--show-cameras`): one window, titled `cameras: ...`, tiles in two rows: RGB on top, depth below (colour-mapped, near = blue,
 black = no return), columns top camera, wrist_A (the bracing arm), wrist_B (the placer), and, with `--look --aim fk_vision` (or `--shadow-vision`), the **last look**. Drag its corner to
 resize; the side panel's *Logged Images* dropdown hides or reopens it. The live feeds refresh every `--camera-every N` frames (default 10, about 6 Hz, ~30 ms a refresh;
-a larger N is lighter) and are shown at half size, without the sensor noise. Each wrist feed is rendered from its own arm's FK pose. The look tile is
+a larger N is lighter) and are shown at half size, without the sensor noise. Each wrist feed is rendered from its own arm's FK pose. Each wrist feed also shows the top camera's brick read-out projected through its nominal pose (plate cyan, bricks yellow / magenta on the plate, each with a black label: `#id colour size`, then `x, y mm  yaw deg`, and on the plate ` L<layer> (i,j)`); labels are drawn even where the arm occludes a brick. The look tile is
 the real thing: the full noised frame V5 was given. The **last look** tile is the wrist frame at the scheduled look, with V5's result drawn on it: the estimated target
 footprint (cyan) and held-brick footprint (magenta), a green frame and "ACCEPTED studs" or a red one and "REJECTED <reason>", and the target / held
 stud counts. In the side panel, under the usual step lines: per step (the last three) each look's verdict and estimator, the looks the aim used
