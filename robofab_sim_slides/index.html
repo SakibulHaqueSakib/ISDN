@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>robofab_sim</title>
+<style>
+  :root {
+    --bg: #16161d; --surface: #1f1f29; --line: #2e2e3b;
+    --text: #ececf1; --muted: #9a9aab; --accent: #f5c518;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0c0c10; color: var(--text);
+    font: 400 24px/1.4 "Inter", "Segoe UI", system-ui, sans-serif; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  /* each slide is a fixed 1600x900 canvas scaled to fit the window */
+  .slide { position: absolute; width: 1600px; height: 900px; background: var(--bg);
+    padding: 64px 72px; display: none; transform-origin: center; }
+  .slide.on { display: flex; flex-direction: column; }
+  h1 { font-size: 88px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  h2 { font-size: 46px; font-weight: 750; letter-spacing: -0.01em; margin-bottom: 36px; }
+  h3 { font-size: 25px; font-weight: 700; margin-bottom: 6px; }
+  p, li { color: var(--muted); }
+  b, strong { color: var(--text); font-weight: 600; }
+  code { font: 500 0.88em "JetBrains Mono", ui-monospace, monospace; color: var(--text); }
+  .kicker { color: var(--accent); font-weight: 700; font-size: 20px; letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 18px; }
+  .row { display: flex; gap: 48px; flex: 1; min-height: 0; }
+  .media { border-radius: 14px; overflow: hidden; background: #000; position: relative; }
+  .media img, .media video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .tag { position: absolute; left: 14px; bottom: 12px; background: rgba(0,0,0,.65); color: var(--text);
+    font-size: 17px; padding: 4px 10px; border-radius: 6px; }
+  .steps { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 22px; }
+  .steps li { counter-increment: s; position: relative; padding-left: 56px; font-size: 21px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 38px; height: 38px;
+    border-radius: 50%; background: var(--accent); color: #16161d; font-weight: 800;
+    display: grid; place-items: center; font-size: 20px; }
+  .card { background: var(--surface); border-radius: 14px; padding: 22px 26px; }
+  .card p { font-size: 19px; }
+  .stats { display: flex; gap: 40px; margin-top: auto; }
+  .stats div { color: var(--muted); font-size: 18px; }
+  .stats b { display: block; color: var(--accent); font-size: 56px; font-weight: 800; line-height: 1.05; }
+  .pager { position: fixed; right: 18px; bottom: 12px; color: #555; font-size: 14px; }
+
+  /* slide 1 */
+  .title { padding: 0; flex-direction: row !important; }
+  .title .left { width: 640px; padding: 72px 56px 64px 72px; display: flex; flex-direction: column; }
+  .title .left p.sub { font-size: 28px; margin-top: 28px; color: var(--text); }
+  .facts { margin-top: auto; display: flex; flex-direction: column; gap: 18px; }
+  .facts div { font-size: 20px; color: var(--muted); }
+  .facts b { display: block; font-size: 26px; }
+  .title .hero { flex: 1; border-radius: 0; }
+
+  /* bar chart */
+  .bars { display: flex; flex-direction: column; gap: 12px; }
+  .bar { display: grid; grid-template-columns: 250px 1fr; align-items: center; gap: 14px; font-size: 18px; }
+  .bar span:first-child { color: var(--muted); text-align: right; }
+  .bar .track { position: relative; height: 26px; }
+  .bar .fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+  .bar .fill.dim { background: #6b6b7c; }
+  .bar .val { position: absolute; top: 0; line-height: 26px; padding-left: 10px; color: var(--text); font-weight: 600; }
+
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { background: var(--bg); display: block; overflow: visible; }
+    .slide { position: relative; display: flex !important; flex-direction: column; transform: none !important;
+      page-break-after: always; }
+    .title { flex-direction: row !important; }
+    .pager { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide title">
+  <div class="left">
+    <div class="kicker">ISDN Robofab</div>
+    <h1>robofab_sim</h1>
+    <p class="sub">A dual-arm LEGO assembly cell in Newton, with a vision-only RL interface</p>
+    <div class="facts">
+      <div><b>2 × Franka FR3</b>a placer arm and a bracing arm</div>
+      <div><b>Newton 1.2.1</b>MuJoCo-Warp solver, Newton's own collision pipeline, studded hollow bricks</div>
+      <div><b>One-command setup</b><code>bash setup.sh</code> then <code>./run.sh --shape cube</code></div>
+    </div>
+  </div>
+  <div class="media hero"><img src="media/hero_cube.png" alt="The finished 8-brick cube on the baseplate"></div>
+</section>
+
+<!-- 2. The simulator -->
+<section class="slide">
+  <div class="kicker">The simulator</div>
+  <h2>From a drawing to a built structure</h2>
+  <div class="row">
+    <div class="media" style="flex: 0 0 960px; height: 540px;">
+      <video src="media/build_clip.mp4" autoplay muted loop playsinline poster="media/build_poster.png"></video>
+      <span class="tag">8-brick cube, 4× speed</span>
+    </div>
+    <div style="flex: 1; height: 540px; display: flex; flex-direction: column;">
+    <ol class="steps">
+      <li><b>Blueprint.</b> A black-on-white front and side drawing becomes a brick list (or a sample: cube, hollow box, arch).</li>
+      <li><b>Plan.</b> Build order, plate targets and the clutch welds between bricks.</li>
+      <li><b>Place.</b> Arm B picks each brick from the feeder and presses it onto the studs; a snap gate welds it in.</li>
+      <li><b>Hold.</b> A joint-break model on the weld wrenches can fail the build. Arm A can brace a joint.</li>
+    </ol>
+    <div class="stats">
+      <div><b>8 / 8</b>cube bricks placed</div>
+      <div><b>11 / 11</b>arch bricks placed</div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Perception -->
+<section class="slide">
+  <div class="kicker">Perception</div>
+  <h2>The robot acts on what its cameras see</h2>
+  <div class="row">
+    <div style="flex: 0 0 960px;">
+      <div class="media" style="height: 480px;">
+        <img src="media/camera_feeds.png" alt="Top, wrist_A and wrist_B camera feeds, RGB over depth, with top_detect's brick outlines and labels">
+      </div>
+      <p style="font-size: 18px; margin-top: 14px;">Top, wrist_A and wrist_B cameras, RGB over depth (<code>--show-cameras</code>). The labels on wrist_B are top_detect's read-out: colour, size, offset, yaw, layer, plate cell.</p>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+      <div class="card"><h3>Noisy RGB-D cameras</h3><p>Top and two wrist cameras, with sensor noise, exposure gain and a hidden extrinsic error redrawn per episode.</p></div>
+      <div class="card"><h3>top_detect</h3><p>Reads each brick's colour, size and pose, the baseplate grid and the bricks held in a gripper off the top image.</p></div>
+      <div class="card"><h3>Ground truth stays out</h3><p>Simulator state is used only for reward and scoring. A test checks that moving bricks behind the cameras' back leaves the observation unchanged.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. RL interface -->
+<section class="slide">
+  <div class="kicker">Reinforcement learning</div>
+  <h2>An Isaac Lab-style interface, many worlds per GPU</h2>
+  <div class="row" style="gap: 56px;">
+    <div style="flex: 0 0 640px; display: flex; flex-direction: column; gap: 20px;">
+      <div class="card"><h3>BrickStepEnv: one decision per brick</h3><p>Brace on or off, where to brace, and how hard to press. The bracing policy is learned here, not hand-planned.</p></div>
+      <div class="card"><h3>BrickReachEnv: low-level control</h3><p>Both hands at 10 Hz: position, yaw and grip deltas, shaped reward, ends when the brick snaps.</p></div>
+      <div class="card"><h3>Plugs into standard trainers</h3><p><code>DirectRLEnv</code>-style tensors in and out; adapters for rsl_rl, skrl and rl_games (<code>train_rl.py</code>).</p></div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      <h3>Environment steps per second</h3>
+      <p style="font-size: 18px; margin-bottom: 26px;">Zero actions, images off, one development machine</p>
+      <div class="bars">
+        <div class="bar"><span>Single BrickReachEnv</span><div class="track"><div class="fill dim" style="width: 3.2%"></div><span class="val" style="left: 3.2%">7</span></div></div>
+        <div class="bar"><span>Subprocess, 4 workers</span><div class="track"><div class="fill dim" style="width: 4.7%"></div><span class="val" style="left: 4.7%">10.4</span></div></div>
+        <div class="bar"><span>Batched, 1 world</span><div class="track"><div class="fill" style="width: 7.1%"></div><span class="val" style="left: 7.1%">15.6</span></div></div>
+        <div class="bar"><span>Batched, 16 worlds</span><div class="track"><div class="fill" style="width: 50.9%"></div><span class="val" style="left: 50.9%">112</span></div></div>
+        <div class="bar"><span>Batched, 64 worlds</span><div class="track"><div class="fill" style="width: 77.3%"></div><span class="val" style="left: 77.3%">170</span></div></div>
+        <div class="bar"><span>Batched, 128 worlds</span><div class="track"><div class="fill" style="width: 88.2%"></div><span class="val" style="left: 88.2%">194</span></div></div>
+      </div>
+      <p style="font-size: 18px; margin-top: 36px;"><b>BatchedReachEnv</b> runs N cells in one Newton model with one captured CUDA graph per frame and per-world reset; about 28× a single env at N = 128.</p>
+    </div>
+  </div>
+  <p style="font-size: 21px; margin-top: 28px;"><b style="color: var(--accent);">Next:</b> <b>train the bracing policy.</b> The plan's hand-planned brace breaks the arch at step 10 and S3 at step 13, while the same steps succeed unbraced.</p>
+</section>
+
+<div class="pager"></div>
+<script>
+  const slides = [...document.querySelectorAll(".slide")], pager = document.querySelector(".pager");
+  let i = 0;
+  const fit = () => { const s = Math.min(innerWidth / 1600, innerHeight / 900);
+    slides.forEach(el => el.style.transform = `scale(${s})`); };
+  const show = n => { i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((el, k) => el.classList.toggle("on", k === i));
+    pager.textContent = `${i + 1} / ${slides.length}  ·  ← →`; };
+  addEventListener("resize", fit);
+  addEventListener("keydown", e => {
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) show(i + 1);
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+  });
+  addEventListener("click", e => { if (!e.target.closest("video")) show(i + (e.clientX > innerWidth / 2 ? 1 : -1)); });
+  fit(); show(Number(location.hash.slice(1)) - 1 || 0);
+</script>
+</body>
+</html>
